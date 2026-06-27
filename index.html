@@ -422,9 +422,7 @@ class Component extends DCLogic {
     autoSteps: [],
     _runId: 0,
     estPromptTokens: 0,
-    apiKey: '',
-    apiBaseUrl: '',
-    apiProvider: ''
+    apiKey: ''
   };
 
   _timers = [];
@@ -433,14 +431,8 @@ class Component extends DCLogic {
   componentDidMount() {
     try {
       const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      this.setState({ apiKey: s.apiKey || '', apiBaseUrl: s.baseUrl || '', apiProvider: s.selectedProvider || '' });
+      this.setState({ apiKey: s.apiKey || '' });
     } catch(e) {}
-    window.addEventListener('storage', () => {
-      try {
-        const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-        this.setState({ apiKey: s.apiKey || '', apiBaseUrl: s.baseUrl || '', apiProvider: s.selectedProvider || '' });
-      } catch(e) {}
-    });
   }
 
   componentWillUnmount() {
@@ -452,7 +444,11 @@ class Component extends DCLogic {
   _clearAll() { this._timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this._timers = []; }
 
   _useRealApi() {
-    const { apiKey, apiProvider } = this.state;
+    let apiKey = this.state.apiKey;
+    try {
+      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
+      if (s.apiKey) apiKey = s.apiKey;
+    } catch(e) {}
     return !!(apiKey && apiKey.trim());
   }
 
@@ -519,9 +515,14 @@ class Component extends DCLogic {
   }
 
   async _streamReal(rid, history) {
-    const { apiKey, apiBaseUrl, model, params, sysPrompt, toggles, estPromptTokens } = this.state;
-    const baseUrl = (apiBaseUrl && apiBaseUrl.trim()) ? apiBaseUrl.trim().replace(/\/$/, '') : 'https://openrouter.ai/api/v1';
-    const url = baseUrl + '/chat/completions';
+    // 实时读 localStorage，确保 Nav 保存后无需刷新页面
+    let apiKey = this.state.apiKey;
+    try {
+      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
+      if (s.apiKey) apiKey = s.apiKey;
+    } catch(e) {}
+    const { model, params, sysPrompt, estPromptTokens } = this.state;
+    const url = 'https://openrouter.ai/api/v1/chat/completions';
 
     const messages = [
       { role: 'system', content: sysPrompt },
@@ -569,8 +570,8 @@ class Component extends DCLogic {
         headers: {
           'Authorization': `Bearer ${apiKey.trim()}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': location.href,
-          'X-Title': 'LLM Viz'
+          'HTTP-Referer': 'https://llm-viz.app',
+          'X-Title': 'LLM Mechanism Viz'
         },
         body: JSON.stringify(body)
       });
@@ -835,10 +836,9 @@ class Component extends DCLogic {
     };
   }
 
-  _buildModelProfile(model, arch, apiEndpoint) {
-    const ep = (apiEndpoint && apiEndpoint.trim()) ? apiEndpoint.trim().replace(/\/$/, '') : 'https://openrouter.ai/api/v1';
+  _buildModelProfile(model, arch) {
     return {
-      model, endpoint: `POST ${ep}/chat/completions`,
+      model, endpoint: 'POST https://openrouter.ai/api/v1/chat/completions',
       archLabel: arch.arch,
       layers: arch.layers, hidden: arch.hidden, heads: arch.heads, kvHeads: arch.kvHeads,
       ctxWindow: arch.ctxWindow ? (arch.ctxWindow >= 1000000 ? `${(arch.ctxWindow/1000000).toFixed(1)}M` : arch.ctxWindow >= 1000 ? `${(arch.ctxWindow/1000).toFixed(0)}K` : `${arch.ctxWindow}`) : '未知',
@@ -868,9 +868,9 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning, apiKey, apiProvider } = this.state;
+    const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning, apiKey } = this.state;
     const useRealApi = this._useRealApi();
-    const apiStatusText = useRealApi ? `● LIVE · ${apiProvider || 'OpenRouter'}` : '○ 演示模式';
+    const apiStatusText = useRealApi ? '● LIVE · OpenRouter' : '○ 演示模式';
     const apiStatusStyle = { fontSize: '10px', fontFamily: '"JetBrains Mono",monospace', color: useRealApi ? '#00ffa0' : '#484f58', border: `1px solid ${useRealApi ? 'rgba(0,255,160,0.3)' : '#30363d'}`, borderRadius: '4px', padding: '2px 8px', background: useRealApi ? 'rgba(0,255,160,0.06)' : 'transparent', animation: useRealApi ? 'none' : 'none', flexShrink: 0 };
 
     const TS = (on) => ({ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 10px', background: on ? 'rgba(0,255,160,0.08)' : 'transparent', border: `1px solid ${on ? 'rgba(0,255,160,0.32)' : '#30363d'}`, borderRadius: '4px', cursor: 'pointer', color: on ? '#00ffa0' : '#6e7681', fontSize: '11px', fontFamily: '"JetBrains Mono",monospace', whiteSpace: 'nowrap', transition: 'all 0.15s ease' });
@@ -904,8 +904,7 @@ class Component extends DCLogic {
 
     // Stage 4: Model profile
     const arch = this._modelArch(model);
-    const apiEndpoint = this.state.apiBaseUrl || '';
-    const modelProfile = this._buildModelProfile(model, arch, apiEndpoint);
+    const modelProfile = this._buildModelProfile(model, arch);
 
     // Stage 5: Model-specific transformer layers
     const transformerLayers = this._buildTransformerLayers(arch, pipelinePhase);

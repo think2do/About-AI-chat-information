@@ -52,14 +52,14 @@
   </a>
   <a href="./Code.dc.html" style="text-decoration:none">
     <div style="{{ navCode }}">
-      <span style="font-size:17px">🤖</span>
+      <span style="font-size:17px">⌨</span>
       <span>Code</span>
     </div>
   </a>
   <a href="./Jargon.dc.html" style="text-decoration:none">
     <div style="{{ navJargon }}">
-      <span style="font-size:17px">📰</span>
-      <span>名词</span>
+      <span style="font-size:17px">🔤</span>
+      <span>黑话</span>
     </div>
   </a>
   <a href="./Job.dc.html" style="text-decoration:none">
@@ -82,56 +82,38 @@
         <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e6edf3; font-weight:600">⚙ 设置</span>
         <button onClick="{{ toggleSettings }}" style="background:transparent; border:none; color:#6e7681; font-size:18px; cursor:pointer; line-height:1">×</button>
       </div>
-      <div style="margin-bottom:18px">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">模型供应商</div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px">
-          <sc-for list="{{ providers }}" as="pv" hint-placeholder-count="5">
-            <button onClick="{{ pv.select }}" style="{{ pv.style }}">{{ pv.name }}</button>
-          </sc-for>
-        </div>
-      </div>
-      <div style="margin-bottom:18px">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">API KEY</div>
-        <input type="password" value="{{ apiKey }}" onInput="{{ updateApiKey }}" placeholder="sk-..." style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
-        <div style="font-size:10px; color:#484f58; margin-top:5px; font-family:'JetBrains Mono',monospace">仅用于演示，不会真实发送请求</div>
-      </div>
       <div style="margin-bottom:20px">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">BASE URL（可选）</div>
-        <input type="text" value="{{ baseUrl }}" onInput="{{ updateBaseUrl }}" placeholder="https://api.openai.com/v1" style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">OPENROUTER API KEY</div>
+        <input type="password" value="{{ apiKey }}" onInput="{{ updateApiKey }}" placeholder="sk-or-v1-..." style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
+        <div style="font-size:10px; color:#484f58; margin-top:5px; font-family:'JetBrains Mono',monospace">在 openrouter.ai 注册获取 Key，费用由你自行承担</div>
       </div>
       <button onClick="{{ saveSettings }}" style="width:100%; padding:9px; background:#00ffa0; border:none; border-radius:6px; color:#0d1117; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer">保存</button>
     </div>
   </div>
 </sc-if>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:56,&quot;height&quot;:400},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chat&quot;,&quot;lab&quot;,&quot;code&quot;,&quot;jargon&quot;,&quot;job&quot;],&quot;default&quot;:&quot;chat&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:56,&quot;height&quot;:400},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chat&quot;,&quot;lab&quot;,&quot;code&quot;,&quot;jargon&quot;],&quot;default&quot;:&quot;chat&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
   state = {
     showSettings: false,
-    selectedProvider: 'OpenAI',
-    apiKey: '',
-    baseUrl: ''
+    apiKey: ''
   };
 
   componentDidMount() {
     try {
       const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      this.setState({
-        selectedProvider: s.selectedProvider || 'OpenAI',
-        apiKey: s.apiKey || '',
-        baseUrl: s.baseUrl || ''
-      });
+      this.setState({ apiKey: s.apiKey || '' });
     } catch(e) {}
   }
 
   saveSettings() {
-    const { selectedProvider, apiKey, baseUrl } = this.state;
-    try { localStorage.setItem('llm_viz_settings', JSON.stringify({ selectedProvider, apiKey, baseUrl })); } catch(e) {}
+    const { apiKey } = this.state;
+    try { localStorage.setItem('llm_viz_settings', JSON.stringify({ apiKey })); } catch(e) {}
     this.setState({ showSettings: false });
   }
 
   renderVals() {
-    const { showSettings, selectedProvider, apiKey, baseUrl } = this.state;
+    const { showSettings, apiKey } = this.state;
     const active = this.props.active || 'chat';
     const NS = (page) => ({
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -153,15 +135,8 @@ class Component extends DCLogic {
       closeOnBg: (e) => { if (e.target === e.currentTarget) this.setState({ showSettings: false }); },
       stopProp: (e) => e.stopPropagation(),
       apiKey,
-      baseUrl,
       updateApiKey: (e) => this.setState({ apiKey: e.target.value }),
-      updateBaseUrl: (e) => this.setState({ baseUrl: e.target.value }),
       saveSettings: () => this.saveSettings(),
-      providers: ['OpenRouter', 'OpenAI', 'Anthropic', 'Google', 'DeepSeek', 'Groq', '自定义'].map(name => ({
-        name,
-        select: () => this.setState({ selectedProvider: name }),
-        style: { padding: '4px 12px', borderRadius: '5px', border: `1px solid ${selectedProvider === name ? '#00ffa0' : '#30363d'}`, background: selectedProvider === name ? 'rgba(0,255,160,0.1)' : 'transparent', color: selectedProvider === name ? '#00ffa0' : '#6e7681', fontFamily: '"JetBrains Mono",monospace', fontSize: '11px', cursor: 'pointer' }
-      }))
     };
   }
 }

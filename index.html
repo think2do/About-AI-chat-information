@@ -355,15 +355,8 @@ class Component extends DCLogic {
   _clearAll() { this._timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this._timers = []; }
 
   _useRealApi() {
-    // 实时读 localStorage，绕过 state 缓存同步问题
-    let apiKey = this.state.apiKey;
-    try {
-      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      if (s.apiKey) apiKey = s.apiKey;
-    } catch(e) {}
-    const { model } = this.state;
-    const isDemoModel = model.startsWith('demo/');
-    return !!(apiKey && apiKey.trim()) && !isDemoModel;
+    const { apiKey, apiProvider } = this.state;
+    return !!(apiKey && apiKey.trim());
   }
 
   handleRun() {
@@ -426,15 +419,7 @@ class Component extends DCLogic {
   }
 
   async _streamReal(rid, history) {
-    // 实时读 localStorage，确保使用最新凭证（Nav 保存后无需刷新页面）
-    let { apiKey, apiBaseUrl, model, params, sysPrompt } = this.state;
-    try {
-      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      if (s.apiKey) {
-        apiKey = s.apiKey;
-        if (s.baseUrl) apiBaseUrl = s.baseUrl;
-      }
-    } catch(e) {}
+    const { apiKey, apiBaseUrl, model, params, sysPrompt, toggles } = this.state;
     const baseUrl = (apiBaseUrl && apiBaseUrl.trim()) ? apiBaseUrl.trim().replace(/\/$/, '') : 'https://openrouter.ai/api/v1';
     const url = baseUrl + '/chat/completions';
 
@@ -482,8 +467,8 @@ class Component extends DCLogic {
         headers: {
           'Authorization': `Bearer ${apiKey.trim()}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': location.href,
-          'X-Title': 'LLM 机制可视化'
+          'HTTP-Referer': 'https://llm-viz.app',
+          'X-Title': 'LLM Mechanism Viz'
         },
         body: JSON.stringify(body)
       });

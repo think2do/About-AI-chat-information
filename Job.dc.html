@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+</helmet>
+
+<div style="display:flex; height:100vh; background:#0d1117; color:#e6edf3; font-family:'Inter',sans-serif; overflow:hidden">
+  <dc-import name="Nav" active="job" hint-size="56px,100%" style="flex-shrink:0"></dc-import>
+
+  <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; background:#0a0e14">
+    <div style="padding:20px">
+      <div style="font-size:16px; color:#00ffa0; margin-bottom:12px">💼 面试题库 ({{ total }})</div>
+
+      <div style="display:flex; gap:8px; margin-bottom:16px">
+        <sc-for list="{{ tags }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.click }}" style="{{ t.s }}">
+            {{ t.label }} ({{ t.n }})
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="display:flex; gap:0; height:60vh">
+        <div style="width:280px; border-right:1px solid #21262d; overflow-y:auto">
+          <sc-for list="{{ items }}" as="q" hint-placeholder-count="5">
+            <div onClick="{{ q.click }}" style="{{ q.s }}">
+              <div style="font-size:12px; color:#c9d1d9">{{ q.title }}</div>
+              <div style="font-size:10px; color:#484f58; margin-top:2px">{{ q.diff }} · {{ q.company }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:1; padding:16px 24px; overflow-y:auto">
+          <sc-if value="{{ noPick }}" hint-placeholder-val="{{ true }}">
+            <div style="opacity:0.4; text-align:center; padding-top:60px">
+              <span style="font-size:32px">💼</span>
+              <div style="font-size:12px; color:#6e7681; margin-top:8px">选择一道题</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ picked }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:16px; font-weight:600; color:#e6edf3; margin-bottom:16px">❓ {{ pick.title }}</div>
+            <div style="font-size:10px; color:#00ffa0; font-family:'JetBrains Mono',monospace; margin-bottom:10px">💡 参考回答</div>
+            <sc-for list="{{ pick.paragraphs }}" as="p" hint-placeholder-count="3">
+              <div style="font-size:13px; color:#c9d1d9; line-height:1.8; margin-bottom:8px">{{ p }}</div>
+            </sc-for>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tag: 'all', sel: null };
+
+  renderVals() {
+    const { tag, sel } = this.state;
+
+    var Q = [
+      { id: 'q1', tag: '前端', title: 'React 虚拟 DOM 工作原理', diff: '中等', company: '字节跳动',
+        answer: '虚拟 DOM 是 React 在内存中维护的轻量级 JavaScript 对象树。\n\n当状态变化时，React 创建新的虚拟 DOM 树并通过 Diff 算法对比新旧树，找出最小差异后批量更新真实 DOM。\n\n这避免了频繁的真实 DOM 操作，显著提升性能。' },
+      { id: 'q2', tag: '前端', title: 'JavaScript 事件循环机制', diff: '中等', company: '阿里巴巴',
+        answer: 'JS 是单线程语言，事件循环实现异步非阻塞。\n\n同步代码直接执行，异步操作交给 Web APIs，回调进入任务队列。\n\n调用栈清空后，先执行所有微任务（Promise），再取一个宏任务（setTimeout）。' },
+      { id: 'q3', tag: '算法', title: '实现 LRU 缓存淘汰算法', diff: '中等', company: '字节跳动',
+        answer: 'LRU 淘汰最久未使用的数据。\n\n最优实现：哈希表 + 双向链表，get/put 均为 O(1)。\n\n哈希表用于 O(1) 查找节点，双向链表维护访问顺序，最近使用的在头部。' },
+    ];
+
+    var ALL = [
+      { key: 'all', label: '全部' },
+      { key: '前端', label: '前端' },
+      { key: '算法', label: '算法' },
+    ];
+
+    var filtered = tag === 'all' ? Q : Q.filter(function(q) { return q.tag === tag; });
+
+    var selQ = sel ? Q.find(function(q) { return q.id === sel; }) : null;
+
+    return {
+      total: Q.length,
+      tags: ALL.map(function(t) {
+        return {
+          label: t.label,
+          n: t.key === 'all' ? Q.length : Q.filter(function(q) { return q.tag === t.key; }).length,
+          click: function() { this.setState({ tag: t.key, sel: null }); }.bind(this),
+          s: {
+            padding: '5px 12px', borderRadius: '5px', cursor: 'pointer',
+            border: '1px solid ' + (tag === t.key ? '#00ffa0' : '#21262d'),
+            background: tag === t.key ? 'rgba(0,255,160,0.06)' : 'transparent',
+            color: tag === t.key ? '#00ffa0' : '#6e7681',
+            fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px'
+          }
+        };
+      }),
+      items: filtered.map(function(q, i) {
+        return {
+          title: q.title,
+          diff: q.diff,
+          company: q.company,
+          click: function() { this.setState({ sel: q.id }); }.bind(this),
+          s: {
+            padding: '8px 12px', cursor: 'pointer',
+            background: sel === q.id ? 'rgba(0,255,160,0.04)' : 'transparent',
+            borderLeft: sel === q.id ? '2px solid #00ffa0' : '2px solid transparent',
+          }
+        };
+      }),
+      noPick: !sel,
+      picked: !!sel,
+      pick: selQ ? {
+        title: selQ.title,
+        paragraphs: selQ.answer.split('\n').filter(function(p) { return p.trim(); })
+      } : null
+    };
+  }
+}
+</script>
+</body>
+</html>

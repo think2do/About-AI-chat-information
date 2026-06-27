@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+</helmet>
+
+<div style="display:flex; height:100vh; background:#0d1117; color:#e6edf3; font-family:'Inter',sans-serif; overflow:hidden">
+  <dc-import name="Nav" active="code" hint-size="56px,100%" style="flex-shrink:0"></dc-import>
+
+  <div style="flex:1; display:flex; flex-direction:column; overflow:hidden">
+    <!-- Tab bar -->
+    <div style="display:flex; align-items:center; gap:4px; padding:10px 16px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-right:8px; letter-spacing:0.05em">Claude Code</span>
+      <button onClick="{{ setCodeSimulator }}" style="{{ codeTabSimStyle }}">⏵ 模拟器</button>
+      <button onClick="{{ setCodeAgent }}" style="{{ codeTabAgentStyle }}">↻ Agent 循环</button>
+      <button onClick="{{ setCodeTools }}" style="{{ codeTabToolsStyle }}">🔧 工具系统</button>
+      <button onClick="{{ setCodeCmds }}" style="{{ codeTabCmdsStyle }}">/ 命令目录</button>
+      <button onClick="{{ setCodeHidden }}" style="{{ codeTabHiddenStyle }}">✦ 隐藏功能</button>
+    </div>
+
+    <div style="flex:1; overflow:hidden; position:relative">
+
+      <!-- ── SIMULATOR TAB ── -->
+      <sc-if value="{{ codeIsSimulator }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; height:100%; overflow:hidden">
+          <!-- Left: Terminal -->
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid #30363d; background:#0d1117">
+            <div style="padding:8px 16px; border-bottom:1px solid #21262d; flex-shrink:0; display:flex; align-items:center; gap:8px">
+              <div style="display:flex; gap:5px">
+                <div style="width:10px;height:10px;border-radius:50%;background:#ff5f57"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#febc2e"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#28c840"></div>
+              </div>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#6e7681; margin-left:4px">claude — claude-code-simulator</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-left:auto">{{ simStep }}/11</span>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding:16px; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.7">
+              <sc-for list="{{ simTerminalLines }}" as="tl" hint-placeholder-count="2">
+                <div style="{{ tl.style }}">{{ tl.text }}</div>
+              </sc-for>
+              <sc-if value="{{ simNoSteps }}" hint-placeholder-val="{{ true }}">
+                <div style="color:#484f58; font-size:11px">── Claude Code v2.0.0 ──<br/>输入指令后点击「▶ 开始」</div>
+              </sc-if>
+            </div>
+          </div>
+          <!-- Right: Sequence diagram -->
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; background:#0a0e14">
+            <div style="padding:8px 16px; border-bottom:1px solid #30363d; flex-shrink:0; display:flex; align-items:center; justify-content:space-between">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; letter-spacing:0.06em">AGENT LOOP · 消息链路</span>
+              <div style="display:flex; gap:12px">
+                <span style="font-size:10px; color:#00ffa0; font-family:'JetBrains Mono',monospace">Claude Code</span>
+                <span style="font-size:10px; color:#d2a8ff; font-family:'JetBrains Mono',monospace">LLM</span>
+                <span style="font-size:10px; color:#ffa657; font-family:'JetBrains Mono',monospace">Tools</span>
+              </div>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding:12px 16px">
+              <sc-for list="{{ simSeqSteps }}" as="ss" hint-placeholder-count="2">
+                <div style="{{ ss.wrapStyle }}">
+                  <div style="display:flex; align-items:flex-start; gap:10px">
+                    <div style="{{ ss.numStyle }}">{{ ss.num }}</div>
+                    <div style="{{ ss.cardStyle }}">
+                      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px">
+                        <span style="{{ ss.tagStyle }}">{{ ss.tag }}</span>
+                        <span style="{{ ss.titleStyle }}">{{ ss.title }}</span>
+                      </div>
+                      <div style="{{ ss.descStyle }}">{{ ss.desc }}</div>
+                      <sc-if value="{{ ss.hasCode }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ ss.codeStyle }}">{{ ss.code }}</div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ simNoSteps }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:center; justify-content:center; height:120px; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:12px">点击「▶ 开始演示」逐步展开</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ── AGENT LOOP TAB ── -->
+      <sc-if value="{{ codeIsAgent }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; overflow-y:auto; padding:24px 32px; height:100%">
+          <div style="max-width:860px">
+            <div style="font-size:13px; color:#6e7681; margin-bottom:20px; line-height:1.7">从键盘按下到渲染响应，穿越 Claude Code 源码的完整路径。共 <strong style="color:#e6edf3">11 个阶段</strong>。</div>
+            <sc-for list="{{ agentLoopSteps }}" as="al" hint-placeholder-count="11">
+              <div style="{{ al.wrapStyle }}">
+                <div style="display:flex; align-items:flex-start; gap:14px">
+                  <div style="{{ al.numStyle }}">{{ al.num }}</div>
+                  <div style="{{ al.cardStyle }}">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+                      <span style="{{ al.titleStyle }}">{{ al.title }}</span>
+                      <span style="{{ al.srcStyle }}">{{ al.src }}</span>
+                    </div>
+                    <div style="font-size:12px; color:#8b949e; line-height:1.7; margin-bottom:8px">{{ al.desc }}</div>
+                    <div style="{{ al.codeStyle }}">{{ al.code }}</div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ── TOOLS TAB ── -->
+      <sc-if value="{{ codeIsTools }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="flex:1; overflow-y:auto; padding:20px 24px">
+            <div style="font-size:12px; color:#6e7681; margin-bottom:16px">Claude Code 可调用的 <strong style="color:#e6edf3">52 个内置工具</strong>，按职能分类。🔒 表示实验性/特性门控工具。<span style="color:#484f58; font-size:11px; margin-left:8px">点击工具名查看解释</span></div>
+            <sc-for list="{{ toolCategories }}" as="tc" hint-placeholder-count="4">
+              <div style="margin-bottom:20px">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:#c9d1d9">{{ tc.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58">{{ tc.count }} 个工具</span>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px">
+                  <sc-for list="{{ tc.tools }}" as="tool" hint-placeholder-count="4">
+                    <span onClick="{{ tool.onClick }}" style="{{ tool.style }}">{{ tool.name }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ selectedTool }}" hint-placeholder-val="{{ false }}">
+            <div style="flex-shrink:0; border-top:1px solid #30363d; background:#161b22; padding:16px 24px; animation:slideIn 0.2s ease">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px">
+                <div style="flex:1">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+                    <span style="font-size:18px">{{ selectedToolInfo.emoji }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#00ffa0">{{ selectedTool }}</span>
+                    <span style="font-size:12px; color:#6e7681">—</span>
+                    <span style="font-size:12px; color:#c9d1d9; font-weight:500">{{ selectedToolInfo.title }}</span>
+                  </div>
+                  <div style="font-size:13px; color:#8b949e; line-height:1.7; margin-bottom:8px">{{ selectedToolInfo.plain }}</div>
+                  <div style="display:flex; align-items:center; gap:6px">
+                    <span style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace">示例：</span>
+                    <span style="font-size:11px; color:#ffa657; font-family:'JetBrains Mono',monospace; background:rgba(255,166,87,0.08); border:1px solid rgba(255,166,87,0.2); padding:2px 10px; border-radius:4px">{{ selectedToolInfo.example }}</span>
+                  </div>
+                </div>
+                <button onClick="{{ clearTool }}" style="background:transparent; border:none; color:#484f58; font-size:18px; cursor:pointer; line-height:1; flex-shrink:0; padding:0 4px">×</button>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; margin-top:6px; letter-spacing:0.05em">工具解释器 TOOL EXPLAINER</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ── COMMANDS TAB ── -->
+      <sc-if value="{{ codeIsCmds }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="flex:1; overflow-y:auto; padding:20px 24px">
+            <div style="font-size:12px; color:#6e7681; margin-bottom:16px">Claude Code 中所有 <strong style="color:#e6edf3">95 个 slash 命令</strong>，按职能分类。🔒 表示实验性命令。<span style="color:#484f58; font-size:11px; margin-left:8px">点击命令查看解释</span></div>
+            <sc-for list="{{ cmdCategories }}" as="cc" hint-placeholder-count="4">
+              <div style="margin-bottom:20px">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:#c9d1d9">{{ cc.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58">{{ cc.count }}</span>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px">
+                  <sc-for list="{{ cc.cmds }}" as="cmd" hint-placeholder-count="6">
+                    <span onClick="{{ cmd.onClick }}" style="{{ cmd.style }}">{{ cmd.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ selectedCmd }}" hint-placeholder-val="{{ false }}">
+            <div style="flex-shrink:0; border-top:1px solid #30363d; background:#161b22; padding:16px 24px; animation:slideIn 0.2s ease">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px">
+                <div style="flex:1">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+                    <span style="font-size:18px">{{ selectedCmdInfo.emoji }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#58a6ff">{{ selectedCmd }}</span>
+                    <span style="font-size:12px; color:#6e7681">—</span>
+                    <span style="font-size:12px; color:#c9d1d9; font-weight:500">{{ selectedCmdInfo.title }}</span>
+                  </div>
+                  <div style="font-size:13px; color:#8b949e; line-height:1.7; margin-bottom:8px">{{ selectedCmdInfo.plain }}</div>
+                  <div style="display:flex; align-items:center; gap:6px">
+                    <span style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace">使用场景：</span>
+                    <span style="font-size:11px; color:#ffa657; font-family:'JetBrains Mono',monospace; background:rgba(255,166,87,0.08); border:1px solid rgba(255,166,87,0.2); padding:2px 10px; border-radius:4px">{{ selectedCmdInfo.example }}</span>
+                  </div>
+                </div>
+                <button onClick="{{ clearCmd }}" style="background:transparent; border:none; color:#484f58; font-size:18px; cursor:pointer; line-height:1; flex-shrink:0; padding:0 4px">×</button>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; margin-top:6px; letter-spacing:0.05em">命令解释器 COMMAND EXPLAINER</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ── HIDDEN FEATURES TAB ── -->
+      <sc-if value="{{ codeIsHidden }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; overflow-y:auto; padding:20px 24px; height:100%">
+          <div style="font-size:12px; color:#6e7681; margin-bottom:20px">已在源码中实现但尚未公开发布的功能。特性标记控制、环境变量门控，或仅被注释。</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px">
+            <sc-for list="{{ hiddenFeatures }}" as="hf" hint-placeholder-count="4">
+              <div style="{{ hf.cardStyle }}">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#e6edf3">{{ hf.name }}</span>
+                  <span style="color:#ffa657; font-size:12px">✦</span>
+                </div>
+                <div style="font-size:12px; color:#8b949e; line-height:1.6">{{ hf.desc }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:16px; font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace">基于 Claude Code 真实源码分析 · 数据可能随版本更新而变化</div>
+        </div>
+      </sc-if>
+
+    </div><!-- end tab content -->
+
+    <!-- Simulator bottom controls -->
+    <sc-if value="{{ codeIsSimulator }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:10px 16px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117; display:flex; align-items:center; gap:8px">
+        <button onClick="{{ advanceSimStep }}" style="{{ simNextBtnStyle }}">{{ simNextBtnText }}</button>
+        <button onClick="{{ resetSimStep }}" style="padding:6px 12px; background:transparent; border:1px solid #30363d; border-radius:5px; color:#6e7681; font-size:11px; font-family:'JetBrains Mono',monospace; cursor:pointer">↺ 重置</button>
+        <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-left:auto">步骤 {{ simStep }} / 11</span>
+      </div>
+    </sc-if>
+  </div><!-- end main -->
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    codeTab: 'simulator',
+    simStep: 0,
+    selectedTool: null,
+    selectedCmd: null
+  };
+
+  renderVals() {
+    const { codeTab, simStep, selectedTool, selectedCmd } = this.state;
+    const codeIsSimulator = codeTab === 'simulator';
+    const codeIsAgent = codeTab === 'agent';
+    const codeIsTools = codeTab === 'tools';
+    const codeIsCmds = codeTab === 'cmds';
+    const codeIsHidden = codeTab === 'hidden';
+
+    const BS = (on) => ({ padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', background: on ? 'rgba(88,166,255,0.12)' : 'transparent', border: `1px solid ${on ? '#58a6ff' : '#30363d'}`, color: on ? '#58a6ff' : '#6e7681', fontSize: '11px', fontFamily: '"JetBrains Mono",monospace', transition: 'all 0.15s ease' });
+
+    const SIM_STEPS = [
+      { terminal: ['$ claude', '✓ 欢迎回来！已加载项目上下文', '> 帮我找出项目里所有的 TODO 注释'], seq: { tag:'用户', tagColor:'#7ee787', title:'用户输入提示词', desc:'用户在终端键入指令，Claude Code 接收原始输入。', code: null } },
+      { terminal: ['◈ 读取 CLAUDE.md ...', '项目上下文: 28 个文件, 4.2k tokens'], seq: { tag:'CC', tagColor:'#00ffa0', title:'注入系统提示词', desc:'Claude Code 读取 CLAUDE.md、项目记忆和工具权限，构建 system prompt。', code: 'system: "You are Claude Code...\\n当前项目: /users/proj\\n可用工具: Bash, FileRead..."' } },
+      { terminal: ['组装消息历史 (3 轮, 1.2k tokens) ...'], seq: { tag:'CC', tagColor:'#00ffa0', title:'消息历史组装', desc:'将 system prompt + 历史对话 + 本次用户消息组装为 messages 数组。', code: 'messages: [\n  {role:"system", content:"..."},\n  {role:"user",   content:"帮我找..."}\n]' } },
+      { terminal: ['→ 调用 Claude claude-sonnet-4 API ...'], seq: { tag:'LLM', tagColor:'#d2a8ff', title:'发起 API 调用', desc:'Claude Code 向 Anthropic API 发送请求，携带完整 messages 和工具定义。', code: 'POST /v1/messages\nmodel: claude-sonnet-4\ntools: [Bash, FileRead, Grep...]' } },
+      { terminal: ['◌ 模型思考中 ...'], seq: { tag:'LLM', tagColor:'#d2a8ff', title:'模型推理 (thinking)', desc:'模型分析用户意图，决定需要调用 Bash 工具执行 grep 命令。', code: '<thinking>\n需要用 Bash 执行 grep -r "TODO" 来\n搜索所有 TODO 注释...\n</thinking>' } },
+      { terminal: ['⚡ tool_use: Bash', 'grep -r "TODO" src/'], seq: { tag:'LLM', tagColor:'#d2a8ff', title:'输出 tool_use', desc:'模型返回结构化工具调用意图（不是真正执行），Claude Code 解析后执行。', code: '{\n  "type": "tool_use",\n  "name": "Bash",\n  "input": {"command":"grep -r \\"TODO\\" src/"}\n}' } },
+      { terminal: ['⚙ 执行 Bash 命令 ...', 'src/query.ts:42:   // TODO: add retry logic', 'src/tools.ts:108:  // TODO: validate input', '... 14 more results'], seq: { tag:'Tools', tagColor:'#ffa657', title:'工具执行', desc:'Claude Code 真正执行 bash 命令，获取结果，Claude 本身不直接访问系统。', code: 'stdout: "src/query.ts:42: // TODO...\\nsrc/tools.ts:108: // TODO...\\n..."' } },
+      { terminal: ['tool_result 回填消息历史 ...', '触发第 2 轮 API 调用 ↻'], seq: { tag:'CC', tagColor:'#00ffa0', title:'结果回填 → 循环', desc:'工具结果包装为 tool_result 追加到 messages，触发新一轮 LLM 调用——这就是 Agent Loop。', code: '{role:"tool", content:"src/query.ts:42..."}' } },
+      { terminal: ['→ 第 2 轮 API 调用 ...', '◌ 基于工具结果生成回答 ...'], seq: { tag:'LLM', tagColor:'#d2a8ff', title:'基于结果生成回答', desc:'模型拿到真实工具执行结果，生成有依据的自然语言最终回复。', code: null } },
+      { terminal: ['共找到 16 个 TODO 注释：', '• src/query.ts:42   — add retry logic', '• src/tools.ts:108  — validate input', '... 及 14 处更多'], seq: { tag:'CC', tagColor:'#00ffa0', title:'渲染输出', desc:'Claude Code 将模型回复流式渲染到终端，Markdown 格式化，代码块高亮。', code: null } },
+      { terminal: ['', '>  ▌'], seq: { tag:'CC', tagColor:'#00ffa0', title:'等待下一条指令', desc:'Agent Loop 完成一次完整循环，终端重新出现提示符，等待用户下一条指令。', code: null } },
+    ];
+
+    const simTerminalLines = SIM_STEPS.slice(0, simStep).flatMap(s => s.terminal).map(raw => {
+      const text = raw.replace(/\[#[0-9a-f]+\]|\[\/\]/gi, '');
+      const colorMatch = raw.match(/^\[#([0-9a-f]+)\]/i);
+      const color = colorMatch ? '#' + colorMatch[1] : '#c9d1d9';
+      return { text, style: { color, fontFamily:'"JetBrains Mono",monospace', fontSize:'12px', lineHeight:'1.7', whiteSpace:'pre-wrap' } };
+    });
+
+    const simSeqSteps = SIM_STEPS.slice(0, simStep).map((s, i) => {
+      const isLast = i === simStep - 1, tc = s.seq.tagColor;
+      return {
+        wrapStyle: { animation: isLast ? 'slideIn 0.25s ease' : 'none', marginBottom:'12px' },
+        numStyle: { width:'22px', height:'22px', borderRadius:'50%', background: tc + '18', border:'1px solid ' + tc + '44', display:'flex', alignItems:'center', justifyContent:'center', color:tc, fontFamily:'"JetBrains Mono",monospace', fontSize:'9px', fontWeight:'700', flexShrink:0, marginTop:'2px' },
+        cardStyle: { flex:1, background: isLast ? tc + '06' : '#161b22', border:'1px solid ' + (isLast ? tc + '30' : '#30363d'), borderRadius:'6px', padding:'10px 12px' },
+        tagStyle: { fontSize:'9px', color:tc, border:'1px solid ' + tc + '44', borderRadius:'3px', padding:'1px 6px', fontFamily:'"JetBrains Mono",monospace' },
+        titleStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'600', color: isLast ? tc : '#c9d1d9' },
+        descStyle: { fontSize:'11px', color:'#8b949e', lineHeight:'1.6', marginBottom: s.seq.code ? '8px' : '0' },
+        codeStyle: { background:'#0d1117', borderRadius:'4px', padding:'8px 10px', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', color: tc, whiteSpace:'pre', lineHeight:'1.5', border:'1px solid #21262d' },
+        tag: s.seq.tag, title: s.seq.title, desc: s.seq.desc, code: s.seq.code, hasCode: !!s.seq.code,
+        num: String(i + 1).padStart(2, '0'),
+      };
+    });
+
+    const agentLoopSteps = [
+      { num:'1', title:'Input', src:'src/input.ts', desc:'用户键入内容，Claude Code 通过 readline 接口捕获原始输入，处理特殊键位（Ctrl+C 中断、Ctrl+B 后台化等）。', code:'/resume 恢复会话  /help 查看命令  Ctrl+C 中断' },
+      { num:'2', title:'Message', src:'src/messages.ts', desc:'原始输入被封装为 HumanMessage 对象，附加元数据（时间戳、会话 ID）。', code:'{ role: "user", content: "...", timestamp: 1234567890 }' },
+      { num:'3', title:'History', src:'src/history.ts', desc:'新消息追加到会话历史。若超过 context window，自动 compact 压缩早期历史。', code:'history.push(message)  // 自动管理 token 预算' },
+      { num:'4', title:'System', src:'src/system.ts', desc:'读取 CLAUDE.md 项目记忆、工具权限配置、MCP 服务器信息，拼装 system prompt。', code:'system = basePrompt + projectMemory + toolDefs + mcpTools' },
+      { num:'5', title:'API', src:'src/api.ts', desc:'调用 Anthropic /v1/messages，传入完整 messages + tools 定义，开启流式响应。', code:'client.messages.stream({ model, messages, tools, system })' },
+      { num:'6', title:'Tokens', src:'src/tokens.ts', desc:'统计输入/输出 token，追踪 context 占用率，接近上限时触发 compact 策略。', code:'inputTokens: 2847  outputTokens: 312  contextUsed: 14%' },
+      { num:'7', title:'Tools?', src:'src/tools.ts', desc:'解析模型响应，判断是 text_block（直接回答）还是 tool_use_block（需要执行工具）。', code:'if (block.type === "tool_use") → 进入工具执行\nelse → 直接渲染文本' },
+      { num:'8', title:'Loop', src:'src/loop.ts', desc:'工具结果回写历史，触发下一轮 API 调用。支持无限循环直到无工具调用。', code:'do { result = await callAPI() } while (hasToolUse(result))' },
+      { num:'9', title:'Render', src:'src/render.ts', desc:'最终文本响应流式渲染到终端：Markdown 解析、代码块语法高亮、链接处理。', code:'marked.parse(text) → ANSI 着色 → 流式输出到 stdout' },
+      { num:'10', title:'Hooks', src:'src/hooks.ts', desc:'触发 PostToolUse / Stop 钩子，执行用户配置的自定义脚本（如自动 git commit）。', code:'hooks.emit("Stop", { sessionId, cost, tokens })' },
+      { num:'11', title:'Await', src:'src/main.ts', desc:'重新显示提示符，等待用户下一条输入，Agent Loop 进入下一次迭代。', code:'→ 回到 Step 1: Input' },
+    ].map(s => ({
+      wrapStyle: { marginBottom:'12px' },
+      numStyle: { width:'28px', height:'28px', borderRadius:'50%', background:'rgba(0,255,160,0.08)', border:'1px solid rgba(0,255,160,0.25)', display:'flex', alignItems:'center', justifyContent:'center', color:'#00ffa0', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', fontWeight:'700', flexShrink:0, marginTop:'2px' },
+      cardStyle: { flex:1, background:'#161b22', border:'1px solid #30363d', borderRadius:'8px', padding:'12px 14px' },
+      titleStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'12px', fontWeight:'700', color:'#00ffa0' },
+      srcStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'9px', color:'#484f58', background:'#21262d', padding:'1px 6px', borderRadius:'3px' },
+      codeStyle: { background:'#0d1117', borderRadius:'4px', padding:'8px 10px', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', color:'#7ee787', whiteSpace:'pre', lineHeight:'1.5', border:'1px solid #21262d', marginTop:'8px' },
+      num: s.num, title: s.title, src: s.src, desc: s.desc, code: s.code,
+    }));
+
+    const TOOL_DESCS = {
+      FileRead:{emoji:'📖',title:'读取文件',plain:'让 Claude 读取你电脑上的任意文件内容。Claude 本身不能主动访问文件系统，必须通过这个工具来"看"文件。',example:'读取 src/main.ts 的内容'},
+      FileEdit:{emoji:'✏️',title:'编辑文件',plain:'对已有文件做精确的局部修改——只改你指定的那几行，不会重写整个文件。适合小范围代码修复。',example:'把第 42 行的 bug 修掉'},
+      FileWrite:{emoji:'💾',title:'写入/创建文件',plain:'新建文件或完全覆盖写入一个文件的全部内容。适合生成新文件或大幅重写。',example:'创建 README.md 并写入项目说明'},
+      Glob:{emoji:'🔎',title:'文件路径匹配',plain:'用通配符模式（如 **/*.ts）在项目里找到所有匹配的文件路径。就像文件浏览器的搜索功能。',example:'找出所有 .test.ts 测试文件'},
+      Grep:{emoji:'🔍',title:'内容搜索',plain:'在文件内容里搜索指定的文字或正则表达式，返回所有匹配的行和位置。相当于 VS Code 的全局搜索。',example:'找出所有包含 TODO 的代码行'},
+      NotebookEdit:{emoji:'📓',title:'编辑 Notebook',plain:'专门用来修改 Jupyter Notebook (.ipynb) 文件的单元格内容，因为 Notebook 是 JSON 格式，普通编辑工具不够用。',example:'修改数据分析 Notebook 的第 3 个单元格'},
+      Bash:{emoji:'💻',title:'执行终端命令',plain:'在你的电脑上执行任意 Shell 命令。这是 Claude Code 最强大也最危险的工具——它可以运行代码、安装包、操作 git 等。',example:'npm install / git commit / python run.py'},
+      PowerShell:{emoji:'🪟',title:'执行 PowerShell',plain:'Windows 专用，在 PowerShell 环境里执行命令。功能同 Bash，适用于 Windows 开发环境。',example:'在 Windows 上运行脚本'},
+      REPL:{emoji:'⚡',title:'交互式代码执行',plain:'在持久的 Python/Node.js 解释器里逐行执行代码，变量会保留到下次调用。适合数据分析和调试。',example:'计算数据、测试函数逻辑'},
+      WebBrowser:{emoji:'🌐',title:'控制浏览器',plain:'用无头浏览器打开网页、点击按钮、填写表单——就像模拟真实用户操作。用于 Web 自动化测试。🔒实验性',example:'自动填写网页表单并提交'},
+      WebFetch:{emoji:'📡',title:'获取网页内容',plain:'直接抓取指定 URL 的网页内容（HTML/文本），不需要浏览器渲染。适合获取文档、API 返回值。',example:'获取官方文档页面的内容'},
+      WebSearch:{emoji:'🔭',title:'网络搜索',plain:'让 Claude 在互联网上搜索信息，获取最新资讯，弥补训练数据截止日期后的知识空白。',example:'搜索最新的 React 19 更新内容'},
+      ToolSearch:{emoji:'🧰',title:'搜索可用工具',plain:'在所有已加载的工具（含 MCP 工具）里按名称或描述搜索，帮助 Claude 发现有哪些工具可以用。',example:'找一个能操作数据库的工具'},
+      Agent:{emoji:'🤖',title:'创建子 Agent',plain:'启动一个独立的子 Claude 实例来处理子任务，父 Agent 等待子 Agent 完成后继续。实现任务分解与并行。',example:'让子 Agent 去分析某个模块的代码'},
+      SendMessage:{emoji:'📨',title:'发送消息给 Agent',plain:'向正在运行的其他 Agent 实例发送消息，实现多 Agent 之间的实时通信与协作。',example:'通知另一个 Agent 某个任务完成了'},
+      TaskCreate:{emoji:'📋',title:'创建任务',plain:'在任务管理系统里新建一个追踪任务，记录待办事项，方便多步骤工作流的进度管理。',example:'新建"重构用户模块"任务'},
+      TaskGet:{emoji:'📌',title:'查看任务详情',plain:'获取指定任务的完整信息，包括状态、描述、创建时间等。',example:'查看任务 #42 的当前状态'},
+      TaskList:{emoji:'📑',title:'列出所有任务',plain:'列出当前会话或项目中所有的任务，方便 Claude 了解整体工作进度。',example:'显示所有未完成的任务'},
+      TaskUpdate:{emoji:'🔄',title:'更新任务状态',plain:'修改任务的状态（待办→进行中→完成）或内容，保持任务追踪系统最新。',example:'把任务标记为已完成'},
+      TaskStop:{emoji:'🛑',title:'停止任务',plain:'强制终止一个正在执行的任务或子 Agent。',example:'取消卡住的任务'},
+      TaskOutput:{emoji:'📤',title:'获取任务输出',plain:'读取某个已完成任务的输出结果，用于后续处理。',example:'获取代码分析任务的结果'},
+      TeamCreate:{emoji:'👥',title:'创建 Agent 团队',plain:'创建一组协作的 Agent 实例，适合需要多个 Agent 并行工作的复杂任务。',example:'创建"前端+后端+测试"三 Agent 团队'},
+      TeamDelete:{emoji:'🗑️',title:'解散 Agent 团队',plain:'释放一组 Agent 团队占用的资源。',example:'任务完成后解散团队'},
+      ListPeers:{emoji:'🔗',title:'列出对等 Agent',plain:'查看当前会话中所有并行运行的 Agent 实例。🔒实验性',example:'查看有哪些 Agent 在同时运行'},
+      EnterPlanMode:{emoji:'🗺️',title:'进入规划模式',plain:'切换到规划模式，Claude 只做分析和规划，不会真正执行任何命令或修改文件——安全地"纸上谈兵"。',example:'先规划重构方案，不要动代码'},
+      ExitPlanMode:{emoji:'▶️',title:'退出规划模式',plain:'从规划模式切回执行模式，开始真正执行之前规划好的方案。',example:'规划确认后开始执行'},
+      EnterWorktree:{emoji:'🌿',title:'进入工作树',plain:'切换到 git worktree（独立的代码分支工作目录），用于多任务并行开发而不互相干扰。',example:'在独立分支上开发新功能'},
+      ExitWorktree:{emoji:'🔙',title:'退出工作树',plain:'从 git worktree 切回主工作目录。',example:'功能开发完成后回到主分支'},
+      VerifyPlanExecution:{emoji:'✅',title:'验证计划执行',plain:'检查规划的各步骤是否都已正确执行完毕。🔒实验性',example:'确认重构计划的所有步骤都完成了'},
+      mcp:{emoji:'🔌',title:'调用 MCP 工具',plain:'调用通过 Model Context Protocol 接入的外部工具，比如数据库连接、API 客户端等第三方集成。',example:'调用 Postgres MCP 查询数据库'},
+      ListMcpResources:{emoji:'📚',title:'列出 MCP 资源',plain:'查看所有 MCP 服务器提供的可用资源列表。',example:'看看 Notion MCP 有哪些资源'},
+      ReadMcpResource:{emoji:'📰',title:'读取 MCP 资源',plain:'读取 MCP 服务器上的具体资源内容。',example:'读取 Notion 某个文档的内容'},
+      McpAuth:{emoji:'🔑',title:'MCP 认证',plain:'处理 MCP 服务器的身份验证流程，获取访问权限。',example:'授权访问 GitHub MCP 服务器'},
+      AskUserQuestion:{emoji:'❓',title:'向用户提问',plain:'当 Claude 需要更多信息才能继续时，暂停执行并向用户提问，等待回答后再继续。',example:'询问用户想要哪种代码风格'},
+      TodoWrite:{emoji:'✅',title:'写入待办列表',plain:'更新 Claude 的内部待办事项列表，用于追踪多步骤任务的进度，也可显示给用户看。',example:'记录"还需要写单元测试"'},
+      Skill:{emoji:'🎓',title:'调用技能',plain:'执行预先定义的技能脚本（Skill），复用常见的操作模式，提高效率。',example:'调用"代码审查"技能'},
+      Config:{emoji:'⚙️',title:'读写配置',plain:'读取或修改 Claude Code 的配置项，如模型选择、权限设置、主题等。',example:'把默认模型改为 claude-opus-4'},
+      RemoteTrigger:{emoji:'🛰️',title:'远程触发',plain:'接收来自外部的触发信号，启动对应的 Agent 任务。🔒实验性',example:'CI 失败时自动触发修复 Agent'},
+      CronCreate:{emoji:'⏰',title:'创建定时任务',plain:'设置定时计划，让 Claude Code 在指定时间自动执行某项任务。🔒实验性',example:'每天早上 9 点自动跑测试'},
+      CronDelete:{emoji:'🗑️',title:'删除定时任务',plain:'取消一个已设置的定时计划。🔒实验性',example:'取消自动测试计划'},
+      CronList:{emoji:'📅',title:'列出定时任务',plain:'查看所有已配置的定时计划。🔒实验性',example:'看看有哪些定时任务在运行'},
+      Snip:{emoji:'✂️',title:'截断上下文',plain:'标记对话历史中某段内容为"可移除"，在压缩上下文时优先删除，节省 token。🔒实验性',example:'标记已完成的长讨论段落'},
+      Workflow:{emoji:'🔄',title:'执行工作流',plain:'运行预定义的多步骤工作流脚本，类似宏命令。🔒实验性',example:'执行"发布新版本"工作流'},
+      TerminalCapture:{emoji:'📸',title:'捕获终端截图',plain:'截取当前终端屏幕内容为图像，用于调试可视化问题。🔒实验性',example:'截图当前报错界面'},
+      Sleep:{emoji:'😴',title:'等待/暂停',plain:'让 Agent 暂停执行指定的时间（秒）。🔒实验性',example:'等 3 秒让服务器启动完毕'},
+      SendUserMessage:{emoji:'💌',title:'发消息给用户',plain:'在不中断任务流程的情况下，向用户发送一条通知消息。🔒实验性',example:'任务进行中通知"已找到 16 处 TODO"'},
+      StructuredOutput:{emoji:'📐',title:'结构化输出',plain:'以 JSON Schema 约定的格式输出结果，确保返回值可被程序精确解析。🔒实验性',example:'以固定格式返回代码分析结果'},
+      LSP:{emoji:'🔬',title:'语言服务协议',plain:'接入 Language Server Protocol，获取代码的类型信息、报错、跳转定义等 IDE 级别的语义分析。🔒实验性',example:'查看某个函数的类型定义'},
+      SendUserFile:{emoji:'📎',title:'发送文件给用户',plain:'将生成的文件发送给用户下载。🔒实验性',example:'把生成的报告 PDF 发给用户'},
+      PushNotification:{emoji:'🔔',title:'推送通知',plain:'向用户的手机或桌面发送推送通知，用于长时间任务完成提醒。🔒实验性',example:'任务完成后推送手机通知'},
+      Monitor:{emoji:'👁️',title:'监控文件变化',plain:'持续监听文件系统变化，当文件被修改时自动触发相应操作。🔒实验性',example:'监听 src/ 目录变化自动重新分析'},
+      SubscribePR:{emoji:'🔔',title:'订阅 PR 更新',plain:'监听 GitHub Pull Request 的状态变化，自动响应。🔒实验性',example:'PR 被评论时自动回复'},
+    };
+    const TOOL_CATS = [
+      { name:'文件操作', tools:['FileRead','FileEdit','FileWrite','Glob','Grep','NotebookEdit'], exp:[] },
+      { name:'代码执行', tools:['Bash','PowerShell','REPL'], exp:[] },
+      { name:'搜索 & 抓取', tools:['WebBrowser','WebFetch','WebSearch','ToolSearch'], exp:['WebBrowser'] },
+      { name:'Agent & 任务', tools:['Agent','SendMessage','TaskCreate','TaskGet','TaskList','TaskUpdate','TaskStop','TaskOutput','TeamCreate','TeamDelete','ListPeers'], exp:['ListPeers'] },
+      { name:'规划模式', tools:['EnterPlanMode','ExitPlanMode','EnterWorktree','ExitWorktree','VerifyPlanExecution'], exp:['VerifyPlanExecution'] },
+      { name:'MCP', tools:['mcp','ListMcpResources','ReadMcpResource','McpAuth'], exp:[] },
+      { name:'系统', tools:['AskUserQuestion','TodoWrite','Skill','Config','RemoteTrigger','CronCreate','CronDelete','CronList','Snip','Workflow','TerminalCapture'], exp:['RemoteTrigger','CronCreate','CronDelete','CronList','Snip','Workflow','TerminalCapture'] },
+      { name:'实验性', tools:['Sleep','SendUserMessage','StructuredOutput','LSP','SendUserFile','PushNotification','Monitor','SubscribePR'], exp:['Sleep','SendUserMessage','StructuredOutput','LSP','SendUserFile','PushNotification','Monitor','SubscribePR'] },
+    ];
+    const selectedToolInfo = selectedTool ? TOOL_DESCS[selectedTool] : null;
+    const toolCategories = TOOL_CATS.map(cat => ({
+      name: cat.name, count: cat.tools.length,
+      tools: cat.tools.map(t => {
+        const isSelected = t === selectedTool, isExp = cat.exp.includes(t);
+        return {
+          name: isExp ? t + ' 🔒' : t,
+          onClick: () => this.setState({ selectedTool: t }),
+          style: { fontSize:'11px', fontFamily:'"JetBrains Mono",monospace', padding:'3px 10px', borderRadius:'4px', cursor:'pointer', background: isSelected ? (isExp ? 'rgba(255,123,114,0.2)' : 'rgba(0,255,160,0.18)') : isExp ? 'rgba(255,123,114,0.08)' : 'rgba(0,255,160,0.06)', border: isSelected ? ('2px solid ' + (isExp ? '#ff7b72' : '#00ffa0')) : isExp ? '1px solid rgba(255,123,114,0.25)' : '1px solid rgba(0,255,160,0.2)', color: isExp ? '#ff7b72' : '#7ee787', fontWeight: isSelected ? '700' : '400' }
+        };
+      })
+    }));
+
+    const CMD_DESCS = {
+      '/init':{emoji:'🚀',title:'初始化项目',plain:'在当前目录创建 CLAUDE.md 文件，让 Claude 记住项目的背景信息、规范和常用指令，之后每次打开都会自动读取。',example:'在新项目里运行，让 Claude 了解项目结构'},
+      '/login':{emoji:'🔐',title:'登录账号',plain:'登录你的 Anthropic 账号或配置 API Key，授权 Claude Code 使用模型服务。',example:'第一次使用时运行'},
+      '/logout':{emoji:'👋',title:'退出登录',plain:'退出当前登录的账号，清除本地存储的认证信息。',example:'换账号或在公共设备上使用后退出'},
+      '/config':{emoji:'⚙️',title:'查看/修改配置',plain:'查看和修改 Claude Code 的各种设置，如默认模型、主题颜色、权限策略等。',example:'查看当前使用的是哪个模型'},
+      '/permissions':{emoji:'🛡️',title:'管理工具权限',plain:'查看和修改 Claude 被允许使用哪些工具，可以精确控制哪些操作需要先询问你。',example:'禁止 Claude 自动执行 git push'},
+      '/model':{emoji:'🤖',title:'切换模型',plain:'切换当前会话使用的 AI 模型，如从 Sonnet 换到 Opus（更强但更贵）或 Haiku（更快更省）。',example:'切换到 Claude Opus 处理复杂任务'},
+      '/compact':{emoji:'🗜️',title:'压缩上下文',plain:'当对话历史太长时，智能压缩早期内容，释放 context window 空间，让对话可以继续。',example:'长时间工作后 context 快满了时使用'},
+      '/memory':{emoji:'🧠',title:'管理项目记忆',plain:'查看和编辑 Claude 记住的项目信息（CLAUDE.md 内容），让 Claude 更了解你的项目。',example:'更新项目技术栈说明'},
+      '/plan':{emoji:'🗺️',title:'进入规划模式',plain:'切换到只分析不执行的安全模式，Claude 会给出详细计划但不会真正改动任何文件。',example:'做大改动前先看看 Claude 打算怎么做'},
+      '/resume':{emoji:'⏯️',title:'恢复上次会话',plain:'继续上一次未完成的工作会话，包括历史对话和任务进度。',example:'关闭终端后重新打开继续工作'},
+      '/review':{emoji:'🔍',title:'代码审查',plain:'让 Claude 对当前改动进行全面的代码审查，指出潜在问题、安全隐患和改进建议。',example:'提交 PR 前先让 Claude 审查'},
+      '/commit':{emoji:'💾',title:'生成提交',plain:'让 Claude 根据当前的代码改动，自动生成规范的 git commit message 并提交。',example:'懒得写 commit message 时使用'},
+      '/diff':{emoji:'📊',title:'查看代码差异',plain:'显示当前工作区与上次提交的代码差异，让 Claude 解释改了什么。',example:'提交前检查改动内容'},
+      '/clear':{emoji:'🗑️',title:'清空对话历史',plain:'清除当前会话的所有对话记录，重新开始，但不影响项目记忆（CLAUDE.md）。',example:'开始新任务前清空历史'},
+      '/help':{emoji:'❓',title:'帮助文档',plain:'显示所有可用命令的简要说明，快速查找你需要的功能。',example:'忘记某个命令怎么用时查阅'},
+      '/exit':{emoji:'🚪',title:'退出 Claude Code',plain:'安全退出 Claude Code，保存会话状态后关闭程序。',example:'结束工作时使用'},
+      '/cost':{emoji:'💰',title:'查看成本',plain:'显示当前会话或历史的 API 调用费用明细。',example:'控制预算时查看花了多少钱'},
+      '/version':{emoji:'ℹ️',title:'查看版本',plain:'显示当前安装的 Claude Code 版本号。',example:'报 bug 时需要提供版本信息'},
+      '/status':{emoji:'📡',title:'查看服务状态',plain:'检查 Claude Code 服务的连接状态、API 可用性和当前配额。',example:'遇到连接问题时检查状态'},
+      '/mcp':{emoji:'🔌',title:'管理 MCP 服务器',plain:'查看、添加或移除 Model Context Protocol 服务器，扩展 Claude 可以访问的外部工具和数据源。',example:'添加 Postgres 数据库连接'},
+      '/hooks':{emoji:'🪝',title:'配置钩子脚本',plain:'设置在特定事件（如任务完成、工具执行后）自动触发的自定义脚本，实现工作流自动化。',example:'每次 Claude 写完代码自动运行格式化'},
+      '/advisor':{emoji:'🎯',title:'顾问模式',plain:'切换到咨询顾问模式，Claude 提供架构建议和最佳实践，而不是直接动手写代码。',example:'技术选型时听听 Claude 的建议'},
+      '/rewind':{emoji:'⏪',title:'撤回到某个状态',plain:'将会话和文件状态回滚到之前某个时间点，撤销一系列操作。',example:'Claude 改错了，回滚到改之前'},
+      '/security-review':{emoji:'🔒',title:'安全审查',plain:'专门针对代码的安全性进行审查，找出 SQL 注入、XSS、权限漏洞等安全隐患。',example:'上线前做安全检查'},
+      '/pr_comments':{emoji:'💬',title:'处理 PR 评论',plain:'读取 GitHub PR 上的审查评论，让 Claude 逐条处理和回复。',example:'自动处理 Code Review 意见'},
+      '/upgrade':{emoji:'⬆️',title:'升级 Claude Code',plain:'将 Claude Code 更新到最新版本。',example:'有新功能发布时升级'},
+    };
+    const CMD_CATS = [
+      { name:'设置 & 配置', cmds:['/init','/login','/logout','/config','/permissions','/model','/mcp','/hooks'], exp:[] },
+      { name:'日常工作流', cmds:['/compact','/memory','/plan','/resume','/clear','/help','/exit'], exp:[] },
+      { name:'代码审查 & Git', cmds:['/review','/commit','/diff','/pr_comments','/security-review'], exp:[] },
+      { name:'诊断 & 其他', cmds:['/cost','/version','/status','/advisor','/rewind','/upgrade'], exp:[] },
+    ];
+    const selectedCmdInfo = selectedCmd ? CMD_DESCS[selectedCmd] : null;
+    const cmdCategories = CMD_CATS.map(cat => ({
+      name: cat.name, count: cat.cmds.length + ' 个',
+      cmds: cat.cmds.map(c => {
+        const isSelected = c === selectedCmd, isExp = cat.exp && cat.exp.includes(c);
+        return {
+          label: isExp ? c + ' 🔒' : c,
+          onClick: () => this.setState({ selectedCmd: c }),
+          style: { fontSize:'10px', fontFamily:'"JetBrains Mono",monospace', padding:'3px 10px', borderRadius:'4px', cursor:'pointer', background: isSelected ? 'rgba(88,166,255,0.15)' : '#161b22', border: isSelected ? '2px solid #58a6ff' : '1px solid #30363d', color: isSelected ? '#79c0ff' : '#8b949e', fontWeight: isSelected ? '700' : '400' }
+        };
+      })
+    }));
+
+    const hiddenFeatures = [
+      { name:'Buddy', desc:'一只住在终端里的虚拟宠物。物种和稀有度由你的账号 ID 派生，陪伴你的每次编码会话。' },
+      { name:'Kairos', desc:'持久运行模式，在会话间整合记忆，支持自主后台行动，无需用户在场持续干预。' },
+      { name:'UltraPlan', desc:'使用 Opus 级模型进行超长规划，支持最多 30 分钟执行窗口，用于复杂多步任务。' },
+      { name:'Coordinator Mode', desc:'主 Agent 将任务拆解，在独立 git worktree 中并行派遣多个工作 Agent，汇总结果。' },
+      { name:'Bridge', desc:'从手机或浏览器远程控制 Claude Code，完整远程会话，含权限审批界面。' },
+      { name:'Daemon Mode', desc:'使用 --bg 标志在后台运行会话，底层使用 tmux 管理持久会话，关闭终端后继续运行。' },
+      { name:'UDS Inbox', desc:'多个 Claude Code 会话通过 Unix 域套接字互相通信、传递消息，实现多智能体协作。' },
+      { name:'Auto-Dream', desc:'会话结束后，AI 自动回顾发生的事情，整理并组织学到的知识写入项目记忆。' },
+    ].map(f => ({ ...f, cardStyle: { background:'#161b22', border:'1px solid #30363d', borderRadius:'8px', padding:'16px' } }));
+
+    return {
+      codeIsSimulator, codeIsAgent, codeIsTools, codeIsCmds, codeIsHidden,
+      codeTabSimStyle: BS(codeIsSimulator), codeTabAgentStyle: BS(codeIsAgent), codeTabToolsStyle: BS(codeIsTools), codeTabCmdsStyle: BS(codeIsCmds), codeTabHiddenStyle: BS(codeIsHidden),
+      setCodeSimulator: () => this.setState({ codeTab: 'simulator' }),
+      setCodeAgent: () => this.setState({ codeTab: 'agent' }),
+      setCodeTools: () => this.setState({ codeTab: 'tools' }),
+      setCodeCmds: () => this.setState({ codeTab: 'cmds' }),
+      setCodeHidden: () => this.setState({ codeTab: 'hidden' }),
+      simStep, simNoSteps: simStep === 0, simTerminalLines, simSeqSteps,
+      advanceSimStep: () => this.setState(s => ({ simStep: Math.min(s.simStep + 1, 11) })),
+      resetSimStep: () => this.setState({ simStep: 0 }),
+      simNextBtnStyle: { padding:'6px 16px', borderRadius:'5px', border:'none', background: simStep >= 11 ? '#21262d' : '#00ffa0', color: simStep >= 11 ? '#6e7681' : '#0d1117', fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'700', cursor: simStep >= 11 ? 'not-allowed' : 'pointer' },
+      simNextBtnText: simStep === 0 ? '▶ 开始演示' : simStep >= 11 ? '✓ 演示完毕' : `▶ 下一步（${simStep}/11）`,
+      agentLoopSteps, toolCategories, cmdCategories, hiddenFeatures,
+      selectedTool, selectedToolInfo, clearTool: () => this.setState({ selectedTool: null }),
+      selectedCmd, selectedCmdInfo, clearCmd: () => this.setState({ selectedCmd: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+</helmet>
+
+<div style="display:flex; height:100vh; background:#0d1117; color:#e6edf3; font-family:'Inter',sans-serif; overflow:hidden">
+  <dc-import name="Nav" active="lab" hint-size="56px,100%" style="flex-shrink:0"></dc-import>
+
+  <!-- LAB MAIN AREA -->
+  <div style="flex:1; display:flex; flex-direction:column; overflow:hidden">
+
+    <!-- Tab bar -->
+    <div style="display:flex; align-items:center; gap:4px; padding:10px 16px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14" data-comment-anchor="fa75179059-div">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-right:8px; letter-spacing:0.05em">实验室</span>
+      <button onClick="{{ setLabTraining }}" style="{{ labTabTrainingStyle }}">⚖ 训练对比</button>
+      <button onClick="{{ setLabFC }}" style="{{ labTabFCStyle }}">🔗 函数调用</button>
+      <button onClick="{{ setLabWB }}" style="{{ labTabWBStyle }}">🔬 白盒实验</button>
+      <button onClick="{{ setLabInfer }}" style="{{ labTabInferStyle }}">⚙ 模型推理全过程</button>
+      <button onClick="{{ setLabRAG }}" style="{{ labTabRAGStyle }}">🔎 RAG 检索增强</button>
+    </div>
+
+    <!-- Tab content -->
+    <div style="flex:1; overflow:hidden; position:relative">
+
+      <!-- ── TRAINING TAB ── -->
+      <sc-if value="{{ labIsTraining }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="padding:14px 20px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#484f58; letter-spacing:0.05em; margin-bottom:2px">训练阶段对比</div>
+            <div style="font-size:13px; font-weight:500; color:#e6edf3">预训练基座模型 vs SFT 指令微调模型</div>
+            <div style="font-size:11px; color:#6e7681; margin-top:3px">同一问题，观察训练对模型行为的影响</div>
+          </div>
+          <div style="flex:1; display:flex; overflow:hidden">
+            <!-- Base model -->
+            <div style="flex:1; display:flex; flex-direction:column; border-right:1px solid #30363d; overflow:hidden">
+              <div style="padding:10px 16px; border-bottom:1px solid #30363d; flex-shrink:0; background:#161b22; display:flex; align-items:center; justify-content:space-between">
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ffa657; font-weight:600">基座模型 Base LM</div>
+                  <div style="font-size:10px; color:#6e7681; margin-top:1px">纯语言模型，无指令训练</div>
+                </div>
+                <span style="font-size:9px; background:rgba(255,123,114,0.1); border:1px solid rgba(255,123,114,0.3); color:#ff7b72; padding:2px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace">不推荐</span>
+              </div>
+              <div style="padding:16px; flex:1; overflow-y:auto">
+                <sc-if value="{{ labHasQ }}" hint-placeholder-val="{{ true }}">
+                  <div style="background:#21262d; border-radius:6px 6px 2px 6px; padding:10px 14px; font-size:13px; color:#e6edf3; border:1px solid #30363d; margin-bottom:12px">{{ labQ }}</div>
+                  <div style="background:#161b22; border:1px solid rgba(255,123,114,0.2); border-radius:2px 6px 6px 6px; padding:12px 14px; font-size:13px; color:#c9d1d9; line-height:1.7">
+                    <span style="font-size:10px; color:#ff7b72; font-family:'JetBrains Mono',monospace; display:block; margin-bottom:6px">⚠ 续写偏离指令</span>
+                    {{ labBaseText }}<sc-if value="{{ labStreaming }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block; width:2px; height:0.9em; background:#ff7b72; vertical-align:text-bottom; margin-left:2px; animation:blink 1.2s step-end infinite"></span></sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ labNoQ }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; justify-content:center; height:120px; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:12px">在底部输入问题后按回车...</div>
+                </sc-if>
+                <div style="margin-top:12px; padding:10px 12px; background:rgba(255,123,114,0.06); border-radius:6px; border:1px solid rgba(255,123,114,0.15)">
+                  <div style="font-size:11px; color:#ff7b72; font-family:'JetBrains Mono',monospace; margin-bottom:4px">问题分析</div>
+                  <div style="font-size:12px; color:#8b949e; line-height:1.6">基座模型只学会了「续写」，对于「一句话解释」这类指令缺乏理解。它会把问题当成训练语料的一部分继续生成文本，而不是按指令作答。</div>
+                </div>
+              </div>
+            </div>
+            <!-- SFT model -->
+            <div style="flex:1; display:flex; flex-direction:column; overflow:hidden">
+              <div style="padding:10px 16px; border-bottom:1px solid #30363d; flex-shrink:0; background:#161b22; display:flex; align-items:center; justify-content:space-between">
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#00ffa0; font-weight:600">SFT 指令微调模型</div>
+                  <div style="font-size:10px; color:#6e7681; margin-top:1px">经过指令跟随训练</div>
+                </div>
+                <span style="font-size:9px; background:rgba(0,255,160,0.08); border:1px solid rgba(0,255,160,0.3); color:#00ffa0; padding:2px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace">推荐</span>
+              </div>
+              <div style="padding:16px; flex:1; overflow-y:auto">
+                <sc-if value="{{ labHasQ }}" hint-placeholder-val="{{ true }}">
+                  <div style="background:#21262d; border-radius:6px 6px 2px 6px; padding:10px 14px; font-size:13px; color:#e6edf3; border:1px solid #30363d; margin-bottom:12px">{{ labQ }}</div>
+                  <div style="background:#161b22; border:1px solid rgba(0,255,160,0.2); border-radius:2px 6px 6px 6px; padding:12px 14px; font-size:13px; color:#c9d1d9; line-height:1.7">
+                    <span style="font-size:10px; color:#00ffa0; font-family:'JetBrains Mono',monospace; display:block; margin-bottom:6px">✓ 精准跟随指令</span>
+                    {{ labSFTText }}<sc-if value="{{ labStreaming }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block; width:2px; height:0.9em; background:#00ffa0; vertical-align:text-bottom; margin-left:2px; animation:blink 1.2s step-end infinite"></span></sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ labNoQ }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; justify-content:center; height:120px; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:12px">在底部输入问题后按回车...</div>
+                </sc-if>
+                <div style="margin-top:12px; padding:10px 12px; background:rgba(0,255,160,0.05); border-radius:6px; border:1px solid rgba(0,255,160,0.15)">
+                  <div style="font-size:11px; color:#00ffa0; font-family:'JetBrains Mono',monospace; margin-bottom:4px">训练效果</div>
+                  <div style="font-size:12px; color:#8b949e; line-height:1.6">SFT 阶段使用大量「问题 → 答案」对进行微调，让模型学会理解用户指令格式，并按照要求的方式（一句话、解释、列表等）组织回复。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Input bar -->
+          <div style="padding:10px 16px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117; display:flex; align-items:center; gap:8px">
+            <input type="text" value="{{ labQInput }}" onInput="{{ updateLabQInput }}" onKeyDown="{{ labQKeyDown }}" placeholder="输入任意问题，按回车发送，对比两种模型的回复..." style="flex:1; background:#161b22; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-size:13px; padding:9px 14px; outline:none; font-family:inherit"></input>
+            <button onClick="{{ submitLabQ }}" style="padding:9px 18px; background:#00ffa0; border:none; border-radius:6px; color:#0d1117; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0">▶ 发送</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ── FC TAB ── -->
+      <sc-if value="{{ labIsFC }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="padding:12px 20px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14" data-comment-anchor="4ef775d8df-div">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:1px">Function Calling 链路</div>
+            <div style="font-size:13px; font-weight:500; color:#e6edf3">完整工具调用回路演示</div>
+          </div>
+          <div style="flex:1; display:flex; overflow:hidden">
+            <div style="flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:0">
+              <sc-for list="{{ fcStepsVisible }}" as="fcs" hint-placeholder-count="1">
+                <div style="{{ fcs.wrapStyle }}">
+                  <div style="display:flex; align-items:flex-start; gap:14px">
+                    <div style="{{ fcs.iconBoxStyle }}">{{ fcs.icon }}</div>
+                    <div style="flex:1">
+                      <div style="{{ fcs.titleStyle }}">{{ fcs.label }}</div>
+                      <div style="{{ fcs.cardStyle }}">{{ fcs.contentEl }}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:center; margin:6px 0 6px 14px">
+                    <div style="{{ fcs.connStyle }}"></div>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ fcComplete }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px; padding:14px 16px; background:rgba(0,255,160,0.06); border:1px solid rgba(0,255,160,0.25); border-radius:8px">
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#00ffa0; margin-bottom:6px">🎯 关键要点</div>
+                  <div style="font-size:12px; color:#8b949e; line-height:1.7">模型本身<strong style="color:#e6edf3">不执行任何外部函数</strong>，它只输出结构化的「调用意图」JSON。真正调用 API、读数据库、执行代码的，是你写的应用层代码。模型根据返回结果生成最终自然语言回复。</div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="width:320px; flex-shrink:0; border-left:1px solid #30363d; overflow-y:auto; padding:14px">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:10px">当前消息数组 messages[ ]</div>
+              {{ fcMessagesEl }}
+            </div>
+          </div>
+          <div style="padding:10px 16px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117; display:flex; align-items:center; gap:8px">
+            <button onClick="{{ advanceFcStep }}" style="{{ fcNextBtnStyle }}">{{ fcNextBtnText }}</button>
+            <button onClick="{{ resetFcStep }}" style="padding:6px 12px; background:transparent; border:1px solid #30363d; border-radius:5px; color:#6e7681; font-size:11px; font-family:'JetBrains Mono',monospace; cursor:pointer" data-comment-anchor="507d48deb8-button">↺ 重置</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ── WHITEBOX TAB ── -->
+      <sc-if value="{{ labIsWB }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="padding:10px 20px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:1px">白盒机制实验室</div>
+            <div style="font-size:13px; font-weight:500; color:#e6edf3">Tokenizer 分词对比</div>
+          </div>
+          <div style="flex:1; overflow:hidden; display:flex">
+            <div style="flex:1; overflow-y:auto; padding:20px 24px" data-comment-anchor="dd0071763c-div">
+              <div style="display:flex; justify-content:center; gap:6px; margin-bottom:24px">
+                <button onClick="{{ setWbTokMode0 }}" style="{{ wbBtn0Style }}">早期 vs 现在</button>
+                <button onClick="{{ setWbTokMode1 }}" style="{{ wbBtn1Style }}">早期：中文 vs 英文</button>
+                <button onClick="{{ setWbTokMode2 }}" style="{{ wbBtn2Style }}">现在：中文 vs 英文</button>
+              </div>
+              <sc-if value="{{ isWbMode0 }}" hint-placeholder-val="{{ true }}">
+                <div style="animation:slideIn 0.2s ease">
+                  <div style="font-size:12px; color:#6e7681; margin-bottom:16px; font-family:'JetBrains Mono',monospace">以「你好」2个汉字为例，各模型每汉字消耗 token 数：</div>
+                  <div style="display:flex; flex-direction:column; gap:12px">
+                    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:16px">
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ff7b72; margin-bottom:12px; font-weight:600">早期模型（~2021）</div>
+                      <div style="display:flex; flex-direction:column; gap:10px">
+                        <div>
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#c9d1d9">国外模型（GPT-3 等）</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ff7b72; font-weight:600">3.5 tokens / 汉字</span></div>
+                          <div style="height:8px; background:#21262d; border-radius:4px; overflow:hidden"><div style="width:100%; height:100%; background:#ff7b72; border-radius:4px; opacity:0.8"></div></div>
+                        </div>
+                        <div>
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#c9d1d9">国内模型（文心等）</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ffa657; font-weight:600">1.0 token / 汉字</span></div>
+                          <div style="height:8px; background:#21262d; border-radius:4px; overflow:hidden"><div style="width:29%; height:100%; background:#ffa657; border-radius:4px"></div></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="background:#161b22; border:1px solid rgba(0,255,160,0.2); border-radius:8px; padding:16px">
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#00ffa0; margin-bottom:12px; font-weight:600">现在模型（~2024+）</div>
+                      <div style="display:flex; flex-direction:column; gap:10px">
+                        <div>
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#c9d1d9">国外模型（GPT-4o 等）</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#7ee787; font-weight:600">1.0 token / 汉字</span></div>
+                          <div style="height:8px; background:#21262d; border-radius:4px; overflow:hidden"><div style="width:29%; height:100%; background:#7ee787; border-radius:4px"></div></div>
+                        </div>
+                        <div>
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#c9d1d9">国内模型（Qwen、DeepSeek 等）</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#00ffa0; font-weight:600">0.5 token / 汉字</span></div>
+                          <div style="height:8px; background:#21262d; border-radius:4px; overflow:hidden"><div style="width:14%; height:100%; background:#00ffa0; border-radius:4px"></div></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="padding:10px 12px; background:rgba(0,255,160,0.05); border:1px solid rgba(0,255,160,0.15); border-radius:6px; font-size:11px; color:#8b949e; line-height:1.6">💡 从早期到现在，国外模型中文 token 效率提升了 <strong style="color:#00ffa0">3.5×</strong>；国内模型持续领先，甚至达到 0.5 token/汉字（比英文还节省）。</div>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ isWbMode1 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.2s ease">
+                  <div style="font-size:12px; color:#6e7681; margin-bottom:16px; font-family:'JetBrains Mono',monospace">早期模型（~2021），同等信息量下的分词效率：</div>
+                  <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:16px">
+                    <div>
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:8px; letter-spacing:0.05em">国外模型（GPT-3）</div>
+                      <div style="display:flex; gap:12px">
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#ffa657">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ff7b72">3.5 tokens / 字</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:100%; height:100%; background:rgba(255,123,114,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#ff7b72">你｜好 → 7 tok</span></div></div>
+                        </div>
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#7ee787">0.27 tokens / 字母</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:30%; height:100%; background:rgba(126,231,135,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">Hello → 2 tok</span></div></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:8px; letter-spacing:0.05em">国内模型（文心一言等）</div>
+                      <div style="display:flex; gap:12px">
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#ffa657">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ffa657">1.0 token / 字</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:29%; height:100%; background:rgba(255,166,87,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#ffa657">你好 → 2 tok</span></div></div>
+                        </div>
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#7ee787">0.27 tokens / 字母</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:30%; height:100%; background:rgba(126,231,135,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">Hello → 2 tok</span></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px; padding:10px 12px; background:rgba(255,123,114,0.05); border:1px solid rgba(255,123,114,0.15); border-radius:6px; font-size:11px; color:#8b949e; line-height:1.6">⚠ 早期国外模型的中文分词效率极低，同等中文内容消耗的 token 数约为英文的 <strong style="color:#ff7b72">13 倍</strong>。</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ isWbMode2 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.2s ease">
+                  <div style="font-size:12px; color:#6e7681; margin-bottom:16px; font-family:'JetBrains Mono',monospace">现在模型（~2024+），同等信息量下的分词效率：</div>
+                  <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:16px">
+                    <div>
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:8px; letter-spacing:0.05em">国外模型（GPT-4o）</div>
+                      <div style="display:flex; gap:12px">
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#ffa657">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#7ee787">1.0 token / 字</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:29%; height:100%; background:rgba(126,231,135,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">你好 → 2 tok</span></div></div>
+                        </div>
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#7ee787">0.27 tokens / 字母</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:30%; height:100%; background:rgba(126,231,135,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">Hello → 2 tok</span></div></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:8px; letter-spacing:0.05em">国内模型（Qwen、DeepSeek 等）</div>
+                      <div style="display:flex; gap:12px">
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#ffa657">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#00ffa0">0.5 token / 字</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:14%; height:100%; background:rgba(0,255,160,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#00ffa0">你好 → 1 tok</span></div></div>
+                        </div>
+                        <div style="flex:1">
+                          <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#7ee787">0.27 tokens / 字母</span></div>
+                          <div style="height:28px; background:#21262d; border-radius:4px; display:flex; align-items:center; overflow:hidden"><div style="width:30%; height:100%; background:rgba(126,231,135,0.3); display:flex; align-items:center; padding:0 8px"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">Hello → 2 tok</span></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px; padding:10px 12px; background:rgba(0,255,160,0.05); border:1px solid rgba(0,255,160,0.15); border-radius:6px; font-size:11px; color:#8b949e; line-height:1.6">✅ 现在国内模型的中文分词效率甚至超过了英文，<strong style="color:#00ffa0">0.5 token/字</strong>意味着使用中文反而比英文更省 token。</div>
+                </div>
+              </sc-if>
+            </div>
+            <!-- Right sidebar -->
+            <div style="width:280px; flex-shrink:0; border-left:1px solid #30363d; overflow-y:auto; padding:16px; background:#0a0e14" data-comment-anchor="deb7d35796-div">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#ffa657; margin-bottom:12px; letter-spacing:0.05em">TOKEN 效率速查</div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:10px">
+                  <div style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace; margin-bottom:6px">早期国外（GPT-3）</div>
+                  <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#ff7b72">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#ff7b72; font-weight:700">3.5×</span></div>
+                  <div style="display:flex; justify-content:space-between; margin-top:3px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#7ee787; font-weight:700">1.0×</span></div>
+                </div>
+                <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:10px">
+                  <div style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace; margin-bottom:6px">早期国内（文心等）</div>
+                  <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#ffa657">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#ffa657; font-weight:700">1.0×</span></div>
+                  <div style="display:flex; justify-content:space-between; margin-top:3px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#7ee787; font-weight:700">1.0×</span></div>
+                </div>
+                <div style="background:#161b22; border:1px solid rgba(0,255,160,0.2); border-radius:6px; padding:10px">
+                  <div style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace; margin-bottom:6px">现在国外（GPT-4o）</div>
+                  <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#7ee787">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#7ee787; font-weight:700">1.0×</span></div>
+                  <div style="display:flex; justify-content:space-between; margin-top:3px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#7ee787; font-weight:700">1.0×</span></div>
+                </div>
+                <div style="background:#161b22; border:1px solid rgba(0,255,160,0.3); border-radius:6px; padding:10px">
+                  <div style="font-size:10px; color:#00ffa0; font-family:'JetBrains Mono',monospace; margin-bottom:6px">现在国内（Qwen / DS）</div>
+                  <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#00ffa0">中文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#00ffa0; font-weight:700">0.5×</span></div>
+                  <div style="display:flex; justify-content:space-between; margin-top:3px"><span style="font-size:11px; color:#7ee787">英文</span><span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#7ee787; font-weight:700">1.0×</span></div>
+                </div>
+              </div>
+              <div style="margin-top:12px; font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace; line-height:1.5">× 为每汉字/每英文单词消耗的 token 倍率，越低越省。</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ── INFER TAB ── -->
+      <sc-if value="{{ labIsInfer }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="padding:12px 20px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:1px">模型生成推理过程</div>
+            <div style="font-size:13px; font-weight:500; color:#e6edf3">从用户发送消息到模型回复的完整链路</div>
+          </div>
+          <div style="flex:1; overflow-y:auto; padding:20px 32px">
+            <sc-for list="{{ inferSteps }}" as="st" hint-placeholder-count="3">
+              <div style="{{ st.wrapStyle }}">
+                <div style="display:flex; align-items:flex-start; gap:16px">
+                  <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:36px">
+                    <div style="{{ st.dotStyle }}">{{ st.stepNum }}</div>
+                    <div style="{{ st.lineStyle }}"></div>
+                  </div>
+                  <div style="{{ st.cardStyle }}">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+                      <span style="{{ st.iconStyle }}">{{ st.icon }}</span>
+                      <span style="{{ st.titleStyle }}">{{ st.title }}</span>
+                      <sc-if value="{{ st.isActive }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; color:#00ffa0; font-family:'JetBrains Mono',monospace; animation:blink 1.2s ease infinite; margin-left:4px">● 当前</span></sc-if>
+                      <sc-if value="{{ st.isDone }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; color:#7ee787; font-family:'JetBrains Mono',monospace; margin-left:4px">✓ 完成</span></sc-if>
+                    </div>
+                    <div style="{{ st.descStyle }}">{{ st.desc }}</div>
+                    <sc-if value="{{ st.hasCode }}" hint-placeholder-val="{{ false }}"><div style="{{ st.codeStyle }}">{{ st.codeEl }}</div></sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:10px 16px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117; display:flex; align-items:center; gap:8px">
+            <button onClick="{{ advanceInferStep }}" style="{{ inferNextBtnStyle }}">{{ inferNextBtnText }}</button>
+            <button onClick="{{ resetInferStep }}" style="padding:6px 12px; background:transparent; border:1px solid #30363d; border-radius:5px; color:#6e7681; font-size:11px; font-family:'JetBrains Mono',monospace; cursor:pointer">↺ 重置</button>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-left:auto">步骤 {{ inferStep }} / 10</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ── RAG TAB ── -->
+      <sc-if value="{{ labIsRAG }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; height:100%; overflow:hidden">
+          <div style="padding:12px 20px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0a0e14">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-bottom:1px">RAG · 检索增强生成</div>
+            <div style="font-size:13px; font-weight:500; color:#e6edf3">Retrieval-Augmented Generation 完整链路演示</div>
+          </div>
+          <div style="flex:1; overflow-y:auto; padding:20px 32px">
+            <sc-for list="{{ ragSteps }}" as="rs" hint-placeholder-count="3">
+              <div style="{{ rs.wrapStyle }}">
+                <sc-if value="{{ rs.showPhase }}" hint-placeholder-val="{{ false }}"><div style="{{ rs.phaseStyle }}">{{ rs.phaseLabel }}</div></sc-if>
+                <div style="display:flex; align-items:flex-start; gap:16px">
+                  <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:36px">
+                    <div style="{{ rs.dotStyle }}">{{ rs.stepNum }}</div>
+                    <div style="{{ rs.lineStyle }}"></div>
+                  </div>
+                  <div style="{{ rs.cardStyle }}">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+                      <span style="font-size:16px">{{ rs.icon }}</span>
+                      <span style="{{ rs.titleStyle }}">{{ rs.title }}</span>
+                      <sc-if value="{{ rs.isActive }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; color:#00ffa0; font-family:'JetBrains Mono',monospace; animation:blink 1.2s ease infinite; margin-left:4px">● 当前</span></sc-if>
+                      <sc-if value="{{ rs.isDone }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; color:#7ee787; font-family:'JetBrains Mono',monospace; margin-left:4px">✓ 完成</span></sc-if>
+                    </div>
+                    <div style="{{ rs.descStyle }}">{{ rs.desc }}</div>
+                    <sc-if value="{{ rs.hasCode }}" hint-placeholder-val="{{ false }}"><div style="{{ rs.codeStyle }}">{{ rs.codeEl }}</div></sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:10px 16px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117; display:flex; align-items:center; gap:8px">
+            <button onClick="{{ advanceRAGStep }}" style="{{ ragNextBtnStyle }}">{{ ragNextBtnText }}</button>
+            <button onClick="{{ resetRAGStep }}" style="padding:6px 12px; background:transparent; border:1px solid #30363d; border-radius:5px; color:#6e7681; font-size:11px; font-family:'JetBrains Mono',monospace; cursor:pointer">↺ 重置</button>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-left:auto">步骤 {{ ragStep }} / 10</span>
+          </div>
+        </div>
+      </sc-if>
+
+    </div><!-- end tab content -->
+  </div><!-- end lab main area -->
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    labTab: 'training',
+    labQInput: '',
+    labQ: '用一句话解释什么是 Transformer？',
+    labBaseText: '',
+    labSFTText: '',
+    labStreaming: false,
+    fcStep: 0,
+    wbTokMode: 0,
+    inferStep: 0,
+    ragStep: 0
+  };
+
+  _timers = [];
+  componentWillUnmount() { this._timers.forEach(t => { clearTimeout(t); clearInterval(t); }); }
+
+  _labStream(q) {
+    this._timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this._timers = [];
+    const baseAns = `${q}好的，${q}，这让我想到了一个有趣的语言现象……在自然语言语料库中，这类句式往往出现在学术论文的引言部分，例如"Transformer 是一种……Transformer 是一种……"（续写偏离：模型把问题当成训练语料继续生成，而不是按指令回答）`;
+    const sftAns = `Transformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，通过并行计算序列中各位置的相互关系来理解语义，是 GPT、BERT、Claude 等现代大模型的核心技术基础。`;
+    this.setState({ labStreaming: true, labBaseText: '', labSFTText: '' });
+    let i = 0, j = 0;
+    const tick = () => {
+      i = Math.min(i + 3, baseAns.length); j = Math.min(j + 2, sftAns.length);
+      this.setState({ labBaseText: baseAns.slice(0, i), labSFTText: sftAns.slice(0, j) });
+      if (i < baseAns.length || j < sftAns.length) { this._timers.push(setTimeout(tick, 38)); }
+      else { this.setState({ labStreaming: false }); }
+    };
+    this._timers.push(setTimeout(tick, 80));
+  }
+
+  _fmtMsgJSON(msgs) {
+    const roleColors = { system: '#d2a8ff', user: '#79c0ff', assistant: '#7ee787', tool: '#ffa657' };
+    return React.createElement('div', { style: { fontFamily: '"JetBrains Mono",monospace', fontSize: '11px', lineHeight: '1.6' } },
+      React.createElement('span', { style: { color: '#6e7681' } }, '['),
+      ...msgs.map((m, i) => React.createElement('div', { key: i, style: { marginLeft: '14px', borderLeft: `2px solid ${roleColors[m.role] || '#30363d'}`, paddingLeft: '8px', marginBottom: '4px' } },
+        React.createElement('div', null,
+          React.createElement('span', { style: { color: '#6e7681' } }, '{ '),
+          React.createElement('span', { style: { color: '#7ee787' } }, '"role"'),
+          React.createElement('span', { style: { color: '#6e7681' } }, ': '),
+          React.createElement('span', { style: { color: roleColors[m.role] || '#e6edf3' } }, `"${m.role}"`),
+          React.createElement('span', { style: { color: '#6e7681' } }, ', '),
+          React.createElement('span', { style: { color: '#7ee787' } }, '"content"'),
+          React.createElement('span', { style: { color: '#6e7681' } }, ': '),
+          React.createElement('span', { style: { color: '#a5d6ff' } }, `"${m.content.slice(0, 32)}${m.content.length > 32 ? '...' : ''}"`),
+          React.createElement('span', { style: { color: '#6e7681' } }, ` }${i < msgs.length - 1 ? ',' : ''}`)
+        )
+      )),
+      React.createElement('span', { style: { color: '#6e7681' } }, ']')
+    );
+  }
+
+  _fmtJSON(obj) {
+    const lines = JSON.stringify(obj, null, 2).split('\n');
+    return React.createElement('div', { style: { fontFamily: '"JetBrains Mono",monospace', fontSize: '11px', lineHeight: '1.65', color: '#e6edf3' } },
+      ...lines.map((line, i) => {
+        const m = line.match(/^(\s*)("[\w_]+")(\s*:\s*)(.+?)(,?)$/);
+        if (m) {
+          const [, sp, key, col, val, comma] = m;
+          const vc = val.startsWith('"') ? '#a5d6ff' : (val === 'true' || val === 'false' || val === 'null') ? '#ff7b72' : !isNaN(parseFloat(val.replace(',', ''))) ? '#79c0ff' : '#e6edf3';
+          return React.createElement('div', { key: i },
+            React.createElement('span', { style: { color: '#30363d' } }, sp),
+            React.createElement('span', { style: { color: '#7ee787' } }, key),
+            React.createElement('span', { style: { color: '#6e7681' } }, col),
+            React.createElement('span', { style: { color: vc } }, val),
+            React.createElement('span', { style: { color: '#6e7681' } }, comma)
+          );
+        }
+        return React.createElement('div', { key: i }, React.createElement('span', { style: { color: '#6e7681' } }, line));
+      })
+    );
+  }
+
+  renderVals() {
+    const { labTab, labQInput, labQ, labBaseText, labSFTText, labStreaming, fcStep, wbTokMode, inferStep, ragStep } = this.state;
+    const labIsTraining = labTab === 'training';
+    const labIsFC = labTab === 'fc';
+    const labIsWB = labTab === 'whitebox';
+    const labIsInfer = labTab === 'infer';
+    const labIsRAG = labTab === 'rag';
+
+    const BS = (on) => ({ padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', background: on ? 'rgba(88,166,255,0.12)' : 'transparent', border: `1px solid ${on ? '#58a6ff' : '#30363d'}`, color: on ? '#58a6ff' : '#6e7681', fontSize: '11px', fontFamily: '"JetBrains Mono",monospace', transition: 'all 0.15s ease' });
+    const WBS = (n) => wbTokMode === n ? { padding:'5px 14px', borderRadius:'5px', border:'1px solid #00ffa0', background:'rgba(0,255,160,0.1)', color:'#00ffa0', fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', cursor:'pointer' } : { padding:'5px 14px', borderRadius:'5px', border:'1px solid #30363d', background:'transparent', color:'#6e7681', fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', cursor:'pointer' };
+
+    // FC steps
+    const fcStepData = [
+      { icon: '💬', label: '用户发送消息', color: '#79c0ff', content: '"上海今天天气怎么样？"', isCode: true },
+      { icon: '🤖', label: '模型输出工具调用意图（tool_call）', color: '#7ee787', jsonObj: { tool_calls: [{ id: 'call_abc123', type: 'function', function: { name: 'get_weather', arguments: '{"city":"上海","date":"today"}' } }] } },
+      { icon: '💻', label: '⚡ 你的代码执行函数（不是模型！）', color: '#ffa657', highlight: true, content: 'result = get_weather(city="上海", date="today")', isCode: true },
+      { icon: '📥', label: '函数结果回填 messages[ ]', color: '#d2a8ff', jsonObj: { role: 'tool', tool_call_id: 'call_abc123', content: '{"temp":28,"weather":"晴转多云","humidity":"65%"}' } },
+      { icon: '✅', label: '模型据结果生成最终自然语言回答', color: '#00ffa0', content: '上海今天晴转多云，气温 28°C，湿度 65%，适合外出，记得备伞防晒。', isCode: false }
+    ];
+    const fcStepsVisible = fcStepData.slice(0, fcStep + 1).map((s, i) => {
+      const isLast = i === fcStep;
+      const contentEl = s.jsonObj ? this._fmtJSON(s.jsonObj) : React.createElement('div', { style: { fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', color: s.highlight ? '#ffa657' : '#c9d1d9', background: s.highlight ? 'rgba(255,166,87,0.06)' : '#0a0e14', padding: '8px 10px', borderRadius: '4px', border: s.highlight ? '1px solid rgba(255,166,87,0.2)' : 'none' } }, s.highlight && React.createElement('div', { style: { fontSize: '10px', color: '#ffa657', marginBottom: '4px' } }, '⚡ 应用层代码执行，与模型无关'), s.content);
+      return {
+        icon: s.icon, label: s.label, contentEl,
+        iconBoxStyle: { width: '32px', height: '32px', borderRadius: '50%', background: `${s.color}15`, border: `1px solid ${s.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0, animation: isLast ? 'slideIn 0.25s ease' : 'none' },
+        titleStyle: { fontFamily: '"JetBrains Mono",monospace', fontSize: '11px', color: s.color, marginBottom: '6px', fontWeight: '600', animation: isLast ? 'slideIn 0.25s ease' : 'none' },
+        cardStyle: { background: '#161b22', border: `1px solid ${s.color}22`, borderRadius: '6px', padding: '10px 12px', overflow: 'hidden' },
+        wrapStyle: {},
+        connStyle: i < fcStepData.length - 1 ? { width: '1px', height: '24px', background: '#30363d', marginLeft: '15px' } : { display: 'none' }
+      };
+    });
+    const fcMsgHistory = [
+      { role: 'system', content: '你是一个助手，可以调用工具获取天气信息。' },
+      { role: 'user', content: '上海今天天气怎么样？' },
+      ...(fcStep >= 1 ? [{ role: 'assistant', content: '[tool_call: get_weather]' }] : []),
+      ...(fcStep >= 3 ? [{ role: 'tool', content: '{"temp":28,"weather":"晴转多云"}' }] : []),
+      ...(fcStep >= 4 ? [{ role: 'assistant', content: '上海今天晴转多云，气温 28°C…' }] : []),
+    ];
+
+    // Infer steps
+    const INFER_STEPS = [
+      { num:'01', icon:'💬', title:'用户输入', desc:'用户在客户端输入「你好，在吗」，点击发送按钮。', code: null },
+      { num:'02', icon:'📦', title:'消息封装 messages[ ]', desc:'客户端将 system prompt、历史对话和本次 user 消息拼成 messages 数组，准备发送。', code: '{\n  "role": "system", "content": "你是..."\n},\n{\n  "role": "user",  "content": "你好，在吗"\n}' },
+      { num:'03', icon:'🌐', title:'API 请求', desc:'客户端向模型服务端发起 HTTP POST，携带 model、temperature、max_tokens 等参数。', code: 'POST https://api.openai.com/v1/chat/completions\nAuthorization: Bearer sk-...\nContent-Type: application/json' },
+      { num:'04', icon:'≋', title:'Tokenizer 分词', desc:'服务端把输入文本切分成 token 序列。「你好，在吗」→ [15429, 11, 29885, 30982]（4 tokens）。', code: '你好  →  15429\n，    →  11\n在吗  →  29885 30982' },
+      { num:'05', icon:'⬡', title:'Embedding 映射', desc:'每个 token ID 查询 Embedding 矩阵，转换为高维浮点向量（如 4096 维），作为模型输入。', code: '15429 → [0.12, -0.87, 0.34, ... ] (4096-dim)' },
+      { num:'06', icon:'◈', title:'Transformer 前向传播 [示意]', desc:'向量经过 N 层（如 32 层）Transformer Block：每层先做 Self-Attention，再经过 FFN 变换，逐层提炼语义表示。', code: 'Layer 1: Self-Attention + FFN\nLayer 2: Self-Attention + FFN\n...  x32 层  ...\nLayer 32: -> 输出隐向量' },
+      { num:'07', icon:'📊', title:'Logits 计算与 Softmax', desc:'最后一层隐向量经 LM Head 线性变换，得到词表上每个 token 的得分（logits），再经 softmax 转为概率分布。', code: '"你"   -> 0.003\n"在"   -> 0.021\n"好"   -> 0.412  <- 最高\n"嗯"   -> 0.187\n...（共 ~32000 个候选）' },
+      { num:'08', icon:'🎲', title:'采样解码（自回归循环）', desc:'根据 temperature / top-p 从概率分布中采样出下一个 token，追加到序列末尾，再从第 06 步重新前向传播——每次只生成一个 token，循环往复。', code: 'Step 1: -> "好"\nStep 2: -> "的"\nStep 3: -> "，"\n...\n（每步都是一次完整前向传播）' },
+      { num:'09', icon:'🛑', title:'遇到终止条件', desc:'当模型生成 EOS（End-of-Sequence）token，或已达到 max_tokens 上限时，停止自回归循环。', code: 'Generated: "好的，我在～有什么需要帮忙的？"\n-> 遇到 EOS，停止生成\n输出 token 总数: 12' },
+      { num:'10', icon:'✅', title:'返回响应', desc:'服务端将生成的 token 序列通过 Tokenizer 解码回文字，经 API 返回给客户端，客户端展示最终回复。', code: 'HTTP 200 OK\n{\n  "choices": [{\n    "message": {\n      "role": "assistant",\n      "content": "好的，我在～有什么需要帮忙的？"\n    }\n  }]\n}' },
+    ];
+    const inferSteps = INFER_STEPS.slice(0, inferStep).map((s, i) => {
+      const idx = i + 1, isDone = idx < inferStep, isActive = idx === inferStep;
+      return {
+        wrapStyle: { animation: isActive ? 'slideIn 0.3s ease' : 'none', marginBottom: '0' },
+        dotStyle: { width:'36px', height:'36px', borderRadius:'50%', background: isDone ? 'rgba(126,231,135,0.1)' : isActive ? 'rgba(0,255,160,0.15)' : '#21262d', border: '2px solid ' + (isDone ? '#7ee787' : isActive ? '#00ffa0' : '#30363d'), display:'flex', alignItems:'center', justifyContent:'center', color: isDone ? '#7ee787' : isActive ? '#00ffa0' : '#484f58', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', fontWeight:'700', flexShrink:0, boxShadow: isActive ? '0 0 12px rgba(0,255,160,0.35)' : 'none', transition:'all 0.4s ease' },
+        lineStyle: { width:'2px', flex:1, minHeight:'24px', background: isDone ? 'rgba(126,231,135,0.3)' : '#21262d', margin:'4px 0', transition:'background 0.5s ease' },
+        cardStyle: { flex:1, background: isActive ? 'rgba(0,255,160,0.04)' : '#161b22', border:'1px solid ' + (isActive ? 'rgba(0,255,160,0.25)' : '#30363d'), borderRadius:'8px', padding:'14px 16px', marginBottom:'16px', transition:'all 0.4s ease' },
+        iconStyle: { fontSize:'16px' }, titleStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'12px', fontWeight:'600', color: isActive ? '#00ffa0' : isDone ? '#7ee787' : '#c9d1d9' },
+        descStyle: { fontSize:'12px', color:'#8b949e', lineHeight:'1.7', marginBottom: s.code ? '10px' : '0' },
+        codeStyle: { background:'#0d1117', borderRadius:'5px', padding:'10px 12px', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', color:'#7ee787', whiteSpace:'pre', lineHeight:'1.6', border:'1px solid #21262d', overflowX:'auto' },
+        codeEl: s.code, hasCode: !!s.code, stepNum: s.num, icon: s.icon, title: s.title, desc: s.desc, isDone, isActive,
+      };
+    });
+
+    // RAG steps
+    const RAG_STEPS = [
+      { num:'01', icon:'📂', title:'原始文档导入', desc:'收集知识库原始文档（PDF、网页、数据库、Markdown 等），这是 RAG 的离线预处理起点。', code: '文档来源:\n  - 产品手册.pdf\n  - 官网 FAQ（网页爬取）\n  - 内部 Wiki（Confluence）\n  - 数据库导出.csv', phase:'建立索引阶段', phaseColor:'#58a6ff' },
+      { num:'02', icon:'✂', title:'文档切割（Chunking）', desc:'将长文档按策略切分成若干 chunk，常见策略：固定大小（512 tokens）、按语义边界、递归分割。', code: '切片 1: "Transformer 是一种基于自注意力机制的深度..."\n切片 2: "BERT 在预训练阶段使用了掩码语言模型..."\n\n每片约 512 tokens，重叠 50 tokens', phase: null, phaseColor: null },
+      { num:'03', icon:'⬡', title:'Embedding 向量化', desc:'每个 chunk 送入 Embedding 模型，转换为高维浮点向量，语义相近的文本在向量空间中距离更近。', code: '切片 1 -> [0.1, 0.3, -0.5, 0.8, ..., 0.5]  (1536-dim)\n切片 2 -> [0.2, 0.4,  0.1, 0.3, ..., 0.6]  (1536-dim)', phase: null, phaseColor: null },
+      { num:'04', icon:'🗄', title:'向量存储入库', desc:'将向量连同原始文本元数据一起写入向量数据库（Pinecone / Chroma / Milvus），建立可检索的索引。', code: '写入向量数据库:\n  id: "doc_001_chunk_1"\n  vector: [0.1, 0.3, -0.5, ...]\n  metadata: { source: "产品手册.pdf", page: 3 }', phase: null, phaseColor: null },
+      { num:'05', icon:'💬', title:'用户提问', desc:'用户在应用端输入问题，触发 RAG 检索生成流程（实时阶段开始）。', code: '用户输入: "GPT-4 和 GPT-3 相比有哪些主要改进？"', phase:'检索生成阶段', phaseColor:'#00ffa0' },
+      { num:'06', icon:'🔢', title:'Query 向量化', desc:'用相同的 Embedding 模型将用户问题转为查询向量，确保与文档向量在同一语义空间内可以比较。', code: '"GPT-4 和 GPT-3 相比..." -> [0.15, 0.28, -0.41, ..., 0.63]', phase: null, phaseColor: null },
+      { num:'07', icon:'🔍', title:'向量检索 + Rank 精排', desc:'查询向量与数据库中所有文档向量做余弦相似度计算，初步召回 Top-20，再经 Rank 模型精排，最终返回 Top-3 最相关切片。', code: '余弦相似度检索:\n  切片 "GPT-4 架构改进..."  相似度: 0.94  <- Top 1\n  切片 "GPT-3 参数规模..."  相似度: 0.87  <- Top 2\n  切片 "多模态能力对比..."  相似度: 0.81  <- Top 3', phase: null, phaseColor: null },
+      { num:'08', icon:'📝', title:'构建增强 Prompt', desc:'将 Top-3 召回文档切片 + 用户原始问题拼装成增强提示词，作为 LLM 的输入上下文。', code: '{\n  "role": "system",\n  "content": "基于以下文档回答问题:\\n[文档1] GPT-4 架构改进..."\n},\n{\n  "role": "user",\n  "content": "GPT-4 和 GPT-3 相比有哪些主要改进？"\n}', phase: null, phaseColor: null },
+      { num:'09', icon:'◈', title:'大模型推理生成', desc:'增强后的 Prompt 送入 LLM，模型基于检索到的真实文档内容生成有依据的回答，而非依赖训练时记忆。', code: '模型基于文档内容生成:\n"根据文档显示，GPT-4 相比 GPT-3 的主要改进包括：\n 1. 多模态能力（支持图像输入）\n 2. 更强的推理能力和指令跟随\n 3. 更长的上下文窗口（128K tokens）"', phase: null, phaseColor: null },
+      { num:'10', icon:'✅', title:'最终答案对比', desc:'对比有无 RAG 的回答差异，直观体现 RAG 的价值。', code: '无 RAG（模型直接回答，可能幻觉）:\n  "GPT-4 有 1 万亿参数..." <- 未经验证\n\n有 RAG（基于检索文档）:\n  "根据文档 [第3页]，GPT-4 支持..." <- 有据可查', phase: null, phaseColor: null },
+    ];
+    const ragSteps = RAG_STEPS.slice(0, ragStep).map((s, i) => {
+      const idx = i + 1, isDone = idx < ragStep, isActive = idx === ragStep;
+      const isIndexPhase = idx <= 4, accentColor = isIndexPhase ? '#58a6ff' : '#00ffa0';
+      return {
+        wrapStyle: { animation: isActive ? 'slideIn 0.3s ease' : 'none' },
+        showPhase: !!s.phase, phaseLabel: s.phase || '',
+        phaseStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', color: s.phaseColor || '#484f58', background: s.phaseColor ? (s.phaseColor + '12') : 'transparent', border: s.phaseColor ? ('1px solid ' + s.phaseColor + '30') : 'none', padding:'3px 10px', borderRadius:'4px', display:'inline-block', marginBottom:'10px', marginLeft:'52px', letterSpacing:'0.05em' },
+        dotStyle: { width:'36px', height:'36px', borderRadius:'50%', background: isDone ? (isIndexPhase ? 'rgba(88,166,255,0.1)' : 'rgba(126,231,135,0.1)') : isActive ? (isIndexPhase ? 'rgba(88,166,255,0.15)' : 'rgba(0,255,160,0.15)') : '#21262d', border:'2px solid ' + (isDone ? (isIndexPhase ? '#58a6ff' : '#7ee787') : isActive ? accentColor : '#30363d'), display:'flex', alignItems:'center', justifyContent:'center', color: isDone ? accentColor : isActive ? accentColor : '#484f58', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', fontWeight:'700', flexShrink:0, boxShadow: isActive ? ('0 0 12px ' + accentColor + '44') : 'none', transition:'all 0.4s ease' },
+        lineStyle: { width:'2px', flex:1, minHeight:'24px', background: isDone ? (isIndexPhase ? 'rgba(88,166,255,0.3)' : 'rgba(0,255,160,0.3)') : '#21262d', margin:'4px 0', transition:'background 0.5s ease' },
+        cardStyle: { flex:1, background: isActive ? (isIndexPhase ? 'rgba(88,166,255,0.04)' : 'rgba(0,255,160,0.04)') : '#161b22', border:'1px solid ' + (isActive ? (isIndexPhase ? 'rgba(88,166,255,0.25)' : 'rgba(0,255,160,0.25)') : '#30363d'), borderRadius:'8px', padding:'14px 16px', marginBottom:'16px', transition:'all 0.4s ease' },
+        titleStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'12px', fontWeight:'600', color: isActive ? accentColor : isDone ? (isIndexPhase ? '#79c0ff' : '#7ee787') : '#c9d1d9' },
+        descStyle: { fontSize:'12px', color:'#8b949e', lineHeight:'1.7', marginBottom: s.code ? '10px' : '0' },
+        codeStyle: { background:'#0d1117', borderRadius:'5px', padding:'10px 12px', fontFamily:'"JetBrains Mono",monospace', fontSize:'10px', color: isIndexPhase ? '#79c0ff' : '#7ee787', whiteSpace:'pre', lineHeight:'1.6', border:'1px solid #21262d', overflowX:'auto' },
+        codeEl: s.code, hasCode: !!s.code, stepNum: s.num, icon: s.icon, title: s.title, desc: s.desc, isDone, isActive,
+      };
+    });
+
+    return {
+      labIsTraining, labIsFC, labIsWB, labIsInfer, labIsRAG,
+      setLabTraining: () => this.setState({ labTab: 'training' }),
+      setLabFC: () => this.setState({ labTab: 'fc' }),
+      setLabWB: () => this.setState({ labTab: 'whitebox' }),
+      setLabInfer: () => this.setState({ labTab: 'infer' }),
+      setLabRAG: () => this.setState({ labTab: 'rag' }),
+      labTabTrainingStyle: BS(labIsTraining), labTabFCStyle: BS(labIsFC), labTabWBStyle: BS(labIsWB), labTabInferStyle: BS(labIsInfer), labTabRAGStyle: BS(labIsRAG),
+      labQInput, labQ, labHasQ: !!labQ, labNoQ: !labQ, labBaseText, labSFTText, labStreaming,
+      updateLabQInput: (e) => this.setState({ labQInput: e.target.value }),
+      labQKeyDown: (e) => { if (e.key === 'Enter' && labQInput.trim()) { const q = labQInput.trim(); this.setState({ labQ: q, labQInput: '' }); this._labStream(q); } },
+      submitLabQ: () => { if (labQInput.trim()) { const q = labQInput.trim(); this.setState({ labQ: q, labQInput: '' }); this._labStream(q); } },
+      wbTokMode, isWbMode0: wbTokMode === 0, isWbMode1: wbTokMode === 1, isWbMode2: wbTokMode === 2,
+      wbBtn0Style: WBS(0), wbBtn1Style: WBS(1), wbBtn2Style: WBS(2),
+      setWbTokMode0: () => this.setState({ wbTokMode: 0 }),
+      setWbTokMode1: () => this.setState({ wbTokMode: 1 }),
+      setWbTokMode2: () => this.setState({ wbTokMode: 2 }),
+      fcStep, fcStepsVisible, fcMessagesEl: this._fmtMsgJSON(fcMsgHistory),
+      fcComplete: fcStep === fcStepData.length - 1,
+      advanceFcStep: () => this.setState(s => ({ fcStep: Math.min(s.fcStep + 1, fcStepData.length - 1) })),
+      resetFcStep: () => this.setState({ fcStep: 0 }),
+      fcNextBtnStyle: { padding:'6px 14px', borderRadius:'5px', cursor: fcStep < fcStepData.length - 1 ? 'pointer' : 'not-allowed', background: fcStep < fcStepData.length - 1 ? '#00ffa0' : '#21262d', color: fcStep < fcStepData.length - 1 ? '#0d1117' : '#484f58', fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'600', border:'none', transition:'all 0.2s ease' },
+      fcNextBtnText: fcStep < fcStepData.length - 1 ? '下一步 →' : '✓ 完成',
+      inferStep, inferSteps,
+      advanceInferStep: () => this.setState(s => ({ inferStep: Math.min(s.inferStep + 1, 10) })),
+      resetInferStep: () => this.setState({ inferStep: 0 }),
+      inferNextBtnStyle: { padding:'6px 16px', borderRadius:'5px', border:'none', background: inferStep >= 10 ? '#21262d' : '#00ffa0', color: inferStep >= 10 ? '#6e7681' : '#0d1117', fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'700', cursor: inferStep >= 10 ? 'not-allowed' : 'pointer' },
+      inferNextBtnText: inferStep === 0 ? '▶ 开始演示' : inferStep >= 10 ? '✓ 演示完毕' : `▶ 下一步（${inferStep}/10）`,
+      ragStep, ragSteps,
+      advanceRAGStep: () => this.setState(s => ({ ragStep: Math.min(s.ragStep + 1, 10) })),
+      resetRAGStep: () => this.setState({ ragStep: 0 }),
+      ragNextBtnStyle: { padding:'6px 16px', borderRadius:'5px', border:'none', background: ragStep >= 10 ? '#21262d' : '#00ffa0', color: ragStep >= 10 ? '#6e7681' : '#0d1117', fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'700', cursor: ragStep >= 10 ? 'not-allowed' : 'pointer' },
+      ragNextBtnText: ragStep === 0 ? '▶ 开始演示' : ragStep >= 10 ? '✓ 演示完毕' : `▶ 下一步（${ragStep}/10）`,
+    };
+  }
+}
+</script>
+</body>
+</html>

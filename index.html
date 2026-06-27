@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+</helmet>
+
+<div style="display:flex; height:100vh; background:#0d1117; color:#e6edf3; font-family:'Inter',sans-serif; overflow:hidden">
+  <dc-import name="Nav" active="chat" hint-size="56px,100%" style="flex-shrink:0"></dc-import>
+
+  <!-- MAIN AREA: pipeline | conversation | right panel -->
+  <div style="flex:1; display:flex; overflow:hidden">
+
+    <!-- LEFT PAIR: grid for pipeline(col1) + conversation(col2) -->
+    <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden">
+
+      <!-- COL 2: CONVERSATION -->
+      <div style="grid-column:2; grid-row:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; border-left:1px solid #30363d">
+        <!-- Chat history -->
+        <div style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px" id="chatArea">
+          <sc-if value="{{ noMessages }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; min-height:140px; gap:10px; opacity:0.4">
+              <span style="font-size:28px">💬</span>
+              <span style="font-size:11px; color:#6e7681; font-family:'JetBrains Mono',monospace; text-align:center">输入消息后点击<br>「▶ 运行」开始</span>
+            </div>
+          </sc-if>
+          <sc-for list="{{ displayHistory }}" as="msg" hint-placeholder-count="0">
+            <div style="display:flex; flex-direction:column; gap:3px">
+              <span style="{{ msg.roleLabelStyle }}">{{ msg.roleLabel }}</span>
+              <div style="{{ msg.bubbleStyle }}">{{ msg.content }}</div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ showStreamingBubble }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:3px">
+              <span style="font-size:10px; color:rgba(0,255,160,0.5); font-family:'JetBrains Mono',monospace; align-self:flex-start">AI 助手 · 生成中</span>
+              <div style="background:#161b22; border:1px solid rgba(0,255,160,0.2); border-radius:2px 8px 8px 8px; padding:8px 12px; font-size:13px; color:#c9d1d9; line-height:1.6; align-self:flex-start; max-width:92%">{{ streamingText }}<span style="display:inline-block; width:2px; height:0.9em; background:#00ffa0; vertical-align:text-bottom; margin-left:2px; animation:blink 1.06s step-end infinite"></span></div>
+            </div>
+          </sc-if>
+        </div>
+        <!-- Model + Toggles bar -->
+        <div style="padding:7px 12px; border-top:1px solid #30363d; flex-shrink:0; background:#0a0e14; display:flex; align-items:center; gap:5px; flex-wrap:wrap">
+          <select onChange="{{ setModel }}" style="background:#21262d; border:1px solid #30363d; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer; margin-right:4px">
+            <optgroup label="── OpenRouter ──">
+              <option value="openai/gpt-4o">openai/gpt-4o</option>
+              <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+              <option value="anthropic/claude-sonnet-4">anthropic/claude-sonnet-4</option>
+              <option value="anthropic/claude-3-5-haiku">anthropic/claude-3-5-haiku</option>
+              <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+              <option value="deepseek/deepseek-chat-v3-0324">deepseek/deepseek-chat-v3-0324</option>
+              <option value="deepseek/deepseek-r1">deepseek/deepseek-r1</option>
+              <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
+              <option value="qwen/qwen3-235b-a22b">qwen/qwen3-235b-a22b</option>
+            </optgroup>
+            <optgroup label="── 演示模式 ──">
+              <option value="demo/gpt-4o">demo/gpt-4o</option>
+              <option value="demo/claude">demo/claude</option>
+            </optgroup>
+          </select>
+          <span style="{{ apiStatusStyle }}">{{ apiStatusText }}</span>
+          <button onClick="{{ toggleFC }}" style="{{ toggleFCStyle }}"><span>🔧</span><span>工具调用</span></button>
+          <button onClick="{{ toggleCOT }}" style="{{ toggleCOTStyle }}"><span>🧠</span><span>思维链</span></button>
+          <button onClick="{{ toggleSearch }}" style="{{ toggleSearchStyle }}"><span>🔍</span><span>联网</span></button>
+        </div>
+        <!-- Input area -->
+        <div style="padding:10px 12px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117">
+          <div style="display:flex; gap:8px; align-items:flex-end">
+            <textarea value="{{ inputText }}" onChange="{{ setInput }}" style="flex:1; background:#21262d; border:1px solid #30363d; border-radius:6px; padding:8px 10px; color:#e6edf3; font-size:12px; font-family:'JetBrains Mono',monospace; line-height:1.5; height:60px"></textarea>
+            <button onClick="{{ handleRun }}" style="{{ runBtnStyle }}">{{ runBtnText }}</button>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px">
+            <span style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace">输入 token: {{ inputTok }} · 输出: {{ outputTok }}</span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58">对话轮数 <span style="color:#79c0ff">{{ sessionRounds }}</span> · 上下文 <span style="color:#79c0ff">{{ contextDisplay }}</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 1: PIPELINE CANVAS -->
+      <div style="grid-column:1; grid-row:1; display:flex; flex-direction:column; overflow:hidden; min-width:0">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 16px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0d1117">
+          <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; letter-spacing:0.08em">运行流程可视化</span>
+          <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58">阶段 {{ pipelinePhase }} / 4</span>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding:16px 16px 16px 12px; display:flex; flex-direction:column; gap:0">
+
+          <!-- STAGE 1: Messages Array -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS1 }}">{ }</div>
+              <div style="{{ lineS1 }}"></div>
+            </div>
+            <div style="flex:1; margin-left:10px; margin-bottom:0; padding-bottom:12px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">消息数组 messages[ ]</span>
+                <span style="{{ phase1StatusStyle }}">{{ phase1StatusText }}</span>
+              </div>
+              <div style="background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">{{ reqJsonEl }}</div>
+            </div>
+          </div>
+
+          <!-- STAGE 2: Tokenizer -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS2 }}">≋</div>
+              <div style="{{ lineS2 }}"></div>
+            </div>
+            <div style="flex:1; margin-left:10px; padding-bottom:12px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">Tokenizer 分词</span>
+                <span style="{{ phase2StatusStyle }}">{{ phase2StatusText }}</span>
+              </div>
+              <sc-if value="{{ isPhasePending2 }}" hint-placeholder-val="{{ false }}">
+                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待上一阶段...</div>
+              </sc-if>
+              <sc-if value="{{ showPhase2 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
+                  <div style="font-size:10px; color:#6e7681; margin-bottom:6px; font-family:'JetBrains Mono',monospace">输入: "用一句话解释什么是 Transformer"</div>
+                  <div style="display:flex; flex-wrap:wrap; gap:4px">
+                    <sc-for list="{{ inputTokens }}" as="tk" hint-placeholder-count="7">
+                      <div style="{{ tk.style }}" title="{{ tk.idLabel }}">
+                        <span>{{ tk.text }}</span>
+                        <span style="{{ tk.idStyle }}">{{ tk.idDisplay }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="margin-top:6px; font-size:10px; color:#7ee787; font-family:'JetBrains Mono',monospace">共 7 tokens · 平均每中文字 1.4 tokens</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- STAGE 3: Transformer -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS3 }}">◈</div>
+              <div style="{{ lineS3 }}"></div>
+            </div>
+            <div style="flex:1; margin-left:10px; padding-bottom:12px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <div style="display:flex; align-items:center; gap:6px">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">Transformer 模型推理</span>
+                  <span style="font-size:9px; color:#484f58; border:1px solid #30363d; padding:1px 5px; border-radius:3px; font-family:'JetBrains Mono',monospace">示意</span>
+                </div>
+                <span style="{{ phase3StatusStyle }}">{{ phase3StatusText }}</span>
+              </div>
+              <sc-if value="{{ isPhasePending3 }}" hint-placeholder-val="{{ false }}">
+                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待分词阶段...</div>
+              </sc-if>
+              <sc-if value="{{ showPhase3 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
+                  <sc-for list="{{ transformerLayers }}" as="lay" hint-placeholder-count="6">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; width:52px; flex-shrink:0; text-align:right">{{ lay.label }}</span>
+                      <div style="{{ lay.barStyle }}">
+                        <div style="{{ lay.sweepStyle }}"></div>
+                        <div style="{{ lay.dotsStyle }}"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="font-size:10px; color:#6e7681; margin-top:4px; font-family:'JetBrains Mono',monospace">自注意力权重计算，共 32 层</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- STAGE 4: Autoregressive Decoding -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS4 }}">↻</div>
+            </div>
+            <div style="flex:1; margin-left:10px; padding-bottom:8px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <div style="display:flex; align-items:center; gap:6px">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">自回归解码</span>
+                  <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:9px; color:#00ffa0; font-family:'JetBrains Mono',monospace; animation:blink 1.2s ease infinite">● 循环中</span>
+                  </sc-if>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px">
+                  <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">第 {{ streamStep }} 步</span>
+                    <button onClick="{{ toggleAutoSteps }}" style="padding:1px 8px; background:transparent; border:1px solid #30363d; border-radius:3px; color:#8b949e; font-family:'JetBrains Mono',monospace; font-size:9px; cursor:pointer">{{ showAutoSteps ? '▲ 折叠' : '▼ 展开' }}</button>
+                  </sc-if>
+                  <sc-if value="{{ isPhasePending4 }}" hint-placeholder-val="{{ false }}">
+                    <span style="{{ phase4StatusStyle }}">{{ phase4StatusText }}</span>
+                  </sc-if>
+                </div>
+              </div>
+              <sc-if value="{{ isPhasePending4 }}" hint-placeholder-val="{{ false }}">
+                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待模型推理...</div>
+              </sc-if>
+              <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
+                  <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#6e7681; flex-wrap:wrap">
+                    <span style="color:#79c0ff">Context[0..{{ streamStep }}]</span>
+                    <span>→</span>
+                    <span style="color:#d2a8ff; background:rgba(210,168,255,0.08); padding:1px 6px; border-radius:3px; border:1px solid rgba(210,168,255,0.2)">模型</span>
+                    <span>→</span>
+                    <span style="color:#00ffa0">token[{{ streamStep }}]</span>
+                    <span style="color:#484f58">→ 追加 → 下一轮</span>
+                  </div>
+                  <div style="font-size:12px; color:#c9d1d9; line-height:1.7; font-family:'JetBrains Mono',monospace; background:#0a0e14; border-radius:4px; padding:8px 10px; min-height:36px; border:1px solid rgba(0,255,160,0.1)">{{ liveOutputText }}<sc-if value="{{ showLiveCursor }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block; width:2px; height:0.9em; background:#00ffa0; vertical-align:text-bottom; margin-left:2px; animation:blink 1.06s step-end infinite"></span></sc-if></div>
+                  <sc-if value="{{ showAutoSteps }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:8px; background:#0a0e14; border:1px solid #21262d; border-radius:4px; max-height:180px; overflow-y:auto; padding:6px 8px">
+                      <div style="display:flex; gap:8px; font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; padding-bottom:4px; border-bottom:1px solid #21262d; margin-bottom:4px">
+                        <span style="width:32px">步骤</span><span style="min-width:40px">token</span><span style="margin-left:auto">context</span>
+                      </div>
+                      <sc-for list="{{ autoSteps }}" as="st" hint-placeholder-count="0">
+                        <div style="{{ st.rowStyle }}">
+                          <span style="{{ st.stepStyle }}">#{{ st.step }}</span>
+                          <span style="{{ st.tokenStyle }}">{{ st.token }}</span>
+                          <span style="{{ st.ctxStyle }}">{{ st.ctxLen }} tok</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- end left pair -->
+
+    <!-- RIGHT PANEL (360px) -->
+    <div style="width:360px; flex-shrink:0; border-left:1px solid #30363d; overflow-y:auto; display:flex; flex-direction:column; background:#0a0e14">
+
+      <!-- SYSTEM PROMPT -->
+      <div style="padding:12px 14px; border-bottom:1px solid #30363d" data-comment-anchor="b5098f1eb0-div">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:6px">SYSTEM PROMPT</div>
+        <textarea value="{{ sysPrompt }}" onChange="{{ updateSysPrompt }}" placeholder="你是一个专业的 AI 助手..." style="width:100%; padding:8px 10px; background:#0d1117; color:#8b949e; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.55; border:1px solid #30363d; border-radius:6px; height:68px; display:block; resize:vertical; outline:none"></textarea>
+      </div>
+
+      <!-- PARAMETERS -->
+      <div style="padding:12px 14px; border-bottom:1px solid #30363d">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:10px">参数配置 PARAMETERS</div>
+        <sc-for list="{{ sliders }}" as="sl" hint-placeholder-count="5">
+          <div style="margin-bottom:12px">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9">{{ sl.label }}</span>
+              <span style="{{ sl.valStyle }}">{{ sl.display }}</span>
+            </div>
+            <input type="range" min="{{ sl.min }}" max="{{ sl.max }}" step="{{ sl.step }}" value="{{ sl.val }}" onInput="{{ sl.onChange }}">
+            <div style="font-size:10px; color:#484f58; margin-top:3px">{{ sl.desc }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- PROBABILITY DISTRIBUTION -->
+      <div style="padding:12px 14px; border-bottom:1px solid #30363d">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:4px">下一 TOKEN 候选概率分布</div>
+        <div style="font-size:10px; color:#6e7681; margin-bottom:10px; font-family:'JetBrains Mono',monospace">拖动 Temperature / Top-P 滑块查看变化</div>
+        <sc-for list="{{ probDist }}" as="pd" hint-placeholder-count="15">
+          <div style="{{ pd.rowStyle }}">
+            <span style="{{ pd.topPLabelStyle }}">{{ pd.topPLabel }}</span>
+            <div style="display:flex; align-items:center; gap:6px; width:100%">
+              <span style="width:56px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:10px; color:{{ pd.tokenColor }}; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ pd.token }}</span>
+              <div style="flex:1; height:12px; background:#21262d; border-radius:2px; overflow:hidden">
+                <div style="{{ pd.barStyle }}"></div>
+              </div>
+              <span style="width:36px; font-family:'JetBrains Mono',monospace; font-size:10px; color:{{ pd.probColor }}; flex-shrink:0">{{ pd.probText }}</span>
+            </div>
+          </div>
+        </sc-for>
+        <div style="margin-top:8px; display:flex; gap:12px; flex-wrap:wrap">
+          <span style="font-size:9px; color:#6e7681; display:flex; align-items:center; gap:4px"><span style="width:8px; height:8px; border-radius:50%; background:#00ffa0; display:inline-block"></span>候选采样</span>
+          <span style="font-size:9px; color:#6e7681; display:flex; align-items:center; gap:4px"><span style="width:8px; height:8px; border-radius:50%; background:#30363d; display:inline-block"></span>Top-P 截断</span>
+          <span style="font-size:9px; color:#6e7681; display:flex; align-items:center; gap:4px"><span style="width:8px; height:8px; border-radius:50%; background:#ffa657; display:inline-block"></span>惩罚项影响</span>
+        </div>
+      </div>
+
+      <!-- METRICS -->
+      <div style="padding:12px 14px; border-bottom:1px solid #30363d">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:10px">性能 / 成本指标</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px">
+          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
+            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">TPS (tokens/sec)</div>
+            <div style="{{ tpsStyle }}">{{ tpsDisplay }}</div>
+          </div>
+          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
+            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">TTFT (首字延迟)</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:#79c0ff">{{ ttftDisplay }}<span style="font-size:11px; font-weight:400; color:#6e7681"> ms</span></div>
+          </div>
+          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
+            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">本次费用</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:#ffa657">{{ costDisplay }}</div>
+          </div>
+          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
+            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">输出 tokens</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:#d2a8ff">{{ outputTok }}</div>
+          </div>
+        </div>
+        <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:4px">Context 占用 {{ cPct }}%</div>
+        <div style="height:4px; background:#21262d; border-radius:2px; overflow:hidden">
+          <div style="{{ cBarStyle }}"></div>
+        </div>
+      </div>
+
+    </div><!-- end right panel -->
+  </div><!-- end main area -->
+</div><!-- end root -->
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    model: 'openai/gpt-4o',
+    toggles: { streaming: true, fc: false, cot: false, search: false },
+    params: { maxTokens: 512, temperature: 0.7, topP: 0.9, freqPenalty: 0.0, presPenalty: 0.0 },
+    pipelinePhase: 0,
+    streamingText: '',
+    changedParam: null,
+    sysPrompt: '你是一个专业的 AI 技术助手，请用简洁清晰的中文回答问题。',
+    history: [],
+    inputText: '用一句话解释什么是 Transformer',
+    metrics: { tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0, totalTokens: 128000 },
+    isRunning: false,
+    showAutoSteps: false,
+    autoSteps: [],
+    _runId: 0,
+    apiKey: '',
+    apiBaseUrl: '',
+    apiProvider: ''
+  };
+
+  _timers = [];
+  _paramTimer = null;
+
+  componentDidMount() {
+    try {
+      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
+      this.setState({ apiKey: s.apiKey || '', apiBaseUrl: s.baseUrl || '', apiProvider: s.selectedProvider || '' });
+    } catch(e) {}
+    window.addEventListener('storage', () => {
+      try {
+        const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
+        this.setState({ apiKey: s.apiKey || '', apiBaseUrl: s.baseUrl || '', apiProvider: s.selectedProvider || '' });
+      } catch(e) {}
+    });
+  }
+
+  componentWillUnmount() {
+    this._timers.forEach(t => { clearTimeout(t); clearInterval(t); });
+  }
+
+  _schedule(fn, ms) { const t = setTimeout(fn, ms); this._timers.push(t); return t; }
+  _tick(fn, ms) { const t = setInterval(fn, ms); this._timers.push(t); return t; }
+  _clearAll() { this._timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this._timers = []; }
+
+  _useRealApi() {
+    const { apiKey, apiProvider } = this.state;
+    return !!(apiKey && apiKey.trim());
+  }
+
+  handleRun() {
+    const { isRunning, inputText, history, metrics, sysPrompt } = this.state;
+    if (isRunning || !inputText.trim()) return;
+    this._clearAll();
+    const rid = Date.now();
+    const userMsg = { role: 'user', content: inputText, id: `u${rid}` };
+    const newHistory = [...history, userMsg];
+    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0 }, autoSteps: [], _runId: rid });
+
+    const useReal = this._useRealApi();
+    this._schedule(() => this.setState({ pipelinePhase: 2 }), 500);
+    this._schedule(() => this.setState({ pipelinePhase: 3 }), 1100);
+    this._schedule(() => {
+      this.setState(s => ({ pipelinePhase: 4, metrics: { ...s.metrics, inputTokens: useReal ? 0 : 28 } }));
+      if (useReal) {
+        this._streamReal(rid, newHistory);
+      } else {
+        this._streamDemo(rid);
+      }
+    }, useReal ? 1600 : 2400);
+  }
+
+  _streamDemo(rid) {
+    const { toggles } = this.state;
+    const ans = 'Transformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。';
+    if (!toggles.streaming) {
+      this._schedule(() => {
+        if (this.state._runId !== rid) return;
+        const am = { role: 'assistant', content: ans, id: `a${rid}` };
+        const outTok = Math.round(ans.length * 0.42);
+        this.setState(s => ({ isRunning: false, pipelinePhase: 5, streamingText: ans, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, ttft: 220, outputTokens: outTok, inputTokens: 28, contextUsed: s.metrics.contextUsed + outTok } }));
+      }, 600);
+      return;
+    }
+    let i = 0; const t0 = Date.now();
+    this.setState(s => ({ metrics: { ...s.metrics, ttft: Math.round(155 + Math.random() * 110) } }));
+    const iv = this._tick(() => {
+      if (this.state._runId !== rid) { clearInterval(iv); return; }
+      i = Math.min(i + (Math.random() < 0.3 ? 2 : 1), ans.length);
+      const tps = Math.min(Math.round(i / Math.max((Date.now() - t0) / 1000, 0.01) * 0.42), 81);
+      const outTok = Math.round(i * 0.42);
+      const newToken = ans.slice(Math.max(0, i - 2), i);
+      const shouldPush = outTok > 0 && outTok % 2 === 0;
+      this.setState(s => ({
+        streamingText: ans.slice(0, i),
+        metrics: { ...s.metrics, tps, outputTokens: outTok, inputTokens: 28 },
+        autoSteps: shouldPush ? [...s.autoSteps, { step: outTok, token: newToken, ctxLen: 28 + outTok }].slice(-40) : s.autoSteps
+      }));
+      if (i >= ans.length) {
+        clearInterval(iv);
+        const am = { role: 'assistant', content: ans, id: `a${rid}` };
+        this._schedule(() => {
+          if (this.state._runId !== rid) return;
+          this.setState(s => ({ isRunning: false, pipelinePhase: 5, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, contextUsed: s.metrics.contextUsed + outTok } }));
+        }, 350);
+      }
+    }, 32);
+  }
+
+  async _streamReal(rid, history) {
+    const { apiKey, apiBaseUrl, model, params, sysPrompt, toggles } = this.state;
+    const baseUrl = (apiBaseUrl && apiBaseUrl.trim()) ? apiBaseUrl.trim().replace(/\/$/, '') : 'https://openrouter.ai/api/v1';
+    const url = baseUrl + '/chat/completions';
+
+    const messages = [
+      { role: 'system', content: sysPrompt },
+      ...history.map(m => ({ role: m.role, content: m.content }))
+    ];
+
+    const body = {
+      model,
+      messages,
+      max_tokens: params.maxTokens,
+      temperature: params.temperature,
+      top_p: params.topP,
+      stream: true,
+    };
+
+    const t0 = Date.now();
+    let fullText = '';
+    let outTok = 0;
+    let ttftSet = false;
+
+    const _finish = (errMsg) => {
+      if (this.state._runId !== rid) return;
+      if (errMsg) {
+        const errMsg2 = errMsg;
+        this.setState(s => ({
+          isRunning: false, pipelinePhase: 5, streamingText: '',
+          history: [...s.history, { role: 'assistant', content: `❌ ${errMsg2}`, id: `err${rid}` }],
+          metrics: { ...s.metrics, tps: 0 }
+        }));
+      } else {
+        const am = { role: 'assistant', content: fullText, id: `a${rid}` };
+        this.setState(s => ({
+          isRunning: false, pipelinePhase: 5, streamingText: '',
+          history: [...s.history, am],
+          metrics: { ...s.metrics, tps: 0, contextUsed: s.metrics.contextUsed + outTok }
+        }));
+      }
+    };
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': location.href,
+          'X-Title': 'LLM 机制可视化'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let msg = `API 错误 ${res.status}`;
+        try { const j = JSON.parse(errText); msg = j.error?.message || j.message || msg; } catch(e) {}
+        _finish(msg); return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (this.state._runId !== rid) { reader.cancel(); return; }
+
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const data = trimmed.slice(5).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const json = JSON.parse(data);
+            const delta = json.choices?.[0]?.delta?.content;
+            if (delta) {
+              if (!ttftSet) {
+                ttftSet = true;
+                this.setState(s => ({ metrics: { ...s.metrics, ttft: Date.now() - t0 } }));
+              }
+              fullText += delta;
+              outTok++;
+              const elapsed = Math.max((Date.now() - t0) / 1000, 0.01);
+              const tps = Math.round(outTok / elapsed);
+              const shouldPush = outTok % 3 === 0;
+              this.setState(s => ({
+                streamingText: fullText,
+                metrics: { ...s.metrics, tps, outputTokens: outTok },
+                autoSteps: shouldPush ? [...s.autoSteps, { step: outTok, token: delta.slice(0, 4), ctxLen: messages.length * 8 + outTok }].slice(-40) : s.autoSteps
+              }));
+            }
+            if (json.usage) {
+              this.setState(s => ({ metrics: { ...s.metrics, inputTokens: json.usage.prompt_tokens || 0, outputTokens: json.usage.completion_tokens || outTok } }));
+            }
+          } catch(e) {}
+        }
+      }
+      _finish(null);
+    } catch(e) {
+      _finish(`请求失败: ${e.message}`);
+    }
+  }
+
+  changeParam(p, v) {
+    this.setState(s => ({ params: { ...s.params, [p]: parseFloat(v) }, changedParam: p }));
+    clearTimeout(this._paramTimer);
+    this._paramTimer = setTimeout(() => this.setState({ changedParam: null }), 1800);
+  }
+
+  _probDist(T, topP, fP, pP) {
+    const tks = ['是', '一种', '架构', '模型', '深度学习', 'Transformer', '神经网络', '它', '基于', '通过', '注意力', '由', '序列', '机制', '包含'];
+    const lg = [5.8, 5.2, 4.6, 4.1, 3.7, 3.2, 2.9, 2.5, 2.2, 1.9, 1.6, 1.3, 1.0, 0.7, 0.4];
+    const used = new Set(['是', 'Transformer']);
+    const t = Math.max(T, 0.01);
+    const sc = lg.map((l, i) => { let s = l / t; if (used.has(tks[i])) { s -= fP * 3; s -= pP * 2; } return s; });
+    const mx = Math.max(...sc);
+    const ex = sc.map(l => Math.exp(Math.min(l - mx, 30)));
+    const sm = ex.reduce((a, b) => a + b, 0);
+    const pr = ex.map(e => e / sm);
+    const items = tks.map((tk, i) => ({ tk, prob: pr[i], used: used.has(tk) })).sort((a, b) => b.prob - a.prob);
+    const maxP = items[0].prob;
+    let cum = 0, pastCut = false;
+    return items.map((item, i) => {
+      const prev = cum; cum += item.prob;
+      const cut = prev >= topP;
+      const first = !pastCut && cut; if (cut) pastCut = true;
+      const bw = Math.round((item.prob / maxP) * 100);
+      const bg = cut ? '#30363d' : item.used ? 'linear-gradient(90deg,#ffa657,#ff7b7266)' : i === 0 ? 'linear-gradient(90deg,#00ffa0,#00c88888)' : i < 4 ? `rgba(0,255,160,${0.6 - i * 0.1})` : `rgba(88,166,255,${Math.max(0.52 - i * 0.04, 0.08)})`;
+      return {
+        token: item.tk, prob: item.prob, isFirst: first,
+        probText: (item.prob * 100).toFixed(1) + '%',
+        tokenColor: cut ? '#484f58' : item.used ? '#ffa657' : i === 0 ? '#00ffa0' : '#c9d1d9',
+        probColor: cut ? '#3d4a55' : '#79c0ff',
+        topPLabel: first ? 'Top-P ▼' : '',
+        topPLabelStyle: { fontSize: '8px', color: '#58a6ff', fontFamily: '"JetBrains Mono",monospace', position: 'absolute', right: '0', top: '-14px', whiteSpace: 'nowrap', display: first ? 'block' : 'none' },
+        rowStyle: { position: 'relative', paddingTop: first ? '18px' : '0', marginBottom: '2px', borderTop: first ? '1px dashed rgba(88,166,255,0.3)' : 'none', marginTop: first ? '6px' : '0', transition: 'all 0.2s ease' },
+        barStyle: { width: `${cut ? Math.max(bw * 0.25, 2) : bw}%`, height: '100%', borderRadius: '2px', transition: 'width 0.22s cubic-bezier(0.4,0,0.2,1)', background: bg }
+      };
+    });
+  }
+
+  _fmtJSON(obj, hl) {
+    const pMap = { maxTokens: 'max_tokens', temperature: 'temperature', topP: 'top_p', freqPenalty: 'frequency_penalty', presPenalty: 'presence_penalty' };
+    const hKey = hl ? pMap[hl] : null;
+    const lines = JSON.stringify(obj, null, 2).split('\n');
+    return React.createElement('div', { style: { fontFamily: '"JetBrains Mono",monospace', fontSize: '11px', lineHeight: '1.65', color: '#e6edf3' } },
+      ...lines.map((line, i) => {
+        const m = line.match(/^(\s*)("[\w_]+")(\s*:\s*)(.+?)(,?)$/);
+        if (m) {
+          const [, sp, key, col, val, comma] = m;
+          const kn = key.slice(1, -1);
+          const isHL = kn === hKey;
+          const vc = val.startsWith('"') ? '#a5d6ff' : (val === 'true' || val === 'false' || val === 'null') ? '#ff7b72' : !isNaN(parseFloat(val.replace(',', ''))) ? '#79c0ff' : '#e6edf3';
+          return React.createElement('div', { key: i, style: { background: isHL ? 'rgba(0,255,160,0.1)' : 'transparent', borderRadius: '2px', transition: 'background 0.3s', paddingLeft: '2px', animation: isHL ? 'hlFlash 1.5s ease' : 'none' } },
+            React.createElement('span', { style: { color: '#30363d' } }, sp),
+            React.createElement('span', { style: { color: '#7ee787' } }, key),
+            React.createElement('span', { style: { color: '#6e7681' } }, col),
+            React.createElement('span', { style: { color: isHL ? '#00ffa0' : vc, fontWeight: isHL ? '600' : '400', transition: 'color 0.3s' } }, val),
+            React.createElement('span', { style: { color: '#6e7681' } }, comma)
+          );
+        }
+        return React.createElement('div', { key: i }, React.createElement('span', { style: { color: '#6e7681' } }, line));
+      })
+    );
+  }
+
+  _fmtMsgJSON(msgs) {
+    const roleColors = { system: '#d2a8ff', user: '#79c0ff', assistant: '#7ee787' };
+    return React.createElement('div', { style: { fontFamily: '"JetBrains Mono",monospace', fontSize: '11px', lineHeight: '1.6' } },
+      React.createElement('span', { style: { color: '#6e7681' } }, '['),
+      ...msgs.map((m, i) => React.createElement('div', { key: i, style: { marginLeft: '14px', borderLeft: `2px solid ${roleColors[m.role] || '#30363d'}`, paddingLeft: '8px', marginBottom: '4px' } },
+        React.createElement('div', null,
+          React.createElement('span', { style: { color: '#6e7681' } }, '{ '),
+          React.createElement('span', { style: { color: '#7ee787' } }, '"role"'),
+          React.createElement('span', { style: { color: '#6e7681' } }, ': '),
+          React.createElement('span', { style: { color: roleColors[m.role] || '#e6edf3' } }, `"${m.role}"`),
+          React.createElement('span', { style: { color: '#6e7681' } }, ', '),
+          React.createElement('span', { style: { color: '#7ee787' } }, '"content"'),
+          React.createElement('span', { style: { color: '#6e7681' } }, ': '),
+          React.createElement('span', { style: { color: '#a5d6ff' } }, `"${m.content.slice(0, 32)}${m.content.length > 32 ? '...' : ''}"`),
+          React.createElement('span', { style: { color: '#6e7681' } }, ` }${i < msgs.length - 1 ? ',' : ''}`)
+        )
+      )),
+      React.createElement('span', { style: { color: '#6e7681' } }, ']')
+    );
+  }
+
+  renderVals() {
+    const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning, apiKey, apiProvider } = this.state;
+    const useRealApi = this._useRealApi();
+    const apiStatusText = useRealApi ? `● LIVE · ${apiProvider || 'OpenRouter'}` : '○ 演示模式';
+    const apiStatusStyle = { fontSize: '10px', fontFamily: '"JetBrains Mono",monospace', color: useRealApi ? '#00ffa0' : '#484f58', border: `1px solid ${useRealApi ? 'rgba(0,255,160,0.3)' : '#30363d'}`, borderRadius: '4px', padding: '2px 8px', background: useRealApi ? 'rgba(0,255,160,0.06)' : 'transparent', animation: useRealApi ? 'none' : 'none', flexShrink: 0 };
+
+    const TS = (on) => ({ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 10px', background: on ? 'rgba(0,255,160,0.08)' : 'transparent', border: `1px solid ${on ? 'rgba(0,255,160,0.32)' : '#30363d'}`, borderRadius: '4px', cursor: 'pointer', color: on ? '#00ffa0' : '#6e7681', fontSize: '11px', fontFamily: '"JetBrains Mono",monospace', whiteSpace: 'nowrap', transition: 'all 0.15s ease' });
+
+    const phaseStatus = (n) => {
+      if (pipelinePhase < n) return ['PENDING', { fontFamily: '"JetBrains Mono",monospace', fontSize: '9px', color: '#484f58', border: '1px solid #30363d', padding: '1px 6px', borderRadius: '3px' }];
+      if (pipelinePhase === n) return ['ACTIVE', { fontFamily: '"JetBrains Mono",monospace', fontSize: '9px', color: '#00ffa0', border: '1px solid rgba(0,255,160,0.35)', padding: '1px 6px', borderRadius: '3px', animation: 'blink 1.5s ease infinite' }];
+      return ['DONE ✓', { fontFamily: '"JetBrains Mono",monospace', fontSize: '9px', color: '#7ee787', border: '1px solid rgba(126,231,135,0.25)', padding: '1px 6px', borderRadius: '3px' }];
+    };
+    const [p1t, p1s] = phaseStatus(1), [p2t, p2s] = phaseStatus(2), [p3t, p3s] = phaseStatus(3), [p4t, p4s] = phaseStatus(4);
+
+    const mkDot = (n) => {
+      const active = pipelinePhase >= n, curr = pipelinePhase === n;
+      return { width:'28px', height:'28px', borderRadius:'50%', background: curr ? 'rgba(0,255,160,0.15)' : active ? 'rgba(0,255,160,0.08)' : '#21262d', border:`2px solid ${curr ? '#00ffa0' : active ? 'rgba(0,255,160,0.45)' : '#30363d'}`, display:'flex', alignItems:'center', justifyContent:'center', color: active ? (curr ? '#00ffa0' : 'rgba(0,255,160,0.55)') : '#484f58', fontSize:'9px', fontFamily:'"JetBrains Mono",monospace', boxShadow: curr ? '0 0 10px rgba(0,255,160,0.3)' : 'none', transition:'all 0.4s ease', flexShrink:0 };
+    };
+    const mkLine = (n) => ({ width:'2px', flex:1, minHeight:'40px', background: pipelinePhase >= n ? 'rgba(0,255,160,0.4)' : '#21262d', transition:'background 0.5s ease', marginTop:'4px' });
+
+    const sysMsg = { role: 'system', content: sysPrompt };
+    const lastUser = [...history].reverse().find(m => m.role === 'user');
+    const msgsForPipeline = [sysMsg, ...(lastUser ? [lastUser] : [])];
+    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.slice(0, 28) + (m.content.length > 28 ? '...' : '') })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.fc ? { tools: [{ type: 'function', function: { name: 'get_weather' } }] } : {}), ...(toggles.search ? { web_search: true } : {}) };
+
+    const inputTokens = [
+      { text: '用', id: 14297, color: '#79c0ff' }, { text: '一句话', id: 28382, color: '#a5d6ff' },
+      { text: '解释', id: 22885, color: '#7ee787' }, { text: '什么', id: 20160, color: '#79c0ff' },
+      { text: '是', id: 31030, color: '#a5d6ff' }, { text: ' Trans', id: 8291, color: '#ffa657' }, { text: 'former', id: 13952, color: '#d2a8ff' }
+    ].map((tk, i) => ({
+      text: tk.text, idDisplay: `#${tk.id}`, idLabel: `Token ID: ${tk.id}`,
+      style: { display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', borderRadius: '4px', background: `${tk.color}18`, border: `1px solid ${tk.color}44`, color: tk.color, fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', animation: `tokenAppear 0.3s ease ${i * 0.07}s both`, userSelect: 'none', cursor: 'default' },
+      idStyle: { fontSize: '8px', color: `${tk.color}88` }
+    }));
+
+    const transformerLayers = ['Embedding', 'Layer 1', 'Layer 2', 'Layer 3', 'Layer 4', 'Output'].map((label, i) => ({
+      label,
+      barStyle: { position: 'relative', flex: 1, height: '18px', background: 'rgba(210,168,255,0.04)', borderRadius: '3px', overflow: 'hidden', border: '1px solid rgba(210,168,255,0.08)' },
+      sweepStyle: { position: 'absolute', top: 0, bottom: 0, width: '40%', background: 'linear-gradient(90deg,transparent,rgba(210,168,255,0.35),transparent)', animation: pipelinePhase === 3 ? `layerSweep 2s linear ${i * 0.25}s infinite` : 'none' },
+      dotsStyle: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '3px' }
+    }));
+
+    const probDist = this._probDist(params.temperature, params.topP, params.freqPenalty, params.presPenalty);
+
+    const cPct = Math.round((metrics.contextUsed + metrics.outputTokens) / metrics.totalTokens * 100);
+    const prices = {
+      'openai/gpt-4o': [5, 15], 'openai/gpt-4o-mini': [0.15, 0.6],
+      'anthropic/claude-sonnet-4': [3, 15], 'anthropic/claude-3-5-haiku': [0.8, 4],
+      'google/gemini-2.5-flash': [0.15, 0.6],
+      'deepseek/deepseek-chat-v3-0324': [0.27, 1.1], 'deepseek/deepseek-r1': [0.55, 2.19],
+      'meta-llama/llama-3.3-70b-instruct': [0.12, 0.3], 'qwen/qwen3-235b-a22b': [0.23, 0.9],
+      'gpt-4o': [5, 15], 'claude-3-5-sonnet': [3, 15], 'gemini-1.5-pro': [1.25, 5],
+    };
+    const [ip, op] = prices[model] || [1, 3];
+    const costUSD = (metrics.inputTokens / 1e6 * ip + metrics.outputTokens / 1e6 * op);
+    const costDisplay = metrics.inputTokens > 0 || metrics.outputTokens > 0
+      ? (useRealApi ? `$${costUSD.toFixed(6)}` : `¥ ${(costUSD * 7.2).toFixed(5)}`)
+      : '--';
+
+    const sliders = [
+      { key: 'temperature', label: 'Temperature', desc: '越高越随机发散，越低越确定专注', min: 0, max: 2, step: 0.01, val: params.temperature, fmt: v => v.toFixed(2) },
+      { key: 'topP', label: 'Top-P', desc: '核采样截断阈值，过滤低概率候选 token', min: 0.01, max: 1, step: 0.01, val: params.topP, fmt: v => v.toFixed(2) },
+      { key: 'maxTokens', label: 'Max Tokens', desc: '控制本次生成的最大输出长度', min: 16, max: 4096, step: 16, val: params.maxTokens, fmt: v => Math.round(v) },
+      { key: 'freqPenalty', label: 'Frequency Penalty', desc: '降低已出现 token 的重复概率', min: 0, max: 2, step: 0.01, val: params.freqPenalty, fmt: v => v.toFixed(2) },
+      { key: 'presPenalty', label: 'Presence Penalty', desc: '鼓励引入话题中未出现过的词汇', min: 0, max: 2, step: 0.01, val: params.presPenalty, fmt: v => v.toFixed(2) }
+    ].map(s => ({ ...s, display: s.fmt(s.val), onChange: (e) => this.changeParam(s.key, e.target.value), valStyle: { fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', color: changedParam === s.key ? '#00ffa0' : '#79c0ff', transition: 'color 0.3s ease', minWidth: '38px', textAlign: 'right', animation: changedParam === s.key ? 'tpsJump 0.2s ease' : 'none' } }));
+
+    const displayHistory = history.map(m => ({ ...m, roleLabel: m.role === 'user' ? '用户' : 'AI 助手', roleLabelStyle: { fontSize: '10px', color: m.role === 'user' ? '#6e7681' : 'rgba(0,255,160,0.5)', fontFamily: '"JetBrains Mono",monospace', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '2px' }, bubbleStyle: { background: m.role === 'user' ? '#21262d' : '#161b22', border: `1px solid ${m.role === 'user' ? '#30363d' : '#21262d'}`, borderRadius: m.role === 'user' ? '8px 8px 2px 8px' : '2px 8px 8px 8px', padding: '8px 12px', maxWidth: '92%', fontSize: '13px', color: m.role === 'user' ? '#e6edf3' : '#c9d1d9', lineHeight: '1.6', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start' } }));
+
+    const isPhasePending2 = pipelinePhase === 0;
+    const isPhasePending3 = pipelinePhase <= 1;
+    const isPhasePending4 = pipelinePhase <= 2;
+    const showPhase2 = pipelinePhase >= 2;
+    const showPhase3 = pipelinePhase >= 3;
+    const showPhase4 = pipelinePhase >= 4;
+    const showStreamingBubble = streamingText.length > 0;
+    const showLiveCursor = pipelinePhase === 4;
+    const liveOutputText = pipelinePhase === 5 ? '' : streamingText;
+
+    return {
+      model, setModel: (e) => this.setState({ model: e.target.value }),
+      apiStatusText, apiStatusStyle, useRealApi,
+      toggles,
+      toggleFC: () => this.setState(s => ({ toggles: { ...s.toggles, fc: !s.toggles.fc } })),
+      toggleCOT: () => this.setState(s => ({ toggles: { ...s.toggles, cot: !s.toggles.cot } })),
+      toggleSearch: () => this.setState(s => ({ toggles: { ...s.toggles, search: !s.toggles.search } })),
+      toggleFCStyle: TS(toggles.fc), toggleCOTStyle: TS(toggles.cot), toggleSearchStyle: TS(toggles.search),
+      sessionRounds: history.filter(m => m.role === 'user').length,
+      contextDisplay: `${(metrics.contextUsed + metrics.outputTokens).toLocaleString()} / ${metrics.totalTokens.toLocaleString()}`,
+      sysPrompt, updateSysPrompt: (e) => this.setState({ sysPrompt: e.target.value }),
+      displayHistory, noMessages: displayHistory.length === 0,
+      inputText, setInput: (e) => this.setState({ inputText: e.target.value }),
+      handleRun: () => this.handleRun(),
+      isRunning,
+      runBtnStyle: { padding: '7px 14px', borderRadius: '6px', cursor: isRunning ? 'not-allowed' : 'pointer', background: isRunning ? '#21262d' : '#00ffa0', color: isRunning ? '#6e7681' : '#0d1117', fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', fontWeight: '600', border: 'none', transition: 'all 0.2s ease', opacity: isRunning ? 0.7 : 1, flexShrink: 0 },
+      runBtnText: isRunning ? '◌ 运行中' : '▶ 运行',
+      streamingText, showStreamingBubble, showLiveCursor, liveOutputText,
+      streamStep: metrics.outputTokens || 0,
+      showAutoSteps: this.state.showAutoSteps,
+      toggleAutoSteps: () => this.setState(s => ({ showAutoSteps: !s.showAutoSteps })),
+      autoSteps: (this.state.autoSteps || []).map((s, i) => ({
+        ...s,
+        rowStyle: { display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 0', borderBottom: '1px solid #21262d', fontFamily: '"JetBrains Mono",monospace', fontSize: '10px', animation: i === (this.state.autoSteps.length - 1) ? 'slideIn 0.2s ease' : 'none' },
+        stepStyle: { color: '#484f58', width: '32px', flexShrink: 0 },
+        tokenStyle: { color: '#00ffa0', background: 'rgba(0,255,160,0.08)', border: '1px solid rgba(0,255,160,0.2)', borderRadius: '3px', padding: '0 5px', minWidth: '40px', textAlign: 'center' },
+        ctxStyle: { color: '#6e7681', marginLeft: 'auto' }
+      })),
+      inputTok: metrics.inputTokens || '--', outputTok: metrics.outputTokens || '--',
+      pipelinePhase,
+      isPhasePending2, isPhasePending3, isPhasePending4, showPhase2, showPhase3, showPhase4,
+      reqJsonEl: this._fmtJSON(reqObj, changedParam),
+      inputTokens, transformerLayers,
+      dotS1: mkDot(1), dotS2: mkDot(2), dotS3: mkDot(3), dotS4: mkDot(4),
+      lineS1: mkLine(2), lineS2: mkLine(3), lineS3: mkLine(4),
+      phase1StatusText: p1t, phase1StatusStyle: p1s,
+      phase2StatusText: p2t, phase2StatusStyle: p2s,
+      phase3StatusText: p3t, phase3StatusStyle: p3s,
+      phase4StatusText: p4t, phase4StatusStyle: p4s,
+      sliders, probDist,
+      tpsStyle: { fontFamily: '"JetBrains Mono",monospace', fontSize: '20px', fontWeight: '600', color: metrics.tps > 0 ? '#00ffa0' : '#484f58', animation: metrics.tps > 0 ? 'tpsJump 0.18s ease' : 'none' },
+      tpsDisplay: metrics.tps > 0 ? `${metrics.tps}` : '--',
+      ttftDisplay: metrics.ttft > 0 ? `${metrics.ttft}` : '--',
+      cPct, cBarStyle: { height: '100%', borderRadius: '2px', width: `${Math.max(cPct, 0.5)}%`, background: cPct > 80 ? '#ff7b72' : cPct > 60 ? '#ffa657' : '#00ffa0', transition: 'width 0.6s ease' },
+      costDisplay,
+    };
+  }
+}
+</script>
+</body>
+</html>

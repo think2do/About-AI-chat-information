@@ -62,6 +62,12 @@
       <span>黑话</span>
     </div>
   </a>
+  <a href="./Job.dc.html" style="text-decoration:none">
+    <div style="{{ navJob }}">
+      <span style="font-size:17px">💼</span>
+      <span>求职</span>
+    </div>
+  </a>
   <div onClick="{{ toggleSettings }}" style="margin-top:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:10px 0 12px; cursor:pointer; border-top:1px solid #21262d; color:#6e7681; font-size:9px; font-family:'JetBrains Mono',monospace; transition:color 0.15s">
     <span style="font-size:17px">⚙</span>
     <span>设置</span>
@@ -98,7 +104,7 @@
   </div>
 </sc-if>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:56,&quot;height&quot;:400},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chat&quot;,&quot;lab&quot;,&quot;code&quot;,&quot;jargon&quot;],&quot;default&quot;:&quot;chat&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:56,&quot;height&quot;:400},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chat&quot;,&quot;lab&quot;,&quot;code&quot;,&quot;jargon&quot;,&quot;job&quot;],&quot;default&quot;:&quot;chat&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
   state = {
     showSettings: false,
@@ -141,6 +147,7 @@ class Component extends DCLogic {
       navLab: NS('lab'),
       navCode: NS('code'),
       navJargon: NS('jargon'),
+      navJob: NS('job'),
       showSettings,
       toggleSettings: () => this.setState(s => ({ showSettings: !s.showSettings })),
       closeOnBg: (e) => { if (e.target === e.currentTarget) this.setState({ showSettings: false }); },

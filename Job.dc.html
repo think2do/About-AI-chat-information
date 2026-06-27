@@ -11,140 +11,48 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
-  <style>
-    @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .tag-scroll::-webkit-scrollbar { height: 4px; }
-    .tag-scroll::-webkit-scrollbar-track { background: transparent; }
-    .tag-scroll::-webkit-scrollbar-thumb { background: #21262d; border-radius: 2px; }
-  </style>
 </helmet>
 
 <div style="display:flex; height:100vh; background:#0d1117; color:#e6edf3; font-family:'Inter',sans-serif; overflow:hidden">
   <dc-import name="Nav" active="job" hint-size="56px,100%" style="flex-shrink:0"></dc-import>
 
-  <!-- Main content -->
   <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; background:#0a0e14">
+    <div style="padding:20px">
+      <div style="font-size:16px; color:#00ffa0; margin-bottom:12px">💼 面试题库 ({{ total }})</div>
 
-    <!-- Header -->
-    <div style="padding:16px 24px 0; flex-shrink:0">
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px">
-        <span style="font-size:20px">💼</span>
-        <span style="font-size:16px; font-weight:600; color:#e6edf3">面试题库</span>
-        <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-left:4px">{{ totalCount }} 题</span>
-      </div>
-
-      <!-- Tag bar -->
-      <div class="tag-scroll" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; border-bottom:1px solid #21262d">
-        <sc-for list="{{ tagList }}" as="tag" hint-placeholder-count="7">
-          <button onClick="{{ tag.select }}" style="{{ tag.style }}">
-            <span style="font-size:13px; margin-right:4px">{{ tag.emoji }}</span>
-            <span style="font-size:12px; white-space:nowrap">{{ tag.label }}</span>
-            <span style="font-size:10px; opacity:0.5; margin-left:3px">({{ tag.count }})</span>
+      <div style="display:flex; gap:8px; margin-bottom:16px">
+        <sc-for list="{{ tags }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.click }}" style="{{ t.s }}">
+            {{ t.label }} ({{ t.n }})
           </button>
         </sc-for>
       </div>
-    </div>
 
-    <!-- Body: question list + answer panel -->
-    <div style="flex:1; display:flex; overflow:hidden">
-
-      <!-- Left: Question list -->
-      <div style="width:320px; flex-shrink:0; border-right:1px solid #21262d; overflow-y:auto; padding:8px 0">
-        <sc-if value="{{ noQuestions }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; gap:8px; opacity:0.4">
-            <span style="font-size:28px">📭</span>
-            <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#6e7681">该分类暂无题目</span>
-          </div>
-        </sc-if>
-        <sc-for list="{{ questionList }}" as="q" hint-placeholder-count="12">
-          <div onClick="{{ q.select }}" style="{{ q.cardStyle }}">
-            <div style="display:flex; align-items:flex-start; gap:8px">
-              <span style="font-size:11px; color:#484f58; font-family:'JetBrains Mono',monospace; flex-shrink:0; margin-top:1px">{{ q.idx }}</span>
-              <div style="flex:1; min-width:0">
-                <div style="font-size:12px; color:#c9d1d9; line-height:1.5; margin-bottom:4px">{{ q.title }}</div>
-                <div style="display:flex; gap:6px; align-items:center">
-                  <span style="font-size:10px; color:#484f58; font-family:'JetBrains Mono',monospace">{{ q.difficulty }}</span>
-                  <span style="font-size:10px; color:#484f58">·</span>
-                  <span style="font-size:10px; color:#484f58">{{ q.company }}</span>
-                </div>
-              </div>
-              <sc-if value="{{ q.hasAnswer }}" hint-placeholder-val="{{ false }}">
-                <span style="font-size:10px; color:#00ffa0; flex-shrink:0">✓</span>
-              </sc-if>
+      <div style="display:flex; gap:0; height:60vh">
+        <div style="width:280px; border-right:1px solid #21262d; overflow-y:auto">
+          <sc-for list="{{ items }}" as="q" hint-placeholder-count="5">
+            <div onClick="{{ q.click }}" style="{{ q.s }}">
+              <div style="font-size:12px; color:#c9d1d9">{{ q.title }}</div>
+              <div style="font-size:10px; color:#484f58; margin-top:2px">{{ q.diff }} · {{ q.company }}</div>
             </div>
-          </div>
-        </sc-for>
-      </div>
+          </sc-for>
+        </div>
 
-      <!-- Right: Answer detail -->
-      <div style="flex:1; overflow-y:auto; padding:20px 28px">
-        <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60%; gap:12px; opacity:0.4">
-            <span style="font-size:36px">💼</span>
-            <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6e7681; text-align:center">选择一道题目查看参考回答</span>
-            <span style="font-size:11px; color:#484f58; text-align:center; max-width:240px">左侧为常见面试问题，点击即可查看回答参考与解析要点</span>
-          </div>
-        </sc-if>
-        <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
-          <div style="animation:fadeUp 0.2s ease; max-width:680px">
-            <!-- Question header -->
-            <div style="margin-bottom:16px">
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
-                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#00ffa0; background:rgba(0,255,160,0.08); padding:2px 8px; border-radius:4px">{{ detail.difficulty }}</span>
-                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#6e7681">{{ detail.company }}</span>
-                <sc-for list="{{ detail.tags }}" as="t" hint-placeholder-count="3">
-                  <span style="font-size:10px; color:#484f58; background:#161b22; border:1px solid #21262d; padding:1px 6px; border-radius:3px">{{ t }}</span>
-                </sc-for>
-              </div>
-              <div style="font-size:16px; font-weight:600; color:#e6edf3; line-height:1.6">❓ {{ detail.title }}</div>
+        <div style="flex:1; padding:16px 24px; overflow-y:auto">
+          <sc-if value="{{ noPick }}" hint-placeholder-val="{{ true }}">
+            <div style="opacity:0.4; text-align:center; padding-top:60px">
+              <span style="font-size:32px">💼</span>
+              <div style="font-size:12px; color:#6e7681; margin-top:8px">选择一道题</div>
             </div>
-
-            <div style="height:1px; background:#21262d; margin:16px 0"></div>
-
-            <!-- Answer -->
-            <div style="margin-bottom:20px">
-              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#00ffa0; letter-spacing:0.06em; margin-bottom:10px">💡 参考回答</div>
-              <sc-for list="{{ detail.answerParagraphs }}" as="p" hint-placeholder-count="6">
-                <div style="font-size:13px; color:#c9d1d9; line-height:1.85; margin-bottom:10px">{{ p }}</div>
-              </sc-for>
-            </div>
-
-            <!-- Code block if any -->
-            <sc-if value="{{ detail.hasCode }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-bottom:20px; background:#161b22; border:1px solid #30363d; border-radius:6px; overflow:hidden">
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 12px; background:#21262d; border-bottom:1px solid #30363d">
-                  <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58">{{ detail.codeLabel }}</span>
-                  <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#6e7681">{{ detail.codeLines }} 行</span>
-                </div>
-                <pre style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#e6edf3; line-height:1.7; padding:12px 14px; margin:0; overflow-x:auto; white-space:pre-wrap">{{ detail.code }}</pre>
-              </div>
-            </sc-if>
-
-            <!-- Key points -->
-            <div style="margin-bottom:20px; padding:14px 16px; background:rgba(255,166,87,0.04); border:1px solid rgba(255,166,87,0.15); border-radius:6px">
-              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#ffa657; letter-spacing:0.06em; margin-bottom:10px">🔑 解析要点</div>
-              <sc-for list="{{ detail.keyPoints }}" as="kp" hint-placeholder-count="5">
-                <div style="display:flex; gap:8px; margin-bottom:8px">
-                  <span style="color:#ffa657; font-size:11px; flex-shrink:0">▸</span>
-                  <span style="font-size:12px; color:#8b949e; line-height:1.7">{{ kp }}</span>
-                </div>
-              </sc-for>
-            </div>
-
-            <!-- Related topics -->
-            <sc-if value="{{ detail.hasRelated }}" hint-placeholder-val="{{ false }}">
-              <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; letter-spacing:0.06em; margin-bottom:8px">🔗 关联考察点</div>
-                <div style="display:flex; flex-wrap:wrap; gap:6px">
-                  <sc-for list="{{ detail.related }}" as="rel" hint-placeholder-count="4">
-                    <span style="font-size:11px; color:#6e7681; background:#161b22; border:1px solid #30363d; border-radius:4px; padding:3px 10px">{{ rel }}</span>
-                  </sc-for>
-                </div>
-              </div>
-            </sc-if>
-          </div>
-        </sc-if>
+          </sc-if>
+          <sc-if value="{{ picked }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:16px; font-weight:600; color:#e6edf3; margin-bottom:16px">❓ {{ pick.title }}</div>
+            <div style="font-size:10px; color:#00ffa0; font-family:'JetBrains Mono',monospace; margin-bottom:10px">💡 参考回答</div>
+            <sc-for list="{{ pick.paragraphs }}" as="p" hint-placeholder-count="3">
+              <div style="font-size:13px; color:#c9d1d9; line-height:1.8; margin-bottom:8px">{{ p }}</div>
+            </sc-for>
+          </sc-if>
+        </div>
       </div>
     </div>
   </div>
@@ -152,486 +60,65 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = {
-    selectedTag: 'all',
-    selectedQ: null
-  };
+  state = { tag: 'all', sel: null };
 
   renderVals() {
-    const { selectedTag, selectedQ } = this.state;
+    const { tag, sel } = this.state;
 
-    // ── Question bank ──
-    const QUESTIONS = [
-      // 前端开发
-      { id:'fe1', tag:'前端开发', title:'请解释一下 React 中虚拟 DOM 的工作原理，以及它如何提升性能', difficulty:'中等', company:'字节跳动', tags:['React','性能优化'],
-        answer: '虚拟 DOM（Virtual DOM）是 React 在内存中维护的一个轻量级 JavaScript 对象树，它是对真实 DOM 的抽象表示。\n\n工作流程：\n1. 当组件状态变化时，React 首先在内存中创建一棵新的虚拟 DOM 树\n2. 通过 Diff 算法（Reconciliation）对比新旧两棵虚拟 DOM 树，找出需要更新的最小差异\n3. 将差异批量应用到真实 DOM 上，避免频繁的 DOM 操作\n\n性能提升的原因：\n- 真实 DOM 操作昂贵，虚拟 DOM 在 JS 引擎中计算，成本低\n- 批量更新：多次 setState 会被合并为一次 DOM 更新\n- 最小化更新：只更新发生变化的部分节点\n- Fiber 架构使得更新可中断，高优先级任务可插队',
-        code: `// 虚拟 DOM 节点的简化表示
-const vdom = {
-  type: 'div',
-  props: { className: 'container' },
-  children: [
-    { type: 'h1', props: {}, children: ['Hello'] },
-    { type: 'p', props: {}, children: ['Virtual DOM'] }
-  ]
-};
-
-// React 的 Diff 策略（简化）
-function diff(oldVNode, newVNode) {
-  // 类型不同 → 直接替换整棵子树
-  if (oldVNode.type !== newVNode.type) {
-    return { type: 'REPLACE', newVNode };
-  }
-  // 类型相同 → 更新属性
-  const propPatches = diffProps(oldVNode.props, newVNode.props);
-  // 递归对比子节点（key 用于优化）
-  const childPatches = diffChildren(oldVNode.children, newVNode.children);
-  return { type: 'UPDATE', propPatches, childPatches };
-}`,
-        codeLabel:'VDOM diff 示意', codeLines:18,
-        keyPoints: [
-          'React 使用虚拟 DOM 作为中间层，减少对真实 DOM 的直接操作',
-          'Diff 算法的时间复杂度从 O(n³) 优化到 O(n)，依赖两个假设：同级比较、类型判断',
-          'key 属性帮助 React 识别列表中的元素是否改变、添加或删除',
-          'Fiber 架构（React 16+）将调和过程拆分为可中断的工作单元，使渲染不会阻塞用户输入',
-          '面试加分：提到 React 18 的自动批处理（Automatic Batching）和并发特性（Suspense、Transition）'
-        ],
-        related:['Fiber 架构','Reconciliation','React Hooks','浏览器重排与重绘']
-      },
-      { id:'fe2', tag:'前端开发', title:'说说你对 JavaScript 事件循环（Event Loop）的理解', difficulty:'中等', company:'阿里巴巴', tags:['JavaScript','异步'],
-        answer: 'JavaScript 是单线程语言，事件循环是其实现异步非阻塞的核心机制。\n\n运行机制：\n1. 同步代码在调用栈（Call Stack）中直接执行\n2. 遇到异步操作（setTimeout、fetch、事件监听等）时，交给 Web APIs 处理\n3. Web API 完成后，回调进入任务队列\n   - 微任务队列（Microtask）：Promise.then/catch/finally、MutationObserver、queueMicrotask\n   - 宏任务队列（Macrotask）：setTimeout、setInterval、I/O、UI rendering\n4. 调用栈清空后，先清空所有微任务，再从宏任务队列取一个执行\n5. 重复循环\n\n关键点：微任务优先级高于宏任务，微任务执行期间新添加的微任务也会在本轮清空。',
-        code: `console.log('1');  // 同步
-
-setTimeout(() => console.log('2'), 0);  // 宏任务
-
-Promise.resolve()
-  .then(() => {
-    console.log('3');  // 微任务
-    return Promise.resolve();
-  })
-  .then(() => console.log('4'));  // 微任务中的微任务
-
-console.log('5');  // 同步
-
-// 输出顺序：1 → 5 → 3 → 4 → 2`,
-        codeLabel:'经典事件循环输出题', codeLines:14,
-        keyPoints: [
-          'JS 单线程但通过 event loop 实现异步非阻塞',
-          '微任务（microtask）优先于宏任务（macrotask）执行',
-          'async/await 本质是 Promise 的语法糖，await 后面的代码相当于 .then() 中的微任务',
-          'Node.js 的事件循环有 6 个阶段（timers → pending callbacks → idle/prepare → poll → check → close），与浏览器不同',
-          'requestAnimationFrame 在浏览器渲染前执行，适合做动画'
-        ],
-        related:['Promise 原理','async/await','Node.js 事件循环','requestAnimationFrame']
-      },
-      { id:'fe3', tag:'前端开发', title:'请解释浏览器从输入 URL 到页面渲染完成的完整过程', difficulty:'中等', company:'腾讯', tags:['浏览器','网络'],
-        answer: '这是一个经典的考察前端综合能力的问题，可以从以下几个阶段回答：\n\n1. URL 解析：浏览器判断是 URL 还是搜索内容，对 URL 进行编码\n2. DNS 查询：浏览器缓存 → 系统 hosts → 路由器缓存 → ISP DNS 服务器，逐级递归查询域名对应的 IP\n3. TCP 连接：三次握手建立连接（HTTPS 还需 TLS 握手）\n4. HTTP 请求：发送请求报文（请求行、请求头、请求体）\n5. 服务器处理并返回响应\n6. 浏览器解析：\n   - HTML → DOM 树\n   - CSS → CSSOM 树\n   - 合并为 Render Tree\n   - Layout（回流）：计算每个节点的几何位置\n   - Paint（重绘）：绘制像素\n   - Composite：合成图层\n7. JavaScript 加载与执行（可能阻塞解析）',
-        code: `<!-- 优化关键渲染路径 -->
-<!-- async: 下载不阻塞，下载完立即执行（适合独立脚本） -->
-<script async src="analytics.js"><\/script>
-
-<!-- defer: 下载不阻塞，DOM 解析完后按顺序执行 -->
-<script defer src="app.js"><\/script>
-
-<!-- preload: 提前加载关键资源 -->
-<link rel="preload" href="font.woff2" as="font" crossorigin>
-
-<!-- prefetch: 空闲时预加载未来可能用到的资源 -->
-<link rel="prefetch" href="next-page.js">`,
-        codeLabel:'关键渲染路径优化技巧', codeLines:11,
-        keyPoints: [
-          'DNS 查询耗时约 20-120ms，可通过 dns-prefetch 优化',
-          'CSS 会阻塞渲染（Render Tree 需要 CSSOM），JS 会阻塞 HTML 解析',
-          '重排（Reflow）代价高：改变几何属性 → 重新布局；重绘（Repaint）代价较低：只改变外观',
-          '使用 transform/opacity 做动画只触发 Composite，跳过 Layout 和 Paint，性能最优',
-          '关键渲染路径优化：减少关键资源数量、大小、往返次数'
-        ],
-        related:['HTTP 协议','DNS 解析','浏览器渲染机制','性能优化']
-      },
-      { id:'fe4', tag:'前端开发', title:'Vue 的响应式原理是什么？与 React 有什么根本区别？', difficulty:'中等', company:'美团', tags:['Vue','响应式','框架对比'],
-        answer: 'Vue 2 使用 Object.defineProperty 劫持对象属性的 getter/setter；Vue 3 升级为 Proxy，可以拦截更多操作（新增属性、删除属性、数组索引变更等）。\n\n工作流程：\n1. 组件渲染时将数据访问记录为依赖（依赖收集）\n2. 数据变化时通知所有依赖该数据的组件（派发更新）\n3. 组件收到通知后重新渲染（异步批量更新）\n\n与 React 的根本区别：\n- Vue 是"响应式推"（push-based）：数据变化精确知道哪些组件需要更新\n- React 是"状态拉"（pull-based）：setState 后从根开始自上而下重新计算（配合虚拟 DOM diff 优化）\n- Vue 可以做到组件级别的精确更新，React 需要 useMemo、memo 等手动优化\n- 但 React 的不可变数据模式更利于调试和时间旅行',
-        code: `// Vue 3 响应式核心简化实现
-function reactive(target) {
-  return new Proxy(target, {
-    get(obj, key, receiver) {
-      const val = Reflect.get(obj, key, receiver);
-      // 依赖收集
-      track(obj, key);
-      // 深层响应式
-      return typeof val === 'object' ? reactive(val) : val;
-    },
-    set(obj, key, val, receiver) {
-      const old = obj[key];
-      const result = Reflect.set(obj, key, val, receiver);
-      if (old !== val) {
-        // 派发更新
-        trigger(obj, key);
-      }
-      return result;
-    }
-  });
-}`,
-        codeLabel:'Vue 3 响应式核心（Proxy）', codeLines:20,
-        keyPoints: [
-          'Vue 3 Proxy 相比 Vue 2 defineProperty：支持数组索引、新增删除属性、性能更好',
-          '依赖收集发生在组件 render 函数执行期间，形成组件 → 数据的依赖图',
-          'Vue 的 computed 和 watch 都基于响应式系统，computed 有缓存、惰性求值',
-          'React 偏向函数式编程（不可变数据），Vue 偏向声明式（可变数据 + 响应式）',
-          '实际选择取决于团队偏好和项目需求，性能差异在大部分场景下可忽略'
-        ],
-        related:['Proxy vs defineProperty','React Fiber','computed 原理','MVVM 模式']
-      },
-
-      // 算法 & 数据结构
-      { id:'alg1', tag:'算法', title:'请实现一个 LRU（最近最少使用）缓存淘汰算法', difficulty:'中等', company:'字节跳动', tags:['数据结构','设计'],
-        answer: 'LRU（Least Recently Used）缓存是一种常见的缓存淘汰策略：当缓存满时，淘汰最久未使用的数据。\n\n最优实现：使用哈希表 + 双向链表，实现 O(1) 的读写时间复杂度。\n- 哈希表：存储 key → 链表节点的映射，实现 O(1) 查找\n- 双向链表：维护访问顺序，最近使用的在头部，最久未使用的在尾部\n\n操作逻辑：\n- get(key)：查哈希表，找到节点后将其移到链表头部\n- put(key, value)：如果 key 存在则更新并移到头部；如果不存在则插入头部，容量超限则删除尾部节点',
-        code: `class LRUCache {
-  constructor(capacity) {
-    this.capacity = capacity;
-    this.map = new Map(); // key → Node
-    this.head = { prev: null, next: null };
-    this.tail = { prev: null, next: null };
-    this.head.next = this.tail;
-    this.tail.prev = this.head;
-  }
-
-  _moveToHead(node) {
-    this._remove(node);
-    this._add(node);
-  }
-
-  _remove(node) {
-    node.prev.next = node.next;
-    node.next.prev = node.prev;
-  }
-
-  _add(node) {
-    node.next = this.head.next;
-    node.prev = this.head;
-    this.head.next.prev = node;
-    this.head.next = node;
-  }
-
-  get(key) {
-    const node = this.map.get(key);
-    if (!node) return -1;
-    this._moveToHead(node);
-    return node.value;
-  }
-
-  put(key, value) {
-    const node = this.map.get(key);
-    if (node) {
-      node.value = value;
-      this._moveToHead(node);
-    } else {
-      const newNode = { key, value, prev: null, next: null };
-      this.map.set(key, newNode);
-      this._add(newNode);
-      if (this.map.size > this.capacity) {
-        const tail = this.tail.prev;
-        this._remove(tail);
-        this.map.delete(tail.key);
-      }
-    }
-  }
-}`,
-        codeLabel:'LRU Cache O(1) 实现', codeLines:45,
-        keyPoints: [
-          '使用 Map + 双向链表的组合数据结构，保证 get/put 都是 O(1)',
-          '双向链表维护访问顺序，Map 提供 O(1) 的 key 查找',
-          '哨兵节点（head/tail dummy）简化边界处理',
-          '变体：LFU（最不经常使用）需要额外维护频率计数；LRU-K 记录最近 K 次访问',
-          'JavaScript 的 Map 本身记住插入顺序，面试时可先用 new Map() 简化实现，再优化'
-        ],
-        related:['LFU 算法','哈希表','双向链表','浏览器缓存策略']
-      },
-      { id:'alg2', tag:'算法', title:'给定一个无序数组，找出其中第 K 大的元素（要求优于 O(n log n)）', difficulty:'中等', company:'阿里巴巴', tags:['快速选择','堆'],
-        answer: '这是一道高频算法题，考察对排序和分治思想的理解。\n\n解法一：快速选择（QuickSelect）\n- 基于快速排序的分区思想，平均 O(n)，最坏 O(n²)\n- 每次分区后判断 pivot 的位置与 target 的关系，只递归一侧\n\n解法二：最小堆\n- 维护大小为 K 的最小堆，遍历数组\n- 时间复杂度 O(n log k)，当 k 较小时很高效\n\n解法三：计数排序（适合数据范围小的情况）\n\n面试中通常首选快速选择，因为它平均 O(n) 且不依赖额外空间。',
-        code: `// 快速选择 — 平均 O(n)
-function findKthLargest(nums, k) {
-  // 第 K 大 = 第 (n - k) 小（0-indexed）
-  const target = nums.length - k;
-
-  function quickSelect(left, right) {
-    const pivot = nums[right];
-    let p = left;
-    for (let i = left; i < right; i++) {
-      if (nums[i] <= pivot) {
-        [nums[i], nums[p]] = [nums[p], nums[i]];
-        p++;
-      }
-    }
-    [nums[p], nums[right]] = [nums[right], nums[p]];
-
-    if (p === target) return nums[p];
-    if (p < target) return quickSelect(p + 1, right);
-    return quickSelect(left, p - 1);
-  }
-
-  return quickSelect(0, nums.length - 1);
-}`,
-        codeLabel:'快速选择算法', codeLines:25,
-        keyPoints: [
-          '快速选择是快速排序的变形，每次只递归一边，平均 O(n)',
-          '最小堆方案适合 Top K 场景（K 较小），利用堆的插入/删除都是 O(log k)',
-          '快排最坏 O(n²) 可通过随机 pivot 优化到期望 O(n)',
-          '如果数据量极大（内存放不下），使用外部排序或 MapReduce 的分治思想',
-          '变体：找出前 K 大的所有元素、流式数据的第 K 大、两个有序数组的中位数'
-        ],
-        related:['快速排序','堆排序','Top K 问题','分治算法']
-      },
-      { id:'alg3', tag:'算法', title:'手写一个防抖（debounce）和节流（throttle）函数', difficulty:'简单', company:'腾讯', tags:['JavaScript','手写'],
-        answer: '防抖（Debounce）：在事件被触发 n 秒后再执行回调，如果这 n 秒内又被触发，则重新计时。\n典型场景：搜索框输入联想、窗口 resize、表单验证。\n\n节流（Throttle）：规定在一个单位时间内，只能触发一次函数执行。如果这个单位时间内触发多次，只有一次生效。\n典型场景：滚动事件、鼠标移动、按钮防重复点击。\n\n核心区别：防抖是"等稳定后再执行"，节流是"固定频率执行"。',
-        code: `// 防抖（含 leading 选项）
-function debounce(fn, delay, leading = false) {
-  let timer = null;
-  return function (...args) {
-    if (leading && !timer) {
-      fn.apply(this, args);
-    }
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (!leading) fn.apply(this, args);
-      timer = null;
-    }, delay);
-  };
-}
-
-// 节流（时间戳 + 定时器，首尾都能触发）
-function throttle(fn, delay) {
-  let last = 0, timer = null;
-  return function (...args) {
-    const now = Date.now();
-    if (now - last >= delay) {
-      fn.apply(this, args);
-      last = now;
-    } else {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        fn.apply(this, args);
-        last = Date.now();
-      }, delay - (now - last));
-    }
-  };
-}`,
-        codeLabel:'debounce & throttle 完整实现', codeLines:28,
-        keyPoints: [
-          'debounce 的 leading 选项支持首次立即执行，trailing 是默认延迟执行',
-          'throttle 需要兼顾首尾，只用时间戳或只用定时器都有缺陷',
-          'React 中可使用 useMemo/useCallback 配合 useRef 避免闭包陷阱',
-          '实际项目中推荐直接使用 lodash 的 debounce/throttle，但面试要能手写',
-          'requestAnimationFrame 也是一种节流（约 16ms/次），适合做动画'
-        ],
-        related:['闭包','requestAnimationFrame','React useEffect 清理','lodash 源码分析']
-      },
-
-      // 系统设计
-      { id:'sd1', tag:'系统设计', title:'设计一个短链接系统（如 TinyURL），支持高并发读写', difficulty:'困难', company:'字节跳动', tags:['分布式','设计模式'],
-        answer: '短链接系统的核心是将长 URL 映射为一个短的唯一标识符。\n\n核心设计要点：\n\n1. ID 生成策略\n   - 哈希算法：MD5/SHA256 取前 7 位 + 冲突检测，简单但有碰撞风险\n   - 自增 ID + 62 进制编码：数据库自增 ID 转为 [a-zA-Z0-9] 的 7 位短码，无碰撞\n   - 分布式 ID 生成器（Snowflake 等）：适合多机房场景\n\n2. 存储设计\n   - 关系型 DB（MySQL）+ Redis 缓存层（热点 URL）\n   - KV 存储（如 DynamoDB、TiKV）适合高并发场景\n\n3. 高并发优化\n   - CDN 缓存 301 重定向响应\n   - 预生成短码池（减少实时计算）\n   - 读写分离、分库分表（按短码前缀）\n\n4. 额外功能\n   - 过期策略、访问统计、自定义短码、防滥用（限流）',
-        code: `// ID 生成：自增 ID → 62 进制短码
-const BASE62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-function encode(id) {
-  let shortUrl = '';
-  while (id > 0) {
-    shortUrl = BASE62[id % 62] + shortUrl;
-    id = Math.floor(id / 62);
-  }
-  return shortUrl.padStart(7, '0'); // 固定 7 位
-}
-
-function decode(shortUrl) {
-  let id = 0;
-  for (const c of shortUrl) {
-    id = id * 62 + BASE62.indexOf(c);
-  }
-  return id;
-}
-// 7 位 62 进制可表示 62^7 ≈ 3.5 万亿个短链接`,
-        codeLabel:'62 进制短码编码/解码', codeLines:18,
-        keyPoints: [
-          '62 进制编码可表示 3.5 万亿短链接（7 位），远超需求',
-          '预生成短码池可提升写入吞吐，避免每次生成都查库',
-          '301（永久）vs 302（临时）重定向：选 301 利于 SEO 和缓存',
-          '热点 URL 用 Redis 缓存，命中率可达 95%+',
-          '限流策略：令牌桶 / 漏桶算法，防止恶意批量生成'
-        ],
-        related:['Snowflake 算法','一致性哈希','布隆过滤器','限流算法']
-      },
-      { id:'sd2', tag:'系统设计', title:'如何设计一个实时聊天系统（如微信/WhatsApp）', difficulty:'困难', company:'腾讯', tags:['实时通信','分布式'],
-        answer: '实时聊天系统需要解决消息的可靠传输、存储、推送和在线状态管理。\n\n核心模块：\n\n1. 通信协议\n   - WebSocket：长连接，全双工，适合实时消息推送\n   - 备用降级：SSE/Long Polling（网络环境差时）\n\n2. 消息流转\n   - 发送方 → 消息服务 → 消息队列（Kafka）→ 接收方在线推送 / 离线存储\n   - 消息去重：使用客户端生成的唯一 msgId\n   - 消息排序：服务端时间戳 + 序列号（解决时钟偏差）\n\n3. 存储设计\n   - 消息：时序数据库（HBase/Cassandra）或分片 MySQL\n   - 会话列表：Redis（每个用户一个 sorted set）\n   - 附件/图片：对象存储（S3/OSS）+ CDN\n\n4. 在线状态\n   - 心跳检测（30s 间隔，3 次失败判定离线）\n   - 状态变更通过发布订阅推送给好友\n\n5. 扩展性\n   - 按 userId 哈希分片\n   - 连接网关层无状态，可水平扩展',
-        code: `// 消息发送的简化流程
-async function sendMessage(from, to, content) {
-  const msgId = generateUUID(); // 客户端生成，用于去重
-
-  // 1. 写入消息队列（异步解耦）
-  await kafka.send('chat-messages', {
-    msgId, from, to, content,
-    timestamp: Date.now()
-  });
-
-  // 2. 如果接收方在线，通过 WebSocket 实时推送
-  const conn = connectionManager.get(to);
-  if (conn && conn.isAlive()) {
-    conn.send({ type: 'new_msg', msgId, from, content });
-  }
-
-  // 3. 消息持久化（异步批写）
-  await messageStore.save({ msgId, from, to, content });
-
-  // 4. 更新会话列表（双方）
-  await sessionStore.updateLastMsg(from, to, { msgId, content });
-  await sessionStore.updateLastMsg(to, from, { msgId, content });
-}`,
-        codeLabel:'消息发送流程（简化）', codeLines:24,
-        keyPoints: [
-          'WebSocket 长连接管理：心跳保活、断线重连、连接迁移',
-          '消息可靠性：ACK 确认机制 + 失败重试 + 接收方去重',
-          '消息顺序一致性：Lamport 逻辑时钟或向量时钟',
-          '离线消息拉取：用户上线后拉取上次已读 seqId 之后的消息',
-          '群聊的扩散模型：写扩散（小群）vs 读扩散（大群），混合策略为业界最佳实践'
-        ],
-        related:['WebSocket 协议','Kafka 消息队列','分布式 ID 生成','心跳机制']
-      },
-
-      // 计算机基础
-      { id:'cs1', tag:'计算机基础', title:'进程和线程的区别是什么？协程又是什么？', difficulty:'中等', company:'美团', tags:['操作系统'],
-        answer: '这是操作系统中最基础也是最重要的概念之一。\n\n进程（Process）：\n- 操作系统资源分配的最小单位\n- 拥有独立的内存空间、文件描述符、信号处理器\n- 进程间通信（IPC）需要管道、消息队列、共享内存等机制\n- 上下文切换开销大（需要切换页表、刷新 TLB）\n\n线程（Thread）：\n- CPU 调度的最小单位\n- 同一进程内的线程共享内存空间和资源\n- 线程间通信方便（直接读写共享内存）\n- 上下文切换开销比进程小\n\n协程（Coroutine）：\n- 用户态的"轻量级线程"，由程序自身调度，不经过操作系统\n- 切换成本极低（只切换寄存器和栈），可在用户态完成\n- Go 的 goroutine、Python 的 async/await、Kotlin 的协程都是协程的实现\n- 适合 IO 密集型任务，但不是真正的并行（受限于单线程）',
-        code: `// Go goroutine 示例：协程的轻量级
-// 可以轻松创建数万个 goroutine
-func main() {
-    var wg sync.WaitGroup
-    for i := 0; i < 10000; i++ {
-        wg.Add(1)
-        go func(id int) {
-            defer wg.Done()
-            time.Sleep(100 * time.Millisecond)
-            fmt.Printf("goroutine %d done\\n", id)
-        }(i)
-    }
-    wg.Wait()
-}
-// 10000 个 goroutine ≈ 几十 MB 内存
-// 同等数量线程 ≈ 几十 GB 内存`,
-        codeLabel:'Go goroutine 的轻量级演示', codeLines:15,
-        keyPoints: [
-          '进程是资源分配单位，线程是 CPU 调度单位，协程是用户态调度单位',
-          '线程上下文切换 ~1-10μs，协程切换 ~100ns，差距 10-100 倍',
-          'Go 的 GMP 模型将 goroutine 映射到系统线程，实现 M:N 调度',
-          'Python 的 async/await 是单线程协程，不能利用多核',
-          '实际开发：CPU 密集型用线程池，IO 密集型用协程'
-        ],
-        related:['Go GMP 模型','Python GIL','上下文切换','并发 vs 并行']
-      },
-      { id:'cs2', tag:'计算机基础', title:'请解释 TCP 的三次握手和四次挥手', difficulty:'中等', company:'阿里巴巴', tags:['网络'],
-        answer: 'TCP 通过三次握手建立连接，四次挥手断开连接。\n\n三次握手：\n1. 客户端 → 服务器：SYN=1, seq=x（客户端进入 SYN_SENT 状态）\n2. 服务器 → 客户端：SYN=1, ACK=1, seq=y, ack=x+1（服务器进入 SYN_RCVD 状态）\n3. 客户端 → 服务器：ACK=1, seq=x+1, ack=y+1（双方进入 ESTABLISHED 状态）\n\n为什么是三次？\n- 防止已失效的连接请求突然传到服务器端从而产生错误\n- 双方都需要确认自己的发送和接收能力正常\n\n四次挥手：\n1. 客户端：FIN=1, seq=u（客户端进入 FIN_WAIT_1）\n2. 服务器：ACK=1, seq=v, ack=u+1（服务器进入 CLOSE_WAIT，客户端进入 FIN_WAIT_2）\n3. 服务器：FIN=1, ACK=1, seq=w, ack=u+1（服务器进入 LAST_ACK）\n4. 客户端：ACK=1, seq=u+1, ack=w+1（客户端进入 TIME_WAIT，等待 2MSL 后关闭）\n\nTIME_WAIT 为什么等 2MSL？\n- 确保最后一个 ACK 能到达服务器\n- 让旧连接的所有报文在网络中消失，避免影响新连接',
-        keyPoints: [
-          'SYN 泛洪攻击：伪造大量 SYN 但不应答，占满半连接队列 → 防御：SYN Cookie',
-          'TCP 快速打开（TFO）：在 SYN 中携带数据，减少一次 RTT',
-          'CLOSE_WAIT 过多通常是服务端代码 bug（未正确 close socket）',
-          'TIME_WAIT 过多可通过 SO_REUSEADDR、调整内核参数缓解',
-          'TCP vs UDP：TCP 可靠有序（适合文件、网页），UDP 快速无连接（适合视频、游戏）'
-        ],
-        related:['HTTP/3 QUIC','TCP 拥塞控制','SYN Flood','OSI 七层模型']
-      },
-
-      // 行为面试
-      { id:'bh1', tag:'行为面试', title:'请分享一个你解决过的技术难题，你在这过程中扮演了什么角色', difficulty:'中等', company:'通用', tags:['STAR 法则'],
-        answer: '这是行为面试中最常见的问题之一，用 STAR 法则（Situation-Task-Action-Result）回答最有效。\n\n参考框架：\n\nSituation（情境）\n"我们团队负责的支付系统在双十一期间出现超时问题，QPS 从日常 2000 飙升至 50000。"\n\nTask（任务）\n"我负责定位瓶颈并提出优化方案，目标是 P99 延迟降至 200ms 以内。"\n\nAction（行动）\n"首先通过 profiling 发现数据库连接池是瓶颈，然后：\n1. 引入 Redis 缓存热点数据，缓存命中率提升至 95%\n2. 将同步扣库存改为异步 + 消息队列削峰\n3. 对核心接口做读写分离\n4. 压力测试验证优化效果"\n\nResult（结果）\n"最终系统支撑了双十一峰值 80000 QPS，P99 延迟降至 120ms，零故障运行。"\n\n加分技巧：\n- 提及遇到的困难和怎么克服的\n- 提到团队协作和沟通，不只是个人英雄主义\n- 如果有量化数据一定要加上',
-        keyPoints: [
-          'STAR 法则是面试官评估行为问题的标准框架',
-          '准备 3-5 个不同方向的故事：技术攻坚、团队冲突、时间压力、失败经历',
-          '数据量化非常重要：性能提升 X%、延迟降低 Yms、节省 Z 成本',
-          '展现反思和成长：从项目中获得了什么教训',
-          '常用考察维度：解决问题能力、主人翁意识、团队合作、抗压能力、沟通表达'
-        ],
-        related:['STAR 法则','技术面试准备','项目复盘','团队协作']
-      },
-      { id:'bh2', tag:'行为面试', title:'如果你和同事在技术方案上有分歧，你会怎么处理？', difficulty:'简单', company:'通用', tags:['沟通','团队协作'],
-        answer: `技术分歧在团队中是正常且健康的，关键在于处理方式。\n\n参考回答：\n\n1. 先理解对方的出发点\n   "我会先让对方完整阐述他的方案和考量因素，确保我真正理解了他为什么这么想。"\n\n2. 用数据说话，而非主观判断\n   "评估方案不能靠'我觉得'。我会建议我们列出客观的评估维度：性能基准测试、开发成本、维护复杂度、扩展性、团队熟悉度等。"\n\n3. 必要时做 POC（概念验证）\n   "对于难以判断的关键分歧，花半天做一个小型 POC，用实际结果代替争论。"\n\n4. 上升决策\n   "如果经过充分讨论仍无法统一，将两种方案及其优劣整理成文档，交由技术负责人做最终决策，决策后全力支持执行。"\n\n5. 事后复盘\n   "项目结束后复盘当初的选择，形成团队的技术决策经验库。"`,
-        keyPoints: [
-          '展现你尊重不同的声音，能理性分析而非情绪化争论',
-          '数据驱动决策是高级工程师的重要标志',
-          'POC 是解决技术分歧的高效手段，成本低但说服力强',
-          '决策前充分讨论，决策后全力执行——这是专业工程师的素养',
-          '复盘让团队从每一次分歧中学习成长'
-        ],
-        related:['技术决策','团队沟通','POC 方法论','技术复盘']
-      },
+    var Q = [
+      { id: 'q1', tag: '前端', title: 'React 虚拟 DOM 工作原理', diff: '中等', company: '字节跳动',
+        answer: '虚拟 DOM 是 React 在内存中维护的轻量级 JavaScript 对象树。\n\n当状态变化时，React 创建新的虚拟 DOM 树并通过 Diff 算法对比新旧树，找出最小差异后批量更新真实 DOM。\n\n这避免了频繁的真实 DOM 操作，显著提升性能。' },
+      { id: 'q2', tag: '前端', title: 'JavaScript 事件循环机制', diff: '中等', company: '阿里巴巴',
+        answer: 'JS 是单线程语言，事件循环实现异步非阻塞。\n\n同步代码直接执行，异步操作交给 Web APIs，回调进入任务队列。\n\n调用栈清空后，先执行所有微任务（Promise），再取一个宏任务（setTimeout）。' },
+      { id: 'q3', tag: '算法', title: '实现 LRU 缓存淘汰算法', diff: '中等', company: '字节跳动',
+        answer: 'LRU 淘汰最久未使用的数据。\n\n最优实现：哈希表 + 双向链表，get/put 均为 O(1)。\n\n哈希表用于 O(1) 查找节点，双向链表维护访问顺序，最近使用的在头部。' },
     ];
 
-    // ── Categories ──
-    const ALL_TAGS = [
-      { key:'all', label:'全部', emoji:'📋' },
-      { key:'前端开发', label:'前端开发', emoji:'🎨' },
-      { key:'算法', label:'算法', emoji:'📐' },
-      { key:'系统设计', label:'系统设计', emoji:'🏗️' },
-      { key:'计算机基础', label:'计算机基础', emoji:'💻' },
-      { key:'行为面试', label:'行为面试', emoji:'🤝' },
+    var ALL = [
+      { key: 'all', label: '全部' },
+      { key: '前端', label: '前端' },
+      { key: '算法', label: '算法' },
     ];
 
-    // Filter
-    const filtered = selectedTag === 'all'
-      ? QUESTIONS
-      : QUESTIONS.filter(q => q.tag === selectedTag);
+    var filtered = tag === 'all' ? Q : Q.filter(function(q) { return q.tag === tag; });
 
-    const totalCount = QUESTIONS.length;
-
-    // Tag list with counts
-    const tagList = ALL_TAGS.map(t => ({
-      ...t,
-      count: t.key === 'all' ? QUESTIONS.length : QUESTIONS.filter(q => q.tag === t.key).length,
-      select: () => this.setState({ selectedTag: t.key, selectedQ: null }),
-      style: {
-        padding: '6px 14px',
-        borderRadius: '6px',
-        border: `1px solid ${selectedTag === t.key ? '#00ffa0' : '#21262d'}`,
-        background: selectedTag === t.key ? 'rgba(0,255,160,0.06)' : 'transparent',
-        color: selectedTag === t.key ? '#00ffa0' : '#6e7681',
-        fontFamily: '"Inter",sans-serif',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        transition: 'all 0.15s ease',
-        display: 'flex',
-        alignItems: 'center',
-      }
-    }));
-
-    // Question list
-    const questionList = filtered.map((q, i) => ({
-      ...q,
-      idx: `${String(i + 1).padStart(2, '0')}`,
-      hasAnswer: !!q.answer,
-      select: () => this.setState({ selectedQ: q.id }),
-      cardStyle: {
-        padding: '10px 14px',
-        margin: '0 6px 2px',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        background: selectedQ === q.id ? 'rgba(0,255,160,0.04)' : 'transparent',
-        borderLeft: selectedQ === q.id ? '2px solid #00ffa0' : '2px solid transparent',
-        transition: 'all 0.12s ease',
-        userSelect: 'none',
-      }
-    }));
-
-    const noQuestions = filtered.length === 0;
-    const noSelection = !selectedQ;
-    const hasSelection = !!selectedQ;
-
-    const detailQ = selectedQ ? QUESTIONS.find(q => q.id === selectedQ) : null;
-    const detail = detailQ ? {
-      ...detailQ,
-      hasCode: !!detailQ.code,
-      codeLines: detailQ.code ? detailQ.code.split('\n').length : 0,
-      codeLabel: detailQ.codeLabel || '代码示例',
-      answerParagraphs: detailQ.answer ? detailQ.answer.split('\n').filter(p => p.trim()) : [],
-      hasRelated: detailQ.related && detailQ.related.length > 0,
-    } : null;
+    var selQ = sel ? Q.find(function(q) { return q.id === sel; }) : null;
 
     return {
-      totalCount, tagList, questionList, noQuestions,
-      noSelection, hasSelection, detail,
+      total: Q.length,
+      tags: ALL.map(function(t) {
+        return {
+          label: t.label,
+          n: t.key === 'all' ? Q.length : Q.filter(function(q) { return q.tag === t.key; }).length,
+          click: function() { this.setState({ tag: t.key, sel: null }); }.bind(this),
+          s: {
+            padding: '5px 12px', borderRadius: '5px', cursor: 'pointer',
+            border: '1px solid ' + (tag === t.key ? '#00ffa0' : '#21262d'),
+            background: tag === t.key ? 'rgba(0,255,160,0.06)' : 'transparent',
+            color: tag === t.key ? '#00ffa0' : '#6e7681',
+            fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px'
+          }
+        };
+      }),
+      items: filtered.map(function(q, i) {
+        return {
+          title: q.title,
+          diff: q.diff,
+          company: q.company,
+          click: function() { this.setState({ sel: q.id }); }.bind(this),
+          s: {
+            padding: '8px 12px', cursor: 'pointer',
+            background: sel === q.id ? 'rgba(0,255,160,0.04)' : 'transparent',
+            borderLeft: sel === q.id ? '2px solid #00ffa0' : '2px solid transparent',
+          }
+        };
+      }),
+      noPick: !sel,
+      picked: !!sel,
+      pick: selQ ? {
+        title: selQ.title,
+        paragraphs: selQ.answer.split('\n').filter(function(p) { return p.trim(); })
+      } : null
     };
   }
 }

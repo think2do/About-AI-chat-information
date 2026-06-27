@@ -400,8 +400,6 @@
         </div>
       </div>
 
-
-
     </div><!-- end right panel -->
   </div><!-- end main area -->
 </div><!-- end root -->
@@ -536,10 +534,7 @@ class Component extends DCLogic {
       max_tokens: params.maxTokens,
       temperature: params.temperature,
       top_p: params.topP,
-      frequency_penalty: params.freqPenalty,
-      presence_penalty: params.presPenalty,
       stream: true,
-      stream_options: { include_usage: true },
     };
 
     const t0 = Date.now();
@@ -575,7 +570,7 @@ class Component extends DCLogic {
           'Authorization': `Bearer ${apiKey.trim()}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': location.href,
-          'X-Title': 'LLM 机制可视化'
+          'X-Title': 'LLM Viz'
         },
         body: JSON.stringify(body)
       });

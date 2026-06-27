@@ -86,61 +86,138 @@
       <div style="grid-column:1; grid-row:1; display:flex; flex-direction:column; overflow:hidden; min-width:0">
         <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 16px; border-bottom:1px solid #30363d; flex-shrink:0; background:#0d1117">
           <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; letter-spacing:0.08em">运行流程可视化</span>
-          <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58">阶段 {{ pipelinePhase }} / 4</span>
+          <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58">阶段 {{ pipelinePhase }} / 7</span>
         </div>
         <div style="flex:1; overflow-y:auto; padding:16px 16px 16px 12px; display:flex; flex-direction:column; gap:0">
 
-          <!-- STAGE 1: Messages Array -->
+          <!-- STAGE 1: Context Assembly -->
           <div style="display:flex; align-items:stretch; gap:0">
             <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
-              <div style="{{ dotS1 }}">{ }</div>
+              <div style="{{ dotS1 }}">[ ]</div>
               <div style="{{ lineS1 }}"></div>
             </div>
             <div style="flex:1; margin-left:10px; margin-bottom:0; padding-bottom:12px">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
-                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">消息数组 messages[ ]</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">上下文组装 messages[ ]</span>
                 <span style="{{ phase1StatusStyle }}">{{ phase1StatusText }}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px">
+                <sc-for list="{{ contextCards }}" as="card" hint-placeholder-count="3">
+                  <div style="{{ card.cardStyle }}">
+                    <div style="display:flex; align-items:center; gap:6px">
+                      <span style="font-size:8px; color:{{ card.roleColor }}; font-family:'JetBrains Mono',monospace; border:1px solid {{ card.roleColor }}44; border-radius:2px; padding:0 4px">{{ card.roleLabel }}</span>
+                      <span style="font-size:11px; color:#c9d1d9; font-family:'JetBrains Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ card.preview }}</span>
+                    </div>
+                    <div style="display:flex; gap:12px; font-size:9px; color:#484f58; font-family:'JetBrains Mono',monospace">
+                      <span>{{ card.charCount }} 字符</span>
+                      <span>~{{ card.estTokens }} tokens</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:10px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-top:4px">{{ msgCount }} 条消息 · 预估 ~{{ totalEstTokens }} tokens</div>
+            </div>
+          </div>
+
+          <!-- STAGE 2: Request Encoding -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS2 }}">{ }</div>
+              <div style="{{ lineS2 }}"></div>
+            </div>
+            <div style="flex:1; margin-left:10px; padding-bottom:12px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">请求编码 JSON</span>
+                <span style="{{ phase2StatusStyle }}">{{ phase2StatusText }}</span>
               </div>
               <div style="background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">{{ reqJsonEl }}</div>
             </div>
           </div>
 
-          <!-- STAGE 2: Tokenizer -->
+          <!-- STAGE 3: Tokenization -->
           <div style="display:flex; align-items:stretch; gap:0">
             <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
-              <div style="{{ dotS2 }}">≋</div>
-              <div style="{{ lineS2 }}"></div>
+              <div style="{{ dotS3 }}">#</div>
+              <div style="{{ lineS3 }}"></div>
             </div>
             <div style="flex:1; margin-left:10px; padding-bottom:12px">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
-                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">Tokenizer 分词</span>
-                <span style="{{ phase2StatusStyle }}">{{ phase2StatusText }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">分词预处理</span>
+                <span style="{{ phase3StatusStyle }}">{{ phase3StatusText }}</span>
               </div>
-              <sc-if value="{{ isPhasePending2 }}" hint-placeholder-val="{{ false }}">
-                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待上一阶段...</div>
+              <sc-if value="{{ isPhasePending3 }}" hint-placeholder-val="{{ false }}">
+                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待请求编码...</div>
               </sc-if>
-              <sc-if value="{{ showPhase2 }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ showPhase3 }}" hint-placeholder-val="{{ false }}">
                 <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
-                  <div style="font-size:10px; color:#6e7681; margin-bottom:6px; font-family:'JetBrains Mono',monospace">输入: "用一句话解释什么是 Transformer"</div>
                   <div style="display:flex; flex-wrap:wrap; gap:4px">
-                    <sc-for list="{{ inputTokens }}" as="tk" hint-placeholder-count="7">
+                    <sc-for list="{{ tokenViz.tokens }}" as="tk" hint-placeholder-count="8">
                       <div style="{{ tk.style }}" title="{{ tk.idLabel }}">
                         <span>{{ tk.text }}</span>
                         <span style="{{ tk.idStyle }}">{{ tk.idDisplay }}</span>
                       </div>
                     </sc-for>
                   </div>
-                  <div style="margin-top:6px; font-size:10px; color:#7ee787; font-family:'JetBrains Mono',monospace">共 7 tokens · 平均每中文字 1.4 tokens</div>
+                  <div style="margin-top:6px; font-size:10px; color:#7ee787; font-family:'JetBrains Mono',monospace">{{ tokenViz.summary }}</div>
                 </div>
               </sc-if>
             </div>
           </div>
 
-          <!-- STAGE 3: Transformer -->
+          <!-- STAGE 4: API Dispatch & Model Profile -->
           <div style="display:flex; align-items:stretch; gap:0">
             <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
-              <div style="{{ dotS3 }}">◈</div>
-              <div style="{{ lineS3 }}"></div>
+              <div style="{{ dotS4 }}">⇢</div>
+              <div style="{{ lineS4 }}"></div>
+            </div>
+            <div style="flex:1; margin-left:10px; padding-bottom:12px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">API 调度 & 模型画像</span>
+                <span style="{{ phase4StatusStyle }}">{{ phase4StatusText }}</span>
+              </div>
+              <sc-if value="{{ isPhasePending4 }}" hint-placeholder-val="{{ false }}">
+                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待分词完成...</div>
+              </sc-if>
+              <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
+                  <div style="font-size:10px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:8px">{{ modelProfile.endpoint }}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; font-family:'JetBrains Mono',monospace; font-size:10px">
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">架构</span>
+                      <div style="color:#c9d1d9; margin-top:2px">{{ archLabel }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">开发者</span>
+                      <div style="color:#c9d1d9; margin-top:2px">{{ archFamily }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">层数</span>
+                      <div style="color:#c9d1d9; margin-top:2px">{{ modelProfile.layers }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">隐藏维度</span>
+                      <div style="color:#c9d1d9; margin-top:2px">{{ modelProfile.hidden }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">注意力头</span>
+                      <div style="color:#c9d1d9; margin-top:2px">{{ modelProfile.heads }}{{ modelProfile.hasGQA ? ' (GQA ' + modelProfile.kvHeads + ' KV)' : '' }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">上下文窗口</span>
+                      <div style="color:#c9d1d9; margin-top:2px">{{ modelProfile.ctxWindow }}</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:6px; font-size:9px; color:#484f58; font-family:'JetBrains Mono',monospace">{{ archIsMoE ? 'MoE 混合专家架构 · 推理时仅激活部分参数' : 'Dense 稠密架构 · 每次推理激活全部参数' }}</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- STAGE 5: Transformer Inference -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS5 }}">◈</div>
+              <div style="{{ lineS5 }}"></div>
             </div>
             <div style="flex:1; margin-left:10px; padding-bottom:12px">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
@@ -148,55 +225,56 @@
                   <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">Transformer 模型推理</span>
                   <span style="font-size:9px; color:#484f58; border:1px solid #30363d; padding:1px 5px; border-radius:3px; font-family:'JetBrains Mono',monospace">示意</span>
                 </div>
-                <span style="{{ phase3StatusStyle }}">{{ phase3StatusText }}</span>
+                <span style="{{ phase5StatusStyle }}">{{ phase5StatusText }}</span>
               </div>
-              <sc-if value="{{ isPhasePending3 }}" hint-placeholder-val="{{ false }}">
-                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待分词阶段...</div>
+              <sc-if value="{{ isPhasePending5 }}" hint-placeholder-val="{{ false }}">
+                <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待 API 调度...</div>
               </sc-if>
-              <sc-if value="{{ showPhase3 }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ showPhase5 }}" hint-placeholder-val="{{ false }}">
                 <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
                   <sc-for list="{{ transformerLayers }}" as="lay" hint-placeholder-count="6">
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px">
-                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; width:52px; flex-shrink:0; text-align:right">{{ lay.label }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; width:68px; flex-shrink:0; text-align:right">{{ lay.label }}</span>
                       <div style="{{ lay.barStyle }}">
                         <div style="{{ lay.sweepStyle }}"></div>
                         <div style="{{ lay.dotsStyle }}"></div>
                       </div>
                     </div>
                   </sc-for>
-                  <div style="font-size:10px; color:#6e7681; margin-top:4px; font-family:'JetBrains Mono',monospace">自注意力权重计算，共 32 层</div>
+                  <div style="font-size:10px; color:#6e7681; margin-top:4px; font-family:'JetBrains Mono',monospace">{{ archLabel }} · 自注意力 + {{ archIsMoE ? 'MoE FFN' : 'FFN' }} 逐层计算</div>
                 </div>
               </sc-if>
             </div>
           </div>
 
-          <!-- STAGE 4: Autoregressive Decoding -->
+          <!-- STAGE 6: Autoregressive Decoding -->
           <div style="display:flex; align-items:stretch; gap:0">
             <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
-              <div style="{{ dotS4 }}">↻</div>
+              <div style="{{ dotS6 }}">↻</div>
+              <div style="{{ lineS6 }}"></div>
             </div>
-            <div style="flex:1; margin-left:10px; padding-bottom:8px">
+            <div style="flex:1; margin-left:10px; padding-bottom:12px">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
                 <div style="display:flex; align-items:center; gap:6px">
                   <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">自回归解码</span>
-                  <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+                  <sc-if value="{{ showPhase6 }}" hint-placeholder-val="{{ false }}">
                     <span style="font-size:9px; color:#00ffa0; font-family:'JetBrains Mono',monospace; animation:blink 1.2s ease infinite">● 循环中</span>
                   </sc-if>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px">
-                  <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+                  <sc-if value="{{ showPhase6 }}" hint-placeholder-val="{{ false }}">
                     <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7ee787">第 {{ streamStep }} 步</span>
                     <button onClick="{{ toggleAutoSteps }}" style="padding:1px 8px; background:transparent; border:1px solid #30363d; border-radius:3px; color:#8b949e; font-family:'JetBrains Mono',monospace; font-size:9px; cursor:pointer">{{ showAutoSteps ? '▲ 折叠' : '▼ 展开' }}</button>
                   </sc-if>
-                  <sc-if value="{{ isPhasePending4 }}" hint-placeholder-val="{{ false }}">
-                    <span style="{{ phase4StatusStyle }}">{{ phase4StatusText }}</span>
+                  <sc-if value="{{ isPhasePending6 }}" hint-placeholder-val="{{ false }}">
+                    <span style="{{ phase6StatusStyle }}">{{ phase6StatusText }}</span>
                   </sc-if>
                 </div>
               </div>
-              <sc-if value="{{ isPhasePending4 }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ isPhasePending6 }}" hint-placeholder-val="{{ false }}">
                 <div style="height:28px; display:flex; align-items:center; color:#484f58; font-family:'JetBrains Mono',monospace; font-size:11px">等待模型推理...</div>
               </sc-if>
-              <sc-if value="{{ showPhase4 }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ showPhase6 }}" hint-placeholder-val="{{ false }}">
                 <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
                   <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#6e7681; flex-wrap:wrap">
                     <span style="color:#79c0ff">Context[0..{{ streamStep }}]</span>
@@ -221,6 +299,51 @@
                       </sc-for>
                     </div>
                   </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- STAGE 7: Response Completion -->
+          <div style="display:flex; align-items:stretch; gap:0">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:32px; padding-top:2px">
+              <div style="{{ dotS7 }}">✓</div>
+            </div>
+            <div style="flex:1; margin-left:10px; padding-bottom:8px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#c9d1d9; font-weight:500">响应完成 & 指标</span>
+                <span style="{{ phase7StatusStyle }}">{{ phase7StatusText }}</span>
+              </div>
+              <sc-if value="{{ showPhase7 }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:slideIn 0.25s ease; background:#161b22; border-radius:6px; padding:10px; border:1px solid #21262d">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px">
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">TPS (tokens/sec)</span>
+                      <div style="{{ tpsStyle }}; font-size:14px">{{ tpsDisplay }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">TTFT 首字延迟</span>
+                      <div style="color:#79c0ff; font-size:14px; font-weight:600">{{ ttftDisplay }}<span style="font-size:9px; font-weight:400"> ms</span></div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">输入 tokens</span>
+                      <div style="color:#79c0ff; font-size:14px; font-weight:600">{{ inputTok }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">输出 tokens</span>
+                      <div style="color:#d2a8ff; font-size:14px; font-weight:600">{{ outputTok }}</div>
+                    </div>
+                    <div style="background:#0a0e14; padding:6px 8px; border-radius:4px; border:1px solid #21262d">
+                      <span style="color:#484f58">本次费用</span>
+                      <div style="color:#ffa657; font-size:14px; font-weight:600">{{ costDisplay }}</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:8px; font-size:9px; color:#484f58; font-family:'JetBrains Mono',monospace; display:flex; gap:16px">
+                    <span>Context 占用 {{ cPct }}%</span>
+                  </div>
+                  <div style="height:4px; background:#21262d; border-radius:2px; overflow:hidden; margin-top:4px">
+                    <div style="{{ cBarStyle }}"></div>
+                  </div>
                 </div>
               </sc-if>
             </div>
@@ -277,32 +400,7 @@
         </div>
       </div>
 
-      <!-- METRICS -->
-      <div style="padding:12px 14px; border-bottom:1px solid #30363d">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:10px">性能 / 成本指标</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px">
-          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
-            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">TPS (tokens/sec)</div>
-            <div style="{{ tpsStyle }}">{{ tpsDisplay }}</div>
-          </div>
-          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
-            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">TTFT (首字延迟)</div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:#79c0ff">{{ ttftDisplay }}<span style="font-size:11px; font-weight:400; color:#6e7681"> ms</span></div>
-          </div>
-          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
-            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">本次费用</div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:#ffa657">{{ costDisplay }}</div>
-          </div>
-          <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:8px 10px">
-            <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:3px">输出 tokens</div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:#d2a8ff">{{ outputTok }}</div>
-          </div>
-        </div>
-        <div style="font-size:9px; color:#6e7681; font-family:'JetBrains Mono',monospace; margin-bottom:4px">Context 占用 {{ cPct }}%</div>
-        <div style="height:4px; background:#21262d; border-radius:2px; overflow:hidden">
-          <div style="{{ cBarStyle }}"></div>
-        </div>
-      </div>
+
 
     </div><!-- end right panel -->
   </div><!-- end main area -->
@@ -325,6 +423,7 @@ class Component extends DCLogic {
     showAutoSteps: false,
     autoSteps: [],
     _runId: 0,
+    estPromptTokens: 0,
     apiKey: '',
     apiBaseUrl: '',
     apiProvider: ''
@@ -366,60 +465,63 @@ class Component extends DCLogic {
     const rid = Date.now();
     const userMsg = { role: 'user', content: inputText, id: `u${rid}` };
     const newHistory = [...history, userMsg];
-    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0 }, autoSteps: [], _runId: rid });
+    const estPromptTokens = this._estimateTokens(sysPrompt) + newHistory.reduce((s, m) => s + this._estimateTokens(m.content), 0);
+    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens });
 
     const useReal = this._useRealApi();
-    this._schedule(() => this.setState({ pipelinePhase: 2 }), 500);
-    this._schedule(() => this.setState({ pipelinePhase: 3 }), 1100);
+    this._schedule(() => this.setState({ pipelinePhase: 2 }), 350);
+    this._schedule(() => this.setState({ pipelinePhase: 3 }), 700);
+    this._schedule(() => this.setState({ pipelinePhase: 4 }), 1050);
     this._schedule(() => {
-      this.setState(s => ({ pipelinePhase: 4, metrics: { ...s.metrics, inputTokens: useReal ? 0 : 28 } }));
+      this.setState({ pipelinePhase: 5 });
       if (useReal) {
         this._streamReal(rid, newHistory);
       } else {
         this._streamDemo(rid);
       }
-    }, useReal ? 1600 : 2400);
+    }, useReal ? 1550 : 2200);
   }
 
   _streamDemo(rid) {
-    const { toggles } = this.state;
+    const { toggles, estPromptTokens } = this.state;
     const ans = 'Transformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。';
+    const estInput = estPromptTokens || 28;
     if (!toggles.streaming) {
       this._schedule(() => {
         if (this.state._runId !== rid) return;
         const am = { role: 'assistant', content: ans, id: `a${rid}` };
         const outTok = Math.round(ans.length * 0.42);
-        this.setState(s => ({ isRunning: false, pipelinePhase: 5, streamingText: ans, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, ttft: 220, outputTokens: outTok, inputTokens: 28, contextUsed: s.metrics.contextUsed + outTok } }));
+        this.setState(s => ({ isRunning: false, pipelinePhase: 7, streamingText: ans, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, ttft: 220, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok } }));
       }, 600);
       return;
     }
     let i = 0; const t0 = Date.now();
-    this.setState(s => ({ metrics: { ...s.metrics, ttft: Math.round(155 + Math.random() * 110) } }));
+    this.setState(s => ({ metrics: { ...s.metrics, ttft: Math.round(155 + Math.random() * 110), inputTokens: estInput }, pipelinePhase: 6 }));
     const iv = this._tick(() => {
       if (this.state._runId !== rid) { clearInterval(iv); return; }
       i = Math.min(i + (Math.random() < 0.3 ? 2 : 1), ans.length);
-      const tps = Math.min(Math.round(i / Math.max((Date.now() - t0) / 1000, 0.01) * 0.42), 81);
       const outTok = Math.round(i * 0.42);
+      const tps = Math.min(Math.round(outTok / Math.max((Date.now() - t0) / 1000, 0.01)), 81);
       const newToken = ans.slice(Math.max(0, i - 2), i);
       const shouldPush = outTok > 0 && outTok % 2 === 0;
       this.setState(s => ({
         streamingText: ans.slice(0, i),
-        metrics: { ...s.metrics, tps, outputTokens: outTok, inputTokens: 28 },
-        autoSteps: shouldPush ? [...s.autoSteps, { step: outTok, token: newToken, ctxLen: 28 + outTok }].slice(-40) : s.autoSteps
+        metrics: { ...s.metrics, tps, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok },
+        autoSteps: shouldPush ? [...s.autoSteps, { step: outTok, token: newToken, ctxLen: estInput + outTok }].slice(-40) : s.autoSteps
       }));
       if (i >= ans.length) {
         clearInterval(iv);
         const am = { role: 'assistant', content: ans, id: `a${rid}` };
         this._schedule(() => {
           if (this.state._runId !== rid) return;
-          this.setState(s => ({ isRunning: false, pipelinePhase: 5, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, contextUsed: s.metrics.contextUsed + outTok } }));
+          this.setState(s => ({ isRunning: false, pipelinePhase: 7, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, contextUsed: estInput + outTok } }));
         }, 350);
       }
     }, 32);
   }
 
   async _streamReal(rid, history) {
-    const { apiKey, apiBaseUrl, model, params, sysPrompt, toggles } = this.state;
+    const { apiKey, apiBaseUrl, model, params, sysPrompt, toggles, estPromptTokens } = this.state;
     const baseUrl = (apiBaseUrl && apiBaseUrl.trim()) ? apiBaseUrl.trim().replace(/\/$/, '') : 'https://openrouter.ai/api/v1';
     const url = baseUrl + '/chat/completions';
 
@@ -434,29 +536,34 @@ class Component extends DCLogic {
       max_tokens: params.maxTokens,
       temperature: params.temperature,
       top_p: params.topP,
+      frequency_penalty: params.freqPenalty,
+      presence_penalty: params.presPenalty,
       stream: true,
+      stream_options: { include_usage: true },
     };
 
     const t0 = Date.now();
     let fullText = '';
     let outTok = 0;
     let ttftSet = false;
+    let promptTok = estPromptTokens || 0;
 
     const _finish = (errMsg) => {
       if (this.state._runId !== rid) return;
       if (errMsg) {
         const errMsg2 = errMsg;
         this.setState(s => ({
-          isRunning: false, pipelinePhase: 5, streamingText: '',
+          isRunning: false, pipelinePhase: 7, streamingText: '',
           history: [...s.history, { role: 'assistant', content: `❌ ${errMsg2}`, id: `err${rid}` }],
           metrics: { ...s.metrics, tps: 0 }
         }));
       } else {
         const am = { role: 'assistant', content: fullText, id: `a${rid}` };
+        const finalCtx = promptTok + outTok;
         this.setState(s => ({
-          isRunning: false, pipelinePhase: 5, streamingText: '',
+          isRunning: false, pipelinePhase: 7, streamingText: '',
           history: [...s.history, am],
-          metrics: { ...s.metrics, tps: 0, contextUsed: s.metrics.contextUsed + outTok }
+          metrics: { ...s.metrics, tps: 0, contextUsed: finalCtx, inputTokens: promptTok, outputTokens: outTok }
         }));
       }
     };
@@ -467,8 +574,8 @@ class Component extends DCLogic {
         headers: {
           'Authorization': `Bearer ${apiKey.trim()}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://llm-viz.app',
-          'X-Title': 'LLM Mechanism Viz'
+          'HTTP-Referer': location.href,
+          'X-Title': 'LLM 机制可视化'
         },
         body: JSON.stringify(body)
       });
@@ -504,21 +611,26 @@ class Component extends DCLogic {
             if (delta) {
               if (!ttftSet) {
                 ttftSet = true;
-                this.setState(s => ({ metrics: { ...s.metrics, ttft: Date.now() - t0 } }));
+                this.setState(s => ({ pipelinePhase: 6, metrics: { ...s.metrics, ttft: Date.now() - t0 } }));
               }
               fullText += delta;
               outTok++;
               const elapsed = Math.max((Date.now() - t0) / 1000, 0.01);
               const tps = Math.round(outTok / elapsed);
               const shouldPush = outTok % 3 === 0;
+              const ctxNow = promptTok + outTok;
               this.setState(s => ({
                 streamingText: fullText,
-                metrics: { ...s.metrics, tps, outputTokens: outTok },
-                autoSteps: shouldPush ? [...s.autoSteps, { step: outTok, token: delta.slice(0, 4), ctxLen: messages.length * 8 + outTok }].slice(-40) : s.autoSteps
+                metrics: { ...s.metrics, tps, outputTokens: outTok, contextUsed: ctxNow },
+                autoSteps: shouldPush ? [...s.autoSteps, { step: outTok, token: delta.slice(0, 4), ctxLen: ctxNow }].slice(-40) : s.autoSteps
               }));
             }
             if (json.usage) {
-              this.setState(s => ({ metrics: { ...s.metrics, inputTokens: json.usage.prompt_tokens || 0, outputTokens: json.usage.completion_tokens || outTok } }));
+              promptTok = json.usage.prompt_tokens || promptTok;
+              const compTok = json.usage.completion_tokens || outTok;
+              if (promptTok > 0) {
+                this.setState(s => ({ metrics: { ...s.metrics, inputTokens: promptTok, outputTokens: compTok, contextUsed: promptTok + Math.max(outTok, compTok) } }));
+              }
             }
           } catch(e) {}
         }
@@ -613,6 +725,153 @@ class Component extends DCLogic {
     );
   }
 
+  _modelArch(model) {
+    const DB = {
+      'openai/gpt-4o':              { layers: '~120', hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 128000, isMoE: true,  arch: 'GPT-4o (MoE 推测)', family: 'OpenAI' },
+      'openai/gpt-4o-mini':         { layers: '~80',  hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 128000, isMoE: false, arch: 'GPT-4o-mini (Dense)', family: 'OpenAI' },
+      'anthropic/claude-sonnet-4':  { layers: '未公开', hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 200000, isMoE: false, arch: 'Claude 4 (Dense)', family: 'Anthropic' },
+      'anthropic/claude-3-5-haiku': { layers: '未公开', hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 200000, isMoE: false, arch: 'Claude 3.5 (Dense)', family: 'Anthropic' },
+      'google/gemini-2.5-flash':    { layers: '未公开', hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 1048576,isMoE: true,  arch: 'Gemini 2.5 (MoE)', family: 'Google' },
+      'deepseek/deepseek-chat-v3-0324': { layers: 61,  hidden: 7168,  heads: 128, kvHeads: 128, ctxWindow: 131072, isMoE: true,  arch: 'DeepSeek-V3 (MoE)', family: 'DeepSeek' },
+      'deepseek/deepseek-r1':       { layers: 61,  hidden: 7168,  heads: 128, kvHeads: 128, ctxWindow: 131072, isMoE: true,  arch: 'DeepSeek-R1 (MoE)', family: 'DeepSeek' },
+      'meta-llama/llama-3.3-70b-instruct': { layers: 80, hidden: 8192,  heads: 64,  kvHeads: 8,   ctxWindow: 131072, isMoE: false, arch: 'Llama 3.3 (Dense, GQA)', family: 'Meta' },
+      'qwen/qwen3-235b-a22b':       { layers: 94,  hidden: 16384, heads: 128, kvHeads: 16,  ctxWindow: 131072, isMoE: true,  arch: 'Qwen3 (MoE)', family: 'Alibaba' },
+      'demo/gpt-4o':                { layers: 120, hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 128000, isMoE: true,  arch: 'GPT-4o (模拟示意)', family: 'Demo' },
+      'demo/claude':                { layers: 96,  hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 200000, isMoE: false, arch: 'Claude (模拟示意)', family: 'Demo' },
+    };
+    return DB[model] || { layers: '未知', hidden: '未知', heads: '未知', kvHeads: '未知', ctxWindow: 128000, isMoE: false, arch: '未知架构', family: 'Unknown' };
+  }
+
+  _estimateTokens(text) {
+    if (!text) return 0;
+    const cjk = (text.match(/[一-鿿㐀-䶿豈-﫿　-〿＀-￯]/g) || []).length;
+    const nonCjk = text.length - cjk;
+    const wordPieces = Math.max(0, nonCjk - (text.match(/[\s]+/g) || []).length);
+    return Math.max(1, Math.round(cjk * 0.72 + wordPieces * 0.28));
+  }
+
+  _buildContextCards(sysPrompt, history, inputText) {
+    const roleColors = { system: '#d2a8ff', user: '#79c0ff', assistant: '#7ee787' };
+    const roleLabels = { system: 'SYSTEM', user: '用户', assistant: 'AI' };
+    const cards = [];
+    cards.push({ role: 'system', content: sysPrompt, charCount: sysPrompt.length, estTokens: this._estimateTokens(sysPrompt) });
+    const recentHistory = history.slice(-4);
+    for (const m of recentHistory) {
+      cards.push({ role: m.role, content: m.content, charCount: m.content.length, estTokens: this._estimateTokens(m.content) });
+    }
+    if (inputText.trim()) {
+      cards.push({ role: 'user', content: inputText, charCount: inputText.length, estTokens: this._estimateTokens(inputText), isNew: true });
+    } else if (!history.length) {
+      cards.push({ role: 'user', content: inputText || '(空)', charCount: (inputText || '').length, estTokens: 0, isNew: true });
+    }
+    const totalEst = cards.reduce((s, c) => s + c.estTokens, 0);
+    return cards.map((c, i) => ({
+      ...c,
+      roleLabel: roleLabels[c.role] || c.role,
+      roleColor: roleColors[c.role] || '#6e7681',
+      preview: c.content.length > 72 ? c.content.slice(0, 72) + '...' : c.content,
+      cardStyle: {
+        background: c.isNew ? 'rgba(0,255,160,0.04)' : '#161b22',
+        border: `1px solid ${c.isNew ? 'rgba(0,255,160,0.2)' : '#21262d'}`,
+        borderLeft: `3px solid ${roleColors[c.role] || '#30363d'}`,
+        borderRadius: '4px',
+        padding: '6px 10px',
+        marginBottom: '5px',
+        fontSize: '11px',
+        animation: `tokenAppear 0.3s ease ${i * 0.06}s both`,
+        display: 'flex', flexDirection: 'column', gap: '2px'
+      },
+      totalEst,
+    }));
+  }
+
+  _buildTokenViz(text, actualCount, isReal) {
+    if (!text || !text.trim()) {
+      return { tokens: [], summary: '无输入文本', estCount: 0, actualCount: 0 };
+    }
+    const t = text.trim();
+    const est = this._estimateTokens(t);
+    const segments = [];
+    let i = 0;
+    while (i < t.length) {
+      const ch = t[i];
+      if (/[一-鿿㐀-䶿豈-﫿　-〿＀-￯]/.test(ch)) {
+        segments.push({ text: ch, type: 'cjk', idEst: Math.floor(14000 + ch.charCodeAt(0) * 0.7) % 40000 });
+        i++;
+      } else if (/[a-zA-Z]/.test(ch)) {
+        let w = '';
+        while (i < t.length && /[a-zA-Z]/.test(t[i])) { w += t[i]; i++; }
+        segments.push({ text: w, type: 'en', idEst: Math.floor(800 + w.length * 127) % 30000 });
+      } else if (/[0-9]/.test(ch)) {
+        let n = '';
+        while (i < t.length && /[0-9]/.test(t[i])) { n += t[i]; i++; }
+        segments.push({ text: n, type: 'num', idEst: Math.floor(30000 + (parseInt(n) || 0)) % 20000 });
+      } else if (/\s/.test(ch)) {
+        let s = '';
+        while (i < t.length && /\s/.test(t[i])) { s += t[i]; i++; }
+        segments.push({ text: s.replace(/ /g, '·'), type: 'space', idEst: 220 });
+      } else {
+        segments.push({ text: ch, type: 'punct', idEst: Math.floor(6000 + ch.charCodeAt(0)) % 10000 });
+        i++;
+      }
+    }
+    const typeColors = { cjk: '#79c0ff', en: '#ffa657', num: '#7ee787', punct: '#d2a8ff', space: '#30363d' };
+    const typeLabels = { cjk: '中文字符', en: '英文词块', num: '数字', punct: '标点', space: '空白' };
+    return {
+      tokens: segments.map((seg, idx) => ({
+        text: seg.text,
+        idDisplay: seg.idEst ? `#${seg.idEst}` : '',
+        idLabel: `估算 Token ID: ${seg.idEst}（${typeLabels[seg.type] || seg.type}）`,
+        type: seg.type,
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', borderRadius: '4px',
+          background: `${typeColors[seg.type] || '#6e7681'}18`, border: `1px solid ${typeColors[seg.type] || '#6e7681'}44`,
+          color: typeColors[seg.type] || '#6e7681', fontFamily: '"JetBrains Mono",monospace', fontSize: '12px',
+          animation: `tokenAppear 0.3s ease ${idx * 0.06}s both`, userSelect: 'none', cursor: 'default'
+        },
+        idStyle: { fontSize: '8px', color: `${typeColors[seg.type] || '#6e7681'}88` }
+      })),
+      summary: isReal && actualCount > 0
+        ? `实际 ${actualCount} tokens · 预估 ${est}（偏差 ${Math.abs(actualCount - est)}）`
+        : `预估 ${est} tokens（中文字符 ${(t.match(/[一-鿿]/g) || []).length} 个，英文词块 ${(t.match(/[a-zA-Z]+/g) || []).length} 个）`,
+      estCount: est, actualCount: actualCount || 0,
+      cjkCount: segments.filter(s => s.type === 'cjk').length,
+      enCount: segments.filter(s => s.type === 'en').length,
+    };
+  }
+
+  _buildModelProfile(model, arch, apiEndpoint) {
+    const ep = (apiEndpoint && apiEndpoint.trim()) ? apiEndpoint.trim().replace(/\/$/, '') : 'https://openrouter.ai/api/v1';
+    return {
+      model, endpoint: `POST ${ep}/chat/completions`,
+      archLabel: arch.arch,
+      layers: arch.layers, hidden: arch.hidden, heads: arch.heads, kvHeads: arch.kvHeads,
+      ctxWindow: arch.ctxWindow ? (arch.ctxWindow >= 1000000 ? `${(arch.ctxWindow/1000000).toFixed(1)}M` : arch.ctxWindow >= 1000 ? `${(arch.ctxWindow/1000).toFixed(0)}K` : `${arch.ctxWindow}`) : '未知',
+      isMoE: arch.isMoE, family: arch.family,
+      hasGQA: typeof arch.kvHeads === 'number' && typeof arch.heads === 'number' && arch.kvHeads < arch.heads,
+    };
+  }
+
+  _buildTransformerLayers(arch, phase) {
+    const totalLayers = typeof arch.layers === 'number' ? arch.layers : (typeof arch.layers === 'string' && /^\d+$/.test(arch.layers) ? parseInt(arch.layers) : 0);
+    const n = totalLayers || 32;
+    const displayRows = Math.max(6, Math.min(12, Math.ceil(n / 8)));
+    const perRow = Math.ceil(n / displayRows);
+    const rows = [];
+    for (let i = 0; i < displayRows; i++) {
+      const start = i * perRow + 1;
+      const end = Math.min((i + 1) * perRow, n);
+      const label = start === end ? `Layer ${start}` : `Layers ${start}-${end}`;
+      rows.push({
+        label,
+        barStyle: { position: 'relative', flex: 1, height: '18px', background: 'rgba(210,168,255,0.04)', borderRadius: '3px', overflow: 'hidden', border: '1px solid rgba(210,168,255,0.08)' },
+        sweepStyle: { position: 'absolute', top: 0, bottom: 0, width: '40%', background: 'linear-gradient(90deg,transparent,rgba(210,168,255,0.35),transparent)', animation: phase >= 5 ? `layerSweep 2s linear ${i * (1.8 / displayRows)}s infinite` : 'none' },
+        dotsStyle: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '3px' }
+      });
+    }
+    return rows;
+  }
+
   renderVals() {
     const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning, apiKey, apiProvider } = this.state;
     const useRealApi = this._useRealApi();
@@ -627,6 +886,7 @@ class Component extends DCLogic {
       return ['DONE ✓', { fontFamily: '"JetBrains Mono",monospace', fontSize: '9px', color: '#7ee787', border: '1px solid rgba(126,231,135,0.25)', padding: '1px 6px', borderRadius: '3px' }];
     };
     const [p1t, p1s] = phaseStatus(1), [p2t, p2s] = phaseStatus(2), [p3t, p3s] = phaseStatus(3), [p4t, p4s] = phaseStatus(4);
+    const [p5t, p5s] = phaseStatus(5), [p6t, p6s] = phaseStatus(6), [p7t, p7s] = phaseStatus(7);
 
     const mkDot = (n) => {
       const active = pipelinePhase >= n, curr = pipelinePhase === n;
@@ -639,26 +899,25 @@ class Component extends DCLogic {
     const msgsForPipeline = [sysMsg, ...(lastUser ? [lastUser] : [])];
     const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.slice(0, 28) + (m.content.length > 28 ? '...' : '') })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.fc ? { tools: [{ type: 'function', function: { name: 'get_weather' } }] } : {}), ...(toggles.search ? { web_search: true } : {}) };
 
-    const inputTokens = [
-      { text: '用', id: 14297, color: '#79c0ff' }, { text: '一句话', id: 28382, color: '#a5d6ff' },
-      { text: '解释', id: 22885, color: '#7ee787' }, { text: '什么', id: 20160, color: '#79c0ff' },
-      { text: '是', id: 31030, color: '#a5d6ff' }, { text: ' Trans', id: 8291, color: '#ffa657' }, { text: 'former', id: 13952, color: '#d2a8ff' }
-    ].map((tk, i) => ({
-      text: tk.text, idDisplay: `#${tk.id}`, idLabel: `Token ID: ${tk.id}`,
-      style: { display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', borderRadius: '4px', background: `${tk.color}18`, border: `1px solid ${tk.color}44`, color: tk.color, fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', animation: `tokenAppear 0.3s ease ${i * 0.07}s both`, userSelect: 'none', cursor: 'default' },
-      idStyle: { fontSize: '8px', color: `${tk.color}88` }
-    }));
+    // Stage 1: Context cards
+    const contextCards = this._buildContextCards(sysPrompt, history, inputText);
+    const totalEstTokens = contextCards.length > 0 ? contextCards[0].totalEst : 0;
+    const msgCount = contextCards.length;
 
-    const transformerLayers = ['Embedding', 'Layer 1', 'Layer 2', 'Layer 3', 'Layer 4', 'Output'].map((label, i) => ({
-      label,
-      barStyle: { position: 'relative', flex: 1, height: '18px', background: 'rgba(210,168,255,0.04)', borderRadius: '3px', overflow: 'hidden', border: '1px solid rgba(210,168,255,0.08)' },
-      sweepStyle: { position: 'absolute', top: 0, bottom: 0, width: '40%', background: 'linear-gradient(90deg,transparent,rgba(210,168,255,0.35),transparent)', animation: pipelinePhase === 3 ? `layerSweep 2s linear ${i * 0.25}s infinite` : 'none' },
-      dotsStyle: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '3px' }
-    }));
+    // Stage 3: Tokenization (dynamic, based on actual user input)
+    const tokenViz = this._buildTokenViz(inputText || (lastUser ? lastUser.content : ''), metrics.inputTokens, useRealApi);
+
+    // Stage 4: Model profile
+    const arch = this._modelArch(model);
+    const apiEndpoint = this.state.apiBaseUrl || '';
+    const modelProfile = this._buildModelProfile(model, arch, apiEndpoint);
+
+    // Stage 5: Model-specific transformer layers
+    const transformerLayers = this._buildTransformerLayers(arch, pipelinePhase);
 
     const probDist = this._probDist(params.temperature, params.topP, params.freqPenalty, params.presPenalty);
 
-    const cPct = Math.round((metrics.contextUsed + metrics.outputTokens) / metrics.totalTokens * 100);
+    const cPct = Math.round(metrics.contextUsed / metrics.totalTokens * 100);
     const prices = {
       'openai/gpt-4o': [5, 15], 'openai/gpt-4o-mini': [0.15, 0.6],
       'anthropic/claude-sonnet-4': [3, 15], 'anthropic/claude-3-5-haiku': [0.8, 4],
@@ -683,15 +942,20 @@ class Component extends DCLogic {
 
     const displayHistory = history.map(m => ({ ...m, roleLabel: m.role === 'user' ? '用户' : 'AI 助手', roleLabelStyle: { fontSize: '10px', color: m.role === 'user' ? '#6e7681' : 'rgba(0,255,160,0.5)', fontFamily: '"JetBrains Mono",monospace', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '2px' }, bubbleStyle: { background: m.role === 'user' ? '#21262d' : '#161b22', border: `1px solid ${m.role === 'user' ? '#30363d' : '#21262d'}`, borderRadius: m.role === 'user' ? '8px 8px 2px 8px' : '2px 8px 8px 8px', padding: '8px 12px', maxWidth: '92%', fontSize: '13px', color: m.role === 'user' ? '#e6edf3' : '#c9d1d9', lineHeight: '1.6', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start' } }));
 
-    const isPhasePending2 = pipelinePhase === 0;
-    const isPhasePending3 = pipelinePhase <= 1;
-    const isPhasePending4 = pipelinePhase <= 2;
+    const isPhasePending2 = pipelinePhase < 2;
+    const isPhasePending3 = pipelinePhase < 3;
+    const isPhasePending4 = pipelinePhase < 4;
+    const isPhasePending5 = pipelinePhase < 5;
+    const isPhasePending6 = pipelinePhase < 6;
     const showPhase2 = pipelinePhase >= 2;
     const showPhase3 = pipelinePhase >= 3;
     const showPhase4 = pipelinePhase >= 4;
+    const showPhase5 = pipelinePhase >= 5;
+    const showPhase6 = pipelinePhase >= 6;
+    const showPhase7 = pipelinePhase >= 7;
     const showStreamingBubble = streamingText.length > 0;
-    const showLiveCursor = pipelinePhase === 4;
-    const liveOutputText = pipelinePhase === 5 ? '' : streamingText;
+    const showLiveCursor = pipelinePhase === 6;
+    const liveOutputText = pipelinePhase === 7 ? '' : streamingText;
 
     return {
       model, setModel: (e) => this.setState({ model: e.target.value }),
@@ -702,7 +966,7 @@ class Component extends DCLogic {
       toggleSearch: () => this.setState(s => ({ toggles: { ...s.toggles, search: !s.toggles.search } })),
       toggleFCStyle: TS(toggles.fc), toggleCOTStyle: TS(toggles.cot), toggleSearchStyle: TS(toggles.search),
       sessionRounds: history.filter(m => m.role === 'user').length,
-      contextDisplay: `${(metrics.contextUsed + metrics.outputTokens).toLocaleString()} / ${metrics.totalTokens.toLocaleString()}`,
+      contextDisplay: `${metrics.contextUsed.toLocaleString()} / ${metrics.totalTokens.toLocaleString()}`,
       sysPrompt, updateSysPrompt: (e) => this.setState({ sysPrompt: e.target.value }),
       displayHistory, noMessages: displayHistory.length === 0,
       inputText, setInput: (e) => this.setState({ inputText: e.target.value }),
@@ -723,15 +987,24 @@ class Component extends DCLogic {
       })),
       inputTok: metrics.inputTokens || '--', outputTok: metrics.outputTokens || '--',
       pipelinePhase,
-      isPhasePending2, isPhasePending3, isPhasePending4, showPhase2, showPhase3, showPhase4,
+      isPhasePending2, isPhasePending3, isPhasePending4, isPhasePending5, isPhasePending6,
+      showPhase2, showPhase3, showPhase4, showPhase5, showPhase6, showPhase7,
       reqJsonEl: this._fmtJSON(reqObj, changedParam),
-      inputTokens, transformerLayers,
+      contextCards, msgCount, totalEstTokens,
+      tokenViz,
+      modelProfile,
+      transformerLayers, archLabel: arch.arch, archFamily: arch.family, archIsMoE: arch.isMoE,
       dotS1: mkDot(1), dotS2: mkDot(2), dotS3: mkDot(3), dotS4: mkDot(4),
+      dotS5: mkDot(5), dotS6: mkDot(6), dotS7: mkDot(7),
       lineS1: mkLine(2), lineS2: mkLine(3), lineS3: mkLine(4),
+      lineS4: mkLine(5), lineS5: mkLine(6), lineS6: mkLine(7),
       phase1StatusText: p1t, phase1StatusStyle: p1s,
       phase2StatusText: p2t, phase2StatusStyle: p2s,
       phase3StatusText: p3t, phase3StatusStyle: p3s,
       phase4StatusText: p4t, phase4StatusStyle: p4s,
+      phase5StatusText: p5t, phase5StatusStyle: p5s,
+      phase6StatusText: p6t, phase6StatusStyle: p6s,
+      phase7StatusText: p7t, phase7StatusStyle: p7s,
       sliders, probDist,
       tpsStyle: { fontFamily: '"JetBrains Mono",monospace', fontSize: '20px', fontWeight: '600', color: metrics.tps > 0 ? '#00ffa0' : '#484f58', animation: metrics.tps > 0 ? 'tpsJump 0.18s ease' : 'none' },
       tpsDisplay: metrics.tps > 0 ? `${metrics.tps}` : '--',

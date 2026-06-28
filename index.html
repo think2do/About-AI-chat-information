@@ -64,13 +64,12 @@
               <option value="demo/claude">demo/claude</option>
             </optgroup>
           </select>
-          <button onClick="{{ toggleFC }}" style="{{ toggleFCStyle }}"><span>🔧</span><span>工具调用</span></button>
           <button onClick="{{ toggleCOT }}" style="{{ toggleCOTStyle }}"><span>🧠</span><span>思维链</span></button>
         </div>
         <!-- Input area -->
         <div style="padding:10px 12px; border-top:1px solid #30363d; flex-shrink:0; background:#0d1117">
           <div style="display:flex; gap:8px; align-items:flex-end">
-            <textarea value="{{ inputText }}" onChange="{{ setInput }}" style="flex:1; background:#21262d; border:1px solid #30363d; border-radius:6px; padding:8px 10px; color:#e6edf3; font-size:12px; font-family:'JetBrains Mono',monospace; line-height:1.5; height:60px"></textarea>
+            <textarea key="{{ inputKey }}" defaultValue="{{ inputText }}" onInput="{{ setInput }}" style="flex:1; background:#21262d; border:1px solid #30363d; border-radius:6px; padding:8px 10px; color:#e6edf3; font-size:12px; font-family:'JetBrains Mono',monospace; line-height:1.5; height:60px"></textarea>
             <button onClick="{{ handleRun }}" style="{{ runBtnStyle }}">{{ runBtnText }}</button>
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px">
@@ -356,7 +355,7 @@
       <!-- SYSTEM PROMPT -->
       <div style="padding:12px 14px; border-bottom:1px solid #30363d" data-comment-anchor="b5098f1eb0-div">
         <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:6px">SYSTEM PROMPT</div>
-        <textarea value="{{ sysPrompt }}" onChange="{{ updateSysPrompt }}" placeholder="你是一个专业的 AI 助手..." style="width:100%; padding:8px 10px; background:#0d1117; color:#8b949e; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.55; border:1px solid #30363d; border-radius:6px; height:68px; display:block; resize:vertical; outline:none"></textarea>
+        <textarea defaultValue="{{ sysPrompt }}" onInput="{{ updateSysPrompt }}" placeholder="你是一个专业的 AI 助手..." style="width:100%; padding:8px 10px; background:#0d1117; color:#8b949e; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.55; border:1px solid #30363d; border-radius:6px; height:68px; display:block; resize:vertical; outline:none"></textarea>
       </div>
 
       <!-- PARAMETERS -->
@@ -406,7 +405,7 @@ class Component extends DCLogic {
   state = {
     model: 'openai/gpt-4o',
     toggles: { streaming: true, fc: false, cot: false, search: false },
-    params: { maxTokens: 512, temperature: 0.7, topP: 0.9, freqPenalty: 0.0, presPenalty: 0.0 },
+    params: { maxTokens: 4096, temperature: 1.0, topP: 1.0, freqPenalty: 1.0, presPenalty: 1.0 },
     pipelinePhase: 0,
     streamingText: '',
     changedParam: null,
@@ -419,7 +418,8 @@ class Component extends DCLogic {
     autoSteps: [],
     _runId: 0,
     estPromptTokens: 0,
-    apiKey: ''
+    apiKey: '',
+    _inputKey: 0
   };
 
   _timers = [];
@@ -457,7 +457,7 @@ class Component extends DCLogic {
     const userMsg = { role: 'user', content: inputText, id: `u${rid}` };
     const newHistory = [...history, userMsg];
     const estPromptTokens = this._estimateTokens(sysPrompt) + newHistory.reduce((s, m) => s + this._estimateTokens(m.content), 0);
-    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens });
+    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens, _inputKey: this.state._inputKey + 1 });
 
     const useReal = this._useRealApi();
     this._schedule(() => this.setState({ pipelinePhase: 2 }), 350);
@@ -474,8 +474,10 @@ class Component extends DCLogic {
   }
 
   _streamDemo(rid) {
-    const { toggles, estPromptTokens } = this.state;
-    const ans = 'Transformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。';
+    const { toggles, estPromptTokens, sysPrompt, history } = this.state;
+    const lastUser = [...history].reverse().find(m => m.role === 'user');
+    const question = lastUser ? lastUser.content : this.state.inputText;
+    const ans = this._genDemoResponse(sysPrompt, question, history);
     const estInput = estPromptTokens || 28;
     if (!toggles.streaming) {
       this._schedule(() => {
@@ -508,6 +510,42 @@ class Component extends DCLogic {
         }, 350);
       }
     }, 32);
+  }
+
+  _genDemoResponse(sysPrompt, userInput, history) {
+    const sp = (sysPrompt || '').toLowerCase();
+    const q = userInput || '';
+    const lastAssistant = [...(history || [])].reverse().find(m => m.role === 'assistant');
+    const prevContext = lastAssistant
+      ? `\n\n（之前你回复过：「${lastAssistant.content.slice(0, 80)}」）`
+      : '';
+    const isMultiTurn = (history || []).filter(m => m.role === 'user').length > 1;
+
+    // 猫娘 / 角色扮演类
+    if (sp.includes('猫娘') || sp.includes('角色扮演') || sp.includes('猫猫')) {
+      if (q.includes('transformer') || q.includes('Transformer'))
+        return isMultiTurn
+          ? '喵～主人又问到 Transformer 了呢～上一轮我已经解释过架构层面的东西喵，这次可以从训练细节来补充：它使用注意力计算代替 RNN 序列处理，所以可以并行训练，速度飞快喵！(*＾▽＾)／'
+          : '喵～主人问的是 Transformer 喵！它是一种基于自注意力机制的深度学习架构喵，用并行计算代替了 RNN 的逐步处理，训练效率超高的说～像 GPT、BERT 这些大模型都是用它做的喵！(*^▽^*)';
+      return `喵呜～主人说「${q.length > 40 ? q.slice(0, 40) + '...' : q}」喵～这个问题很有趣呢！${isMultiTurn ? '主人这次问的方向和之前不太一样喵，让我想想……' : '作为一只聪明的小猫娘，我觉得这个问题需要从多个角度来看喵～'}(*´ω｀*) 主人想深入了解的话，可以再具体一点问我喵！${prevContext}`;
+    }
+    // 代码 / 技术专家类
+    if (sp.includes('代码') || sp.includes('程序员') || sp.includes('编程') || sp.includes('工程师')) {
+      return `好的，基于我们${isMultiTurn ? '之前的讨论，' : ''}从技术角度来分析「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题：\n\n${isMultiTurn ? '结合你刚才提到的内容，' : ''}这是一个涉及计算机科学核心概念的话题。从工程实践来看，我们需要关注以下几个方面：\n\n1. **架构设计**：合理的系统架构是解决问题的基础\n2. **性能优化**：在保证正确性的前提下追求效率\n3. **可维护性**：代码的可读性和可扩展性同样重要\n\n如果你有更具体的场景或需求，我可以给出更针对性的建议。`;
+    }
+    // 简短回答类
+    if (sp.includes('简短') || sp.includes('简洁') || sp.includes('一句话') || sp.includes('简明')) {
+      if (q.includes('transformer') || q.includes('Transformer'))
+        return isMultiTurn
+          ? 'Transformer 通过自注意力机制实现高效的序列建模，上一轮提到的并行训练是它相比 RNN 的核心优势。'
+          : 'Transformer 是一种基于自注意力机制的深度学习架构，通过并行计算替代 RNN 序列处理，大幅提升训练效率。';
+      return `关于「${q.length > 30 ? q.slice(0, 30) + '...' : q}」：${isMultiTurn ? '结合上下文来看，' : ''}核心在于理解其基本原理和实际应用场景。`;
+    }
+    // 默认：专业 AI 助手
+    const suffix = isMultiTurn
+      ? '\n\n另外，如果你对新话题感兴趣，也可以随时切换方向。'
+      : '\n\n如果你对某个具体方面感兴趣，欢迎继续提问！';
+    return `感谢你的提问！关于「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题，让我为你详细解答：\n\nTransformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。\n\n在实际应用中，Transformer 架构已被广泛用于自然语言处理、计算机视觉、语音识别等多个领域。其核心创新在于自注意力机制，使得模型能够动态关注输入序列中的不同位置，从而更好地理解上下文关系。${suffix}`;
   }
 
   async _streamReal(rid, history) {
@@ -886,8 +924,8 @@ class Component extends DCLogic {
 
     const sysMsg = { role: 'system', content: sysPrompt };
     const lastUser = [...history].reverse().find(m => m.role === 'user');
-    const msgsForPipeline = [sysMsg, ...(lastUser ? [lastUser] : [])];
-    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.slice(0, 28) + (m.content.length > 28 ? '...' : '') })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.fc ? { tools: [{ type: 'function', function: { name: 'get_weather' } }] } : {}), ...(toggles.search ? { web_search: true } : {}) };
+    const msgsForPipeline = [sysMsg, ...history];
+    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.search ? { web_search: true } : {}) };
 
     // Stage 1: Context cards
     const contextCards = this._buildContextCards(sysPrompt, history, inputText);
@@ -943,7 +981,7 @@ class Component extends DCLogic {
     const showPhase6 = pipelinePhase >= 6;
     const showPhase7 = pipelinePhase >= 7;
     const isPhase6Active = pipelinePhase === 6;
-    const showStreamingBubble = streamingText.length > 0;
+    const showStreamingBubble = streamingText.length > 0 && isRunning;
     const showLiveCursor = pipelinePhase === 6;
     const liveOutputText = streamingText;
 
@@ -951,15 +989,15 @@ class Component extends DCLogic {
       model, setModel: (e) => this.setState({ model: e.target.value }),
       apiStatusText, apiStatusStyle, useRealApi,
       toggles,
-      toggleFC: () => this.setState(s => ({ toggles: { ...s.toggles, fc: !s.toggles.fc } })),
       toggleCOT: () => this.setState(s => ({ toggles: { ...s.toggles, cot: !s.toggles.cot } })),
       toggleSearch: () => this.setState(s => ({ toggles: { ...s.toggles, search: !s.toggles.search } })),
-      toggleFCStyle: TS(toggles.fc), toggleCOTStyle: TS(toggles.cot), toggleSearchStyle: TS(toggles.search),
+      toggleCOTStyle: TS(toggles.cot), toggleSearchStyle: TS(toggles.search),
       sessionRounds: history.filter(m => m.role === 'user').length,
       contextDisplay: `${metrics.contextUsed.toLocaleString()} / ${metrics.totalTokens.toLocaleString()}`,
       sysPrompt, updateSysPrompt: (e) => this.setState({ sysPrompt: e.target.value }),
       displayHistory, noMessages: displayHistory.length === 0,
       inputText, setInput: (e) => this.setState({ inputText: e.target.value }),
+      inputKey: this.state._inputKey,
       handleRun: () => this.handleRun(),
       isRunning,
       runBtnStyle: { padding: '7px 14px', borderRadius: '6px', cursor: isRunning ? 'not-allowed' : 'pointer', background: isRunning ? '#21262d' : '#00ffa0', color: isRunning ? '#6e7681' : '#0d1117', fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', fontWeight: '600', border: 'none', transition: 'all 0.2s ease', opacity: isRunning ? 0.7 : 1, flexShrink: 0 },

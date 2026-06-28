@@ -35,7 +35,19 @@
           <sc-for list="{{ displayHistory }}" as="msg" hint-placeholder-count="0">
             <div style="display:flex; flex-direction:column; gap:3px">
               <span style="{{ msg.roleLabelStyle }}">{{ msg.roleLabel }}</span>
-              <div style="{{ msg.bubbleStyle }}">{{ msg.content }}</div>
+              <div style="{{ msg.bubbleStyle }}">
+                <sc-if value="{{ msg.isCot }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ msg.cotThinkingStyle }}">🧠 {{ msg.cotThinking }}</div>
+                </sc-if>
+                {{ msg.cotAnswer }}
+              </div>
+              <sc-if value="{{ msg.showMetrics }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ msg.metricsStyle }}">
+                  <span>输出 {{ msg.msgOutTok }} tok</span>
+                  <span>TPS {{ msg.msgTps }}</span>
+                  <span>TTFT {{ msg.msgTtft }}ms</span>
+                </div>
+              </sc-if>
             </div>
           </sc-for>
           <sc-if value="{{ showStreamingBubble }}" hint-placeholder-val="{{ false }}">
@@ -419,7 +431,8 @@ class Component extends DCLogic {
     _runId: 0,
     estPromptTokens: 0,
     apiKey: '',
-    _inputKey: 0
+    _inputKey: 0,
+    _lastOutput: ''
   };
 
   _timers = [];
@@ -457,7 +470,7 @@ class Component extends DCLogic {
     const userMsg = { role: 'user', content: inputText, id: `u${rid}` };
     const newHistory = [...history, userMsg];
     const estPromptTokens = this._estimateTokens(sysPrompt) + newHistory.reduce((s, m) => s + this._estimateTokens(m.content), 0);
-    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens, _inputKey: this.state._inputKey + 1 });
+    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', _lastOutput: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens, _inputKey: this.state._inputKey + 1 });
 
     const useReal = this._useRealApi();
     this._schedule(() => this.setState({ pipelinePhase: 2 }), 350);
@@ -477,42 +490,60 @@ class Component extends DCLogic {
     const { toggles, estPromptTokens, sysPrompt, history } = this.state;
     const lastUser = [...history].reverse().find(m => m.role === 'user');
     const question = lastUser ? lastUser.content : this.state.inputText;
-    const ans = this._genDemoResponse(sysPrompt, question, history);
+    const result = this._genDemoResponse(sysPrompt, question, history, toggles.cot);
+    const ans = typeof result === 'string' ? result : result.answer;
+    const cotText = typeof result === 'string' ? '' : result.thinking;
     const estInput = estPromptTokens || 28;
+    const _finishDemo = (finalAns, isCot) => {
+      const outTok = Math.round(finalAns.length * 0.42);
+      const m = this.state.metrics;
+      const am = { role: 'assistant', content: finalAns, id: `a${rid}`, cot: isCot || false, _outTok: outTok, _tps: m.tps, _ttft: m.ttft };
+      this.setState(s => ({ isRunning: false, pipelinePhase: 7, streamingText: '', _lastOutput: finalAns, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, contextUsed: estInput + outTok } }));
+    };
+
     if (!toggles.streaming) {
+      const fullText = cotText ? cotText + '\n\n' + ans : ans;
       this._schedule(() => {
         if (this.state._runId !== rid) return;
-        const am = { role: 'assistant', content: ans, id: `a${rid}` };
-        const outTok = Math.round(ans.length * 0.42);
-        this.setState(s => ({ isRunning: false, pipelinePhase: 7, streamingText: ans, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, ttft: 220, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok } }));
-      }, 600);
+        const am = { role: 'assistant', content: fullText, id: `a${rid}`, cot: !!cotText, _outTok: outTok, _tps: 0, _ttft: 220 };
+        const outTok = Math.round(fullText.length * 0.42);
+        this.setState(s => ({ isRunning: false, pipelinePhase: 7, streamingText: fullText, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, ttft: 220, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok } }));
+      }, cotText ? 1200 : 600);
       return;
     }
+
+    let phase = cotText ? 'cot' : 'answer';
     let i = 0; const t0 = Date.now();
+    const currentText = () => phase === 'cot' ? cotText : ans;
     this.setState(s => ({ metrics: { ...s.metrics, ttft: Math.round(155 + Math.random() * 110), inputTokens: estInput }, pipelinePhase: 6 }));
+
     const iv = this._tick(() => {
       if (this.state._runId !== rid) { clearInterval(iv); return; }
-      i = Math.min(i + (Math.random() < 0.3 ? 2 : 1), ans.length);
+      const txt = currentText();
+      if (!txt) { clearInterval(iv); _finishDemo(ans, false); return; }
+      i = Math.min(i + (Math.random() < 0.3 ? 2 : 1), txt.length);
       const outTok = Math.round(i * 0.42);
       const tps = Math.min(Math.round(outTok / Math.max((Date.now() - t0) / 1000, 0.01)), 81);
-      const newToken = ans.slice(Math.max(0, i - 2), i);
+      const newToken = txt.slice(Math.max(0, i - 2), i);
       this.setState(s => ({
-        streamingText: ans.slice(0, i),
+        streamingText: (phase === 'cot' ? '🧠 思考中…\n' : '') + txt.slice(0, i),
         metrics: { ...s.metrics, tps, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok },
         autoSteps: [...s.autoSteps, { step: outTok, token: newToken, ctxLen: estInput + outTok }]
       }));
-      if (i >= ans.length) {
-        clearInterval(iv);
-        const am = { role: 'assistant', content: ans, id: `a${rid}` };
-        this._schedule(() => {
-          if (this.state._runId !== rid) return;
-          this.setState(s => ({ isRunning: false, pipelinePhase: 7, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, contextUsed: estInput + outTok } }));
-        }, 350);
+      if (i >= txt.length) {
+        if (phase === 'cot' && ans) {
+          // 思维链输出完，切换到正式回答
+          i = 0; phase = 'answer';
+          this._schedule(() => {}, 400);
+        } else {
+          clearInterval(iv);
+          _finishDemo(cotText ? cotText + '\n\n' + ans : ans, !!cotText);
+        }
       }
     }, 32);
   }
 
-  _genDemoResponse(sysPrompt, userInput, history) {
+  _genDemoResponse(sysPrompt, userInput, history, cot) {
     const sp = (sysPrompt || '').toLowerCase();
     const q = userInput || '';
     const lastAssistant = [...(history || [])].reverse().find(m => m.role === 'assistant');
@@ -521,31 +552,46 @@ class Component extends DCLogic {
       : '';
     const isMultiTurn = (history || []).filter(m => m.role === 'user').length > 1;
 
+    // 各模式的基础回答
+    let answer = '';
     // 猫娘 / 角色扮演类
     if (sp.includes('猫娘') || sp.includes('角色扮演') || sp.includes('猫猫')) {
       if (q.includes('transformer') || q.includes('Transformer'))
-        return isMultiTurn
+        answer = isMultiTurn
           ? '喵～主人又问到 Transformer 了呢～上一轮我已经解释过架构层面的东西喵，这次可以从训练细节来补充：它使用注意力计算代替 RNN 序列处理，所以可以并行训练，速度飞快喵！(*＾▽＾)／'
           : '喵～主人问的是 Transformer 喵！它是一种基于自注意力机制的深度学习架构喵，用并行计算代替了 RNN 的逐步处理，训练效率超高的说～像 GPT、BERT 这些大模型都是用它做的喵！(*^▽^*)';
-      return `喵呜～主人说「${q.length > 40 ? q.slice(0, 40) + '...' : q}」喵～这个问题很有趣呢！${isMultiTurn ? '主人这次问的方向和之前不太一样喵，让我想想……' : '作为一只聪明的小猫娘，我觉得这个问题需要从多个角度来看喵～'}(*´ω｀*) 主人想深入了解的话，可以再具体一点问我喵！${prevContext}`;
+      else
+        answer = `喵呜～主人说「${q.length > 40 ? q.slice(0, 40) + '...' : q}」喵～这个问题很有趣呢！${isMultiTurn ? '主人这次问的方向和之前不太一样喵，让我想想……' : '作为一只聪明的小猫娘，我觉得这个问题需要从多个角度来看喵～'}(*´ω｀*) 主人想深入了解的话，可以再具体一点问我喵！${prevContext}`;
     }
     // 代码 / 技术专家类
-    if (sp.includes('代码') || sp.includes('程序员') || sp.includes('编程') || sp.includes('工程师')) {
-      return `好的，基于我们${isMultiTurn ? '之前的讨论，' : ''}从技术角度来分析「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题：\n\n${isMultiTurn ? '结合你刚才提到的内容，' : ''}这是一个涉及计算机科学核心概念的话题。从工程实践来看，我们需要关注以下几个方面：\n\n1. **架构设计**：合理的系统架构是解决问题的基础\n2. **性能优化**：在保证正确性的前提下追求效率\n3. **可维护性**：代码的可读性和可扩展性同样重要\n\n如果你有更具体的场景或需求，我可以给出更针对性的建议。`;
+    else if (sp.includes('代码') || sp.includes('程序员') || sp.includes('编程') || sp.includes('工程师')) {
+      answer = `好的，基于我们${isMultiTurn ? '之前的讨论，' : ''}从技术角度来分析「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题：\n\n${isMultiTurn ? '结合你刚才提到的内容，' : ''}这是一个涉及计算机科学核心概念的话题。从工程实践来看，我们需要关注以下几个方面：\n\n1. **架构设计**：合理的系统架构是解决问题的基础\n2. **性能优化**：在保证正确性的前提下追求效率\n3. **可维护性**：代码的可读性和可扩展性同样重要\n\n如果你有更具体的场景或需求，我可以给出更针对性的建议。`;
     }
     // 简短回答类
-    if (sp.includes('简短') || sp.includes('简洁') || sp.includes('一句话') || sp.includes('简明')) {
+    else if (sp.includes('简短') || sp.includes('简洁') || sp.includes('一句话') || sp.includes('简明')) {
       if (q.includes('transformer') || q.includes('Transformer'))
-        return isMultiTurn
+        answer = isMultiTurn
           ? 'Transformer 通过自注意力机制实现高效的序列建模，上一轮提到的并行训练是它相比 RNN 的核心优势。'
           : 'Transformer 是一种基于自注意力机制的深度学习架构，通过并行计算替代 RNN 序列处理，大幅提升训练效率。';
-      return `关于「${q.length > 30 ? q.slice(0, 30) + '...' : q}」：${isMultiTurn ? '结合上下文来看，' : ''}核心在于理解其基本原理和实际应用场景。`;
+      else
+        answer = `关于「${q.length > 30 ? q.slice(0, 30) + '...' : q}」：${isMultiTurn ? '结合上下文来看，' : ''}核心在于理解其基本原理和实际应用场景。`;
     }
     // 默认：专业 AI 助手
-    const suffix = isMultiTurn
-      ? '\n\n另外，如果你对新话题感兴趣，也可以随时切换方向。'
-      : '\n\n如果你对某个具体方面感兴趣，欢迎继续提问！';
-    return `感谢你的提问！关于「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题，让我为你详细解答：\n\nTransformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。\n\n在实际应用中，Transformer 架构已被广泛用于自然语言处理、计算机视觉、语音识别等多个领域。其核心创新在于自注意力机制，使得模型能够动态关注输入序列中的不同位置，从而更好地理解上下文关系。${suffix}`;
+    else {
+      const suffix = isMultiTurn
+        ? '\n\n另外，如果你对新话题感兴趣，也可以随时切换方向。'
+        : '\n\n如果你对某个具体方面感兴趣，欢迎继续提问！';
+      answer = `感谢你的提问！关于「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题，让我为你详细解答：\n\nTransformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。\n\n在实际应用中，Transformer 架构已被广泛用于自然语言处理、计算机视觉、语音识别等多个领域。其核心创新在于自注意力机制，使得模型能够动态关注输入序列中的不同位置，从而更好地理解上下文关系。${suffix}`;
+    }
+
+    if (!cot) return answer;
+
+    // 生成思维链：根据问题类型产出不同的推理过程
+    const thinking = q.includes('transformer') || q.includes('Transformer')
+      ? `嗯，用户问的是关于 Transformer 的问题。让我先理清思路：\n1. Transformer 的核心是"自注意力机制"——它让每个词都能直接看到序列里所有其他词\n2. 相比 RNN/LSTM，Transformer 可以并行计算整个序列，不依赖上一步的输出\n3. 这解决了长程依赖问题，因为信息不需要一步步传递\n4. 所以训练效率大幅提升，这也是 GPT/BERT 能 scaling 到大规模的关键\n→ 基于以上分析，我给出回答：`
+      : `让我思考一下这个问题……\n用户想问的是「${q.slice(0, 20)}」相关的概念。\n1. 首先判断这是否涉及技术原理——如果是，就要从核心概念出发\n2. 考虑用户的背景——用${sp.includes('猫娘') ? '猫娘的口吻' : '清晰易懂的中文'}解释\n3. ${isMultiTurn ? '回顾之前的对话，找到可以呼应的点' : '组织一个结构化的回答'}\n→ 整理好思路后，给出最终答复：`;
+
+    return { thinking, answer };
   }
 
   async _streamReal(rid, history) {
@@ -583,15 +629,16 @@ class Component extends DCLogic {
       if (errMsg) {
         const errMsg2 = errMsg;
         this.setState(s => ({
-          isRunning: false, pipelinePhase: 7, streamingText: fullText,
+          isRunning: false, pipelinePhase: 7, streamingText: fullText, _lastOutput: fullText,
           history: [...s.history, { role: 'assistant', content: `❌ ${errMsg2}`, id: `err${rid}` }],
           metrics: { ...s.metrics, tps: 0 }
         }));
       } else {
-        const am = { role: 'assistant', content: fullText, id: `a${rid}` };
+        const m = this.state.metrics;
+        const am = { role: 'assistant', content: fullText, id: `a${rid}`, _outTok: outTok, _tps: m.tps, _ttft: m.ttft };
         const finalCtx = promptTok + outTok;
         this.setState(s => ({
-          isRunning: false, pipelinePhase: 7, streamingText: fullText,
+          isRunning: false, pipelinePhase: 7, streamingText: fullText, _lastOutput: fullText,
           history: [...s.history, am],
           metrics: { ...s.metrics, tps: 0, contextUsed: finalCtx, inputTokens: promptTok, outputTokens: outTok }
         }));
@@ -924,8 +971,9 @@ class Component extends DCLogic {
 
     const sysMsg = { role: 'system', content: sysPrompt };
     const lastUser = [...history].reverse().find(m => m.role === 'user');
-    const msgsForPipeline = [sysMsg, ...history];
-    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.search ? { web_search: true } : {}) };
+    const pendingMsg = (!isRunning && inputText.trim()) ? [{ role: 'user', content: inputText, _pending: true }] : [];
+    const msgsForPipeline = [sysMsg, ...history, ...pendingMsg];
+    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.cot ? { reasoning: true, reasoning_effort: 'medium' } : {}), ...(toggles.search ? { web_search: true } : {}) };
 
     // Stage 1: Context cards
     const contextCards = this._buildContextCards(sysPrompt, history, inputText);
@@ -967,7 +1015,29 @@ class Component extends DCLogic {
       { key: 'presPenalty', label: 'Presence Penalty', desc: '鼓励引入话题中未出现过的词汇', min: 0, max: 2, step: 0.01, val: params.presPenalty, fmt: v => v.toFixed(2) }
     ].map(s => ({ ...s, display: s.fmt(s.val), onChange: (e) => this.changeParam(s.key, e.target.value), valStyle: { fontFamily: '"JetBrains Mono",monospace', fontSize: '12px', color: changedParam === s.key ? '#00ffa0' : '#79c0ff', transition: 'color 0.3s ease', minWidth: '38px', textAlign: 'right', animation: changedParam === s.key ? 'tpsJump 0.2s ease' : 'none' } }));
 
-    const displayHistory = history.map(m => ({ ...m, roleLabel: m.role === 'user' ? '用户' : 'AI 助手', roleLabelStyle: { fontSize: '10px', color: m.role === 'user' ? '#6e7681' : 'rgba(0,255,160,0.5)', fontFamily: '"JetBrains Mono",monospace', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '2px' }, bubbleStyle: { background: m.role === 'user' ? '#21262d' : '#161b22', border: `1px solid ${m.role === 'user' ? '#30363d' : '#21262d'}`, borderRadius: m.role === 'user' ? '8px 8px 2px 8px' : '2px 8px 8px 8px', padding: '8px 12px', maxWidth: '92%', fontSize: '13px', color: m.role === 'user' ? '#e6edf3' : '#c9d1d9', lineHeight: '1.6', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start' } }));
+    const displayHistory = history.map(m => {
+      const isCot = m.cot && m.content.includes('\n\n');
+      const cotParts = isCot ? m.content.split('\n\n') : null;
+      const cotThinking = cotParts ? cotParts[0] : null;
+      const cotAnswer = cotParts ? cotParts.slice(1).join('\n\n') : m.content;
+      const isAI = m.role === 'assistant';
+      const hasMetrics = isAI && typeof m._outTok === 'number';
+      return {
+        ...m,
+        isCot,
+        cotThinking,
+        cotAnswer,
+        roleLabel: m.role === 'user' ? '用户' : (isCot ? 'AI 助手 · 思维链' : 'AI 助手'),
+        roleLabelStyle: { fontSize: '10px', color: m.role === 'user' ? '#6e7681' : (isCot ? '#ffa657' : 'rgba(0,255,160,0.5)'), fontFamily: '"JetBrains Mono",monospace', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '2px' },
+        bubbleStyle: { background: m.role === 'user' ? '#21262d' : (isCot ? '#161b22' : '#161b22'), border: `1px solid ${m.role === 'user' ? '#30363d' : (isCot ? 'rgba(255,166,87,0.2)' : '#21262d')}`, borderRadius: m.role === 'user' ? '8px 8px 2px 8px' : '2px 8px 8px 8px', padding: hasMetrics ? '8px 12px 4px 12px' : '8px 12px', maxWidth: '92%', fontSize: '13px', color: m.role === 'user' ? '#e6edf3' : (isCot ? '#c9d1d9' : '#c9d1d9'), lineHeight: '1.6', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start' },
+        cotThinkingStyle: { color: '#ffa657', fontSize: '12px', lineHeight: '1.6', fontFamily: '"JetBrains Mono",monospace', padding: '6px 8px', background: 'rgba(255,166,87,0.06)', borderRadius: '4px', borderLeft: '2px solid #ffa657', marginBottom: '8px' },
+        showMetrics: hasMetrics,
+        msgOutTok: hasMetrics ? m._outTok : 0,
+        msgTps: hasMetrics ? m._tps : 0,
+        msgTtft: hasMetrics ? (typeof m._ttft === 'number' ? m._ttft : 0) : 0,
+        metricsStyle: { display: 'flex', gap: '12px', fontSize: '9px', fontFamily: '"JetBrains Mono",monospace', color: '#484f58', padding: '3px 0 0 0', borderTop: '1px solid #21262d', marginTop: '4px' },
+      };
+    });
 
     const isPhasePending2 = pipelinePhase < 2;
     const isPhasePending3 = pipelinePhase < 3;
@@ -983,7 +1053,7 @@ class Component extends DCLogic {
     const isPhase6Active = pipelinePhase === 6;
     const showStreamingBubble = streamingText.length > 0 && isRunning;
     const showLiveCursor = pipelinePhase === 6;
-    const liveOutputText = streamingText;
+    const liveOutputText = streamingText || this.state._lastOutput;
 
     return {
       model, setModel: (e) => this.setState({ model: e.target.value }),

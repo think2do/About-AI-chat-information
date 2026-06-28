@@ -17,25 +17,14 @@
   <dc-import name="Nav" active="jargon" hint-size="56px,100%" style="flex-shrink:0"></dc-import>
 
   <!-- Left: Tree -->
-  <div style="width:260px; flex-shrink:0; border-right:1px solid #30363d; overflow-y:auto; background:#0d1117; padding:12px 0">
+  <div style="width:280px; flex-shrink:0; border-right:1px solid #30363d; overflow-y:auto; background:#0d1117; padding:12px 0">
     <div style="padding:0 14px 8px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; letter-spacing:0.06em">AI 技术术语树 · 点击展开 / 选词</div>
-    <sc-for list="{{ jargonTree }}" as="cat" hint-placeholder-count="5">
-      <div style="margin-bottom:2px">
-        <div onClick="{{ cat.toggleExpand }}" style="{{ cat.headerStyle }}">
-          <span style="font-size:10px; color:#484f58; margin-right:4px">{{ cat.expandIcon }}</span>
-          <span style="{{ cat.catLabelStyle }}">{{ cat.label }}</span>
-        </div>
-        <sc-if value="{{ cat.expanded }}" hint-placeholder-val="{{ false }}">
-          <div>
-            <sc-for list="{{ cat.items }}" as="item" hint-placeholder-count="4">
-              <div onClick="{{ item.select }}" style="{{ item.style }}">
-                <span>{{ item.label }}</span>
-                <sc-if value="{{ item.isNew }}" hint-placeholder-val="{{ false }}">
-                  <span style="font-size:8px; color:#ffa657; background:rgba(255,166,87,0.15); border:1px solid rgba(255,166,87,0.3); border-radius:3px; padding:0 4px; margin-left:4px; font-family:'JetBrains Mono',monospace">NEW</span>
-                </sc-if>
-              </div>
-            </sc-for>
-          </div>
+    <sc-for list="{{ jargonTree }}" as="node" hint-placeholder-count="35">
+      <div onClick="{{ node.onClick }}" style="{{ node.itemStyle }}">
+        <span style="{{ node.indicatorStyle }}">{{ node.indicatorIcon }}</span>
+        <span style="{{ node.labelStyle }}">{{ node.label }}</span>
+        <sc-if value="{{ node.isNew }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:8px; color:#ffa657; background:rgba(255,166,87,0.15); border:1px solid rgba(255,166,87,0.3); border-radius:3px; padding:0 4px; margin-left:4px; font-family:'JetBrains Mono',monospace">NEW</span>
         </sc-if>
       </div>
     </sc-for>
@@ -87,11 +76,16 @@
 class Component extends DCLogic {
   state = {
     selectedJargon: null,
-    expandedCats: { '基础概念': true, '训练阶段': false, '推理与调用': false, '架构': false, '应用与职业': false }
+    expandedNodes: {
+      cat_basics: true, cat_arch: false, cat_train: false, cat_infer: false, cat_app: false, cat_limit: false,
+      Transformer: false, FineTuning: false, Alignment: false,
+      grp_decode: false, grp_prompteng: false, grp_toolagent: false, grp_inferboost: false,
+      grp_agent: false, grp_eng: false
+    }
   };
 
   renderVals() {
-    const { selectedJargon, expandedCats } = this.state;
+    const { selectedJargon, expandedNodes } = this.state;
 
     const JARGON_DATA = {
       LLM:{zh:'大语言模型',en:'Large Language Model (LLM)',emoji:'🧠',plain:'一类在海量文本上训练出来的 AI 模型，能理解和生成人类语言。ChatGPT、Claude、Gemini 都是大语言模型。',tech:'基于 Transformer 架构，通过在大规模语料上进行自回归预训练，学习语言的统计规律，参数量通常在数十亿到数万亿之间。',related:['Transformer','Token','Pretrain','Prompt'],isNew:false},
@@ -99,69 +93,174 @@ class Component extends DCLogic {
       Tokenizer:{zh:'分词器',en:'Tokenizer',emoji:'✂️',plain:'把人类写的文字切成 token 的工具。同一句话在不同模型的分词器下切出来的 token 数量可能不一样。',tech:'常见算法包括 BPE（GPT 系列）、WordPiece（BERT）、Unigram（SentencePiece）。中文模型通常针对汉字优化了分词效率。',related:['Token','Embedding','ContextWindow'],isNew:false},
       Embedding:{zh:'向量 / 嵌入',en:'Embedding',emoji:'⬡',plain:'把文字变成一串数字的过程。语义相近的词在这个数字空间里距离更近——这让模型能"理解"词语的含义。',tech:'将离散的 token ID 映射到连续的高维浮点向量空间（如 768 维或 4096 维）。相似语义的 token 在欧氏距离或余弦相似度上更接近。',related:['Token','RAG','VectorDB'],isNew:false},
       ContextWindow:{zh:'上下文窗口',en:'Context Window',emoji:'🪟',plain:'模型一次能"看到"的最大文字量。超过这个限制，早期的内容就会被"遗忘"。现在的顶级模型可以达到 100 万 token 以上。',tech:'Transformer 的 attention 计算是 O(n²) 的，context window 决定了模型能处理的最大序列长度。超长 context 往往伴随"context rot"现象。',related:['Token','ContextRot','ContextEngineering'],isNew:false},
-      Temperature:{zh:'温度 / 采样参数',en:'Temperature',emoji:'🌡️',plain:'控制模型回答"随机性"的旋钮。温度越高，答案越天马行空；温度越低，答案越保守精确。写代码用低温，写诗用高温。',tech:'在 softmax 归一化之前，将 logits 除以温度 T。T→0 趋向 greedy decoding；T→∞ 趋向均匀分布。通常与 Top-P 配合使用。',related:['LLM','Prompt'],isNew:false},
-      Hallucination:{zh:'幻觉',en:'Hallucination',emoji:'👻',plain:'模型一本正经地"编造"不存在的事实。比如引用一篇根本不存在的论文，或者给出一个错误的历史事件。这是 LLM 目前最大的痛点之一。',tech:'源于模型在推理时依赖统计相关性而非真实世界知识。缓解方法包括 RAG（引入外部知识）、RLHF（强化真实性）、以及推理时的 grounding 机制。',related:['RAG','RLHF','Grounding'],isNew:false},
-      ContextRot:{zh:'上下文腐烂',en:'Context Rot',emoji:'🦠',plain:'当塞入 context 的内容越来越多时，模型反而变得更容易犯错、更容易"忘记"前面说的内容。就像桌子越乱，工作效率越低。',tech:'Chroma Research 2025 年研究发现：即使是简单任务，模型在 context 超长时性能也显著下降。根本原因是 attention 机制的有限"注意力预算"。Context Engineering 就是为了解决这个问题。',related:['ContextWindow','ContextEngineering','Attention'],isNew:true},
-      Pretrain:{zh:'预训练',en:'Pre-training',emoji:'📚',plain:'让模型"读遍全网"的阶段。在数万亿字的网页、书籍、代码上训练，学会语言规律，但此时模型还不会"听话"按指令回答问题。',tech:'在大规模无标注语料上进行自监督学习，通常使用 next-token prediction 目标函数。输出的是基座模型（Base Model），具备语言能力但缺乏指令跟随能力。',related:['SFT','RLHF','LLM'],isNew:false},
-      SFT:{zh:'指令微调 / 监督微调',en:'Supervised Fine-Tuning (SFT)',emoji:'🎓',plain:'在预训练之后，用"问题-答案"对来继续训练，让模型学会"按要求回答"而不是随意续写。ChatGPT 能听话就是因为做了这一步。',tech:'在人工标注的指令-响应对上进行有监督学习，让模型从"语言模型"转变为"指令跟随模型"。通常只需要数万到数百万条样本，远少于预训练。',related:['Pretrain','RLHF','FineTuning'],isNew:false},
-      RLHF:{zh:'基于人类反馈的强化学习',en:'RLHF',emoji:'🏆',plain:'让人类评价模型的回答好不好，然后用这些评价来训练模型朝"更好"的方向走。这是让 AI 变得更有用、更安全的关键技术。',tech:'流程：①收集人类偏好数据 ②训练奖励模型（RM）③用 PPO 等强化学习算法优化 LLM 以最大化奖励。DPO 是其简化变体，无需单独训练 RM。',related:['SFT','DPO','Alignment'],isNew:false},
-      DPO:{zh:'直接偏好优化',en:'Direct Preference Optimization (DPO)',emoji:'⚖️',plain:'RLHF 的"简化版"。直接用人类的偏好数据训练模型，不需要单独训练一个评分系统，更简单也更稳定。',tech:'将 RLHF 的三阶段流程压缩为单一监督学习目标，通过最大化偏好响应与非偏好响应之间的对数概率差来优化模型，避免了 reward hacking 问题。',related:['RLHF','SFT','Alignment'],isNew:false},
+      Temperature:{zh:'温度 / 采样参数',en:'Temperature',emoji:'🌡️',plain:'控制模型回答"随机性"的旋钮。温度越高，答案越天马行空；温度越低，答案越保守精确。写代码用低温，写诗用高温。',tech:'在 softmax 归一化之前，将 logits 除以温度 T。T→0 趋向 greedy decoding；T→∞ 趋向均匀分布。通常与 Top-P 配合使用。',related:['grp_decode','LLM'],isNew:false},
+      Hallucination:{zh:'幻觉',en:'Hallucination',emoji:'👻',plain:'模型一本正经地"编造"不存在的事实。比如引用一篇根本不存在的论文，或者给出一个错误的历史事件。这是 LLM 目前最大的痛点之一。',tech:'源于模型在推理时依赖统计相关性而非真实世界知识。缓解方法包括 RAG（引入外部知识）、RLHF（强化真实性）、以及推理时的 grounding 机制。',related:['RAG','RLHF','Grounding','ContextRot'],isNew:false},
+      ContextRot:{zh:'上下文腐烂',en:'Context Rot',emoji:'🦠',plain:'当塞入 context 的内容越来越多时，模型反而变得更容易犯错、更容易"忘记"前面说的内容。就像桌子越乱，工作效率越低。',tech:'Chroma Research 2025 年研究发现：即使是简单任务，模型在 context 超长时性能也显著下降。根本原因是 attention 机制的有限"注意力预算"。Context Engineering 就是为了解决这个问题。',related:['ContextWindow','ContextEngineering','Attention','Hallucination'],isNew:true},
+      Pretrain:{zh:'预训练',en:'Pre-training',emoji:'📚',plain:'让模型"读遍全网"的阶段。在数万亿字的网页、书籍、代码上训练，学会语言规律，但此时模型还不会"听话"按指令回答问题。',tech:'在大规模无标注语料上进行自监督学习，通常使用 next-token prediction 目标函数。输出的是基座模型（Base Model），具备语言能力但缺乏指令跟随能力。',related:['SFT','RLHF','FineTuning'],isNew:false},
+      SFT:{zh:'指令微调 / 监督微调',en:'Supervised Fine-Tuning (SFT)',emoji:'🎓',plain:'在预训练之后，用"问题-答案"对来继续训练，让模型学会"按要求回答"而不是随意续写。ChatGPT 能听话就是因为做了这一步。',tech:'在人工标注的指令-响应对上进行有监督学习，让模型从"语言模型"转变为"指令跟随模型"。通常只需要数万到数百万条样本，远少于预训练。',related:['Pretrain','FineTuning','RLHF'],isNew:false},
+      RLHF:{zh:'基于人类反馈的强化学习',en:'RLHF',emoji:'🏆',plain:'让人类评价模型的回答好不好，然后用这些评价来训练模型朝"更好"的方向走。这是让 AI 变得更有用、更安全的关键技术。',tech:'流程：①收集人类偏好数据 ②训练奖励模型（RM）③用 PPO 等强化学习算法优化 LLM 以最大化奖励。DPO 是其简化变体，无需单独训练 RM。',related:['Alignment','DPO','SFT'],isNew:false},
+      DPO:{zh:'直接偏好优化',en:'Direct Preference Optimization (DPO)',emoji:'⚖️',plain:'RLHF 的"简化版"。直接用人类的偏好数据训练模型，不需要单独训练一个评分系统，更简单也更稳定。',tech:'将 RLHF 的三阶段流程压缩为单一监督学习目标，通过最大化偏好响应与非偏好响应之间的对数概率差来优化模型，避免了 reward hacking 问题。',related:['Alignment','RLHF','SFT'],isNew:false},
       FineTuning:{zh:'微调',en:'Fine-tuning',emoji:'🔧',plain:'在已训练好的大模型上，用你自己的数据继续训练，让它专门擅长你的业务场景。比如训练一个专门懂医疗的 AI。',tech:'常见高效方法：LoRA（Low-Rank Adaptation，只训练低秩分解的增量参数）、QLoRA（量化 LoRA）、Adapter。相比全参数微调节省 90%+ 显存。',related:['SFT','LoRA','Pretrain'],isNew:false},
       LoRA:{zh:'低秩适配',en:'LoRA (Low-Rank Adaptation)',emoji:'🔩',plain:'微调大模型时的"省钱省算力"方法。不改动模型的全部参数，只训练一小部分新增的"适配层"，效果接近全量微调但成本极低。',tech:'在每个目标层旁边加入两个低秩矩阵 A、B（参数量约为原参数的 0.1%~1%），推理时合并 W = W₀ + ΔW = W₀ + BA，不增加推理延迟。',related:['FineTuning','SFT'],isNew:false},
       Alignment:{zh:'对齐',en:'Alignment',emoji:'🎯',plain:'让 AI 的行为真正符合人类的价值观和意图，而不是只追求训练目标。防止 AI"做了你说的，但不是你想要的"。',tech:'技术路径：RLHF（人类反馈强化学习）、Constitutional AI（规则约束训练）、DPO（直接偏好优化）、Scalable Oversight（可扩展监督）。是 AI 安全的核心课题。',related:['RLHF','DPO','Hallucination'],isNew:false},
-      Prompt:{zh:'提示词',en:'Prompt',emoji:'💬',plain:'你发给 AI 的那段话——问题、指令、背景信息都算。写得好不好直接决定 AI 回答的质量。"好好学提示词"就是学这个。',tech:'Prompt 由 system message（角色设定）、user message（用户输入）和可选的 few-shot examples（示例）组成，通过 messages[] 数组传给模型 API。',related:['SystemPrompt','PromptEngineering','CoT'],isNew:false},
-      SystemPrompt:{zh:'系统提示词',en:'System Prompt',emoji:'⚙️',plain:'给 AI 设定"角色和规则"的那段隐藏文字，用户一般看不到。比如"你是一个专业律师，不能给出违法建议"。',tech:'在 messages 数组中 role 为 "system" 的条目，在对话开始前注入，优先级高于用户消息。是 Prompt Engineering 和 Context Engineering 的核心设计对象。',related:['Prompt','ContextEngineering','RLHF'],isNew:false},
-      ZeroFewShot:{zh:'零样本 / 少样本',en:'Zero-shot / Few-shot',emoji:'🎯',plain:'不给例子直接问（零样本），或给几个例子再问（少样本）。给例子通常效果更好，因为模型能"照葫芦画瓢"。',tech:'Zero-shot 直接利用预训练知识；Few-shot 通过 in-context examples 引导模型推断任务格式和风格，无需微调。GPT-3 论文首次系统验证了 few-shot 能力。',related:['CoT','Prompt','PromptEngineering'],isNew:false},
-      CoT:{zh:'思维链',en:'Chain-of-Thought (CoT)',emoji:'🔗',plain:'让 AI 一步一步思考，而不是直接给答案。加上"让我们一步步想"这句话，AI 解复杂数学题的能力会显著提升。',tech:'Wei et al. 2022 发现，在 prompt 中加入推理步骤示例，可以显著提升 LLM 在复杂推理任务上的表现。Self-CoT（零样本版）用"Let\'s think step by step"触发。',related:['Prompt','ZeroFewShot','ReAct'],isNew:false},
-      FunctionCalling:{zh:'函数调用 / 工具调用',en:'Function Calling / Tool Use',emoji:'🔧',plain:'让 AI 不仅能说话，还能真正"做事"——调用外部工具、查询数据库、执行代码。这是从"聊天 AI"到"做事 AI"的关键一步。',tech:'模型输出结构化的 tool_use JSON（指定函数名和参数），应用层代码真正执行函数并返回结果，模型基于结果生成最终答案。这是 Agent Loop 的核心机制。',related:['Agent','MCP','AgentLoop'],isNew:false},
-      InferenceScaling:{zh:'推理扩展',en:'Inference Scaling / Test-Time Compute',emoji:'📈',plain:'不再只靠"训练更大的模型"来提升能力，而是让模型在"回答时多思考一会儿"。o1、o3 系列就是这个思路：想得越久越准。',tech:'也称 Test-Time Compute Scaling。通过扩展推理阶段的计算量（如多次采样、搜索、思维链展开）来提升性能，是 2024-2025 年最重要的技术突破之一。',related:['CoT','ReasoningModel'],isNew:true},
-      ReasoningModel:{zh:'推理模型',en:'Reasoning Model',emoji:'🧮',plain:'专门擅长"深度思考"的 AI，会在回答前花时间进行反复推演。o1、o3、DeepSeek-R1 都是推理模型，做数学题、逻辑题特别强。',tech:'通过 Test-Time Compute Scaling 实现——在推理阶段分配更多计算，通过内部 CoT、树搜索或蒙特卡洛采样等方式提升复杂任务准确率。',related:['CoT','InferenceScaling','LLM'],isNew:true},
+      Prompt:{zh:'提示词',en:'Prompt',emoji:'💬',plain:'你发给 AI 的那段话——问题、指令、背景信息都算。写得好不好直接决定 AI 回答的质量。"好好学提示词"就是学这个。',tech:'Prompt 由 system message（角色设定）、user message（用户输入）和可选的 few-shot examples（示例）组成，通过 messages[] 数组传给模型 API。',related:['SystemPrompt','grp_prompteng','CoT'],isNew:false},
+      SystemPrompt:{zh:'系统提示词',en:'System Prompt',emoji:'⚙️',plain:'给 AI 设定"角色和规则"的那段隐藏文字，用户一般看不到。比如"你是一个专业律师，不能给出违法建议"。',tech:'在 messages 数组中 role 为 "system" 的条目，在对话开始前注入，优先级高于用户消息。是 Prompt Engineering 和 Context Engineering 的核心设计对象。',related:['Prompt','ContextEngineering','grp_prompteng'],isNew:false},
+      ZeroFewShot:{zh:'零样本 / 少样本',en:'Zero-shot / Few-shot',emoji:'🎯',plain:'不给例子直接问（零样本），或给几个例子再问（少样本）。给例子通常效果更好，因为模型能"照葫芦画瓢"。',tech:'Zero-shot 直接利用预训练知识；Few-shot 通过 in-context examples 引导模型推断任务格式和风格，无需微调。GPT-3 论文首次系统验证了 few-shot 能力。',related:['CoT','Prompt','grp_prompteng'],isNew:false},
+      CoT:{zh:'思维链',en:'Chain-of-Thought (CoT)',emoji:'🔗',plain:'让 AI 一步一步思考，而不是直接给答案。加上"让我们一步步想"这句话，AI 解复杂数学题的能力会显著提升。',tech:'Wei et al. 2022 发现，在 prompt 中加入推理步骤示例，可以显著提升 LLM 在复杂推理任务上的表现。Self-CoT（零样本版）用"Let\'s think step by step"触发。',related:['Prompt','ZeroFewShot','ReAct','ReasoningModel'],isNew:false},
+      FunctionCalling:{zh:'函数调用 / 工具调用',en:'Function Calling / Tool Use',emoji:'🔧',plain:'让 AI 不仅能说话，还能真正"做事"——调用外部工具、查询数据库、执行代码。这是从"聊天 AI"到"做事 AI"的关键一步。',tech:'模型输出结构化的 tool_use JSON（指定函数名和参数），应用层代码真正执行函数并返回结果，模型基于结果生成最终答案。这是 Agent Loop 的核心机制。',related:['Agent','MCP','AgentLoop','ReAct'],isNew:false},
+      InferenceScaling:{zh:'推理扩展',en:'Inference Scaling / Test-Time Compute',emoji:'📈',plain:'不再只靠"训练更大的模型"来提升能力，而是让模型在"回答时多思考一会儿"。o1、o3 系列就是这个思路：想得越久越准。',tech:'也称 Test-Time Compute Scaling。通过扩展推理阶段的计算量（如多次采样、搜索、思维链展开）来提升性能，是 2024-2025 年最重要的技术突破之一。',related:['ReasoningModel','grp_inferboost','CoT'],isNew:true},
+      ReasoningModel:{zh:'推理模型',en:'Reasoning Model',emoji:'🧮',plain:'专门擅长"深度思考"的 AI，会在回答前花时间进行反复推演。o1、o3、DeepSeek-R1 都是推理模型，做数学题、逻辑题特别强。',tech:'通过 Test-Time Compute Scaling 实现——在推理阶段分配更多计算，通过内部 CoT、树搜索或蒙特卡洛采样等方式提升复杂任务准确率。',related:['InferenceScaling','grp_inferboost','CoT'],isNew:true},
       Transformer:{zh:'Transformer 架构',en:'Transformer',emoji:'◈',plain:'现代所有主流 AI 大模型的底层结构，2017 年由 Google 提出。它用"注意力机制"让模型同时考虑句子里所有词之间的关系，革命性地替代了 RNN。',tech:'核心是 Multi-Head Self-Attention + FFN（前馈网络）+ 残差连接 + Layer Norm。Encoder-Decoder（BERT）或纯 Decoder（GPT）架构。"Attention Is All You Need"论文奠基。',related:['Attention','LLM','MoE'],isNew:false},
       Attention:{zh:'注意力机制',en:'Attention Mechanism',emoji:'👁️',plain:'让模型在处理每个词时，自动判断应该"重点看"哪些其他词。比如理解"它"指的是哪个名词。',tech:'Self-Attention 计算 Q·Kᵀ/√d 的 softmax 权重，再对 V 加权求和。Multi-Head Attention 在多个子空间并行计算。复杂度 O(n²)，是 context length 瓶颈的根源。',related:['Transformer','ContextWindow','ContextRot'],isNew:false},
       MoE:{zh:'混合专家模型',en:'Mixture of Experts (MoE)',emoji:'👥',plain:'不是每次都用模型的全部"大脑"，而是根据问题自动选几个"专家"来回答。参数多但计算少，又快又强。Mixtral、GPT-4 据传都用了这个。',tech:'Router 网络决定每个 token 激活哪几个 Expert FFN（通常 top-2/top-4），其他 Expert 不参与计算，实现参数量大但 FLOP 少的效果。稀疏激活是关键。',related:['Transformer','LLM'],isNew:false},
       Multimodal:{zh:'多模态',en:'Multimodal',emoji:'🎨',plain:'模型不只能处理文字，还能看图、听声音、看视频。GPT-4V 能看图回答问题，就是多模态能力。',tech:'通过将不同模态（图像/音频/视频）编码为统一的 token 序列，送入同一个 Transformer 处理。图像常用 Vision Encoder（如 ViT）转为 patch embeddings。',related:['Transformer','Embedding','LLM'],isNew:false},
-      RAG:{zh:'检索增强生成',en:'Retrieval-Augmented Generation (RAG)',emoji:'🔎',plain:'给 AI 配一个"外挂记忆库"。回答问题前先去资料库里找相关内容，再基于找到的内容回答，避免胡编乱造。',tech:'流程：① 文档切割 ② Embedding 向量化入库 ③ 查询时检索 Top-K 相关片段 ④ 拼入 context ⑤ 模型基于检索结果生成答案。解决 LLM 知识截止日期和幻觉问题。',related:['Embedding','VectorDB','Hallucination'],isNew:false},
+      RAG:{zh:'检索增强生成',en:'Retrieval-Augmented Generation (RAG)',emoji:'🔎',plain:'给 AI 配一个"外挂记忆库"。回答问题前先去资料库里找相关内容，再基于找到的内容回答，避免胡编乱造。',tech:'流程：① 文档切割 ② Embedding 向量化入库 ③ 查询时检索 Top-K 相关片段 ④ 拼入 context ⑤ 模型基于检索结果生成答案。解决 LLM 知识截止日期和幻觉问题。',related:['Embedding','VectorDB','Hallucination','Grounding'],isNew:false},
       VectorDB:{zh:'向量数据库',en:'Vector Database',emoji:'🗄️',plain:'专门存储和搜索"数字化文字"（向量）的数据库。能快速找出语义上最相似的内容，是 RAG 系统的核心组件。',tech:'支持高效的近似最近邻搜索（ANN），常用索引：HNSW、IVF-PQ。代表产品：Pinecone、Chroma、Milvus、Weaviate、pgvector（PostgreSQL 扩展）。',related:['RAG','Embedding'],isNew:false},
-      Agent:{zh:'智能体',en:'AI Agent',emoji:'🤖',plain:'能自主规划、使用工具、完成多步任务的 AI。不只是"聊天"，而是真的能帮你订机票、写代码、查邮件、发报告。',tech:'Agent = LLM + Tools + Memory + Planning。通过 ReAct（推理-行动）循环实现：模型推理 → 调用工具 → 获取结果 → 继续推理，直到完成目标。',related:['FunctionCalling','MCP','AgentLoop'],isNew:false},
-      AgentLoop:{zh:'Agent 循环',en:'Agent Loop',emoji:'↻',plain:'AI Agent 工作的基本节拍：想一想 → 做一步 → 看结果 → 再想 → 再做……循环直到任务完成。',tech:'每轮循环：① LLM 推理 → 输出 tool_use ② 应用层执行工具 ③ tool_result 回填 messages ④ 触发下一轮 LLM 调用。无 tool_use 时输出最终答案，循环结束。',related:['Agent','FunctionCalling','ReAct'],isNew:false},
-      ReAct:{zh:'推理-行动框架',en:'ReAct (Reasoning + Acting)',emoji:'🔄',plain:'让 AI 交替进行"思考"和"行动"的框架。先想清楚下一步做什么，做完看结果，再想，如此循环，比直接行动更可靠。',tech:'Yao et al. 2022 提出，在 prompt 中交替生成 Thought（推理）和 Action（工具调用）步骤，比纯推理或纯行动表现更好，是大多数 Agent 框架的基础。',related:['CoT','Agent','AgentLoop'],isNew:false},
-      MCP:{zh:'模型上下文协议',en:'Model Context Protocol (MCP)',emoji:'🔌',plain:'Anthropic 2024 年推出的开放标准，让 AI 模型能统一接入各种外部工具和数据源，就像 USB 接口一样——一种协议接所有工具。',tech:'基于 JSON-RPC 的客户端-服务器协议。MCP Server 暴露 Tools/Resources/Prompts，MCP Client（LLM 应用）按标准协议调用。降低工具集成碎片化问题。',related:['FunctionCalling','Agent'],isNew:false},
-      AgenticAI:{zh:'Agentic AI',en:'Agentic AI',emoji:'🚀',plain:'能自主行动、完成复杂多步任务的 AI 系统的统称。区别于单纯聊天的 AI，Agentic AI 会自己规划步骤、调用工具、处理错误、循环执行直到完成目标。',tech:'特征：Planning（规划）、Tool Use（工具调用）、Memory（记忆）、Multi-step Execution（多步执行）。2025 年企业 AI 应用的主流形态，代表产品：Claude Code、Devin、AutoGPT 等。',related:['Agent','AgentLoop','ContextEngineering'],isNew:true},
-      ContextEngineering:{zh:'上下文工程',en:'Context Engineering',emoji:'🏗️',plain:'2025 年最火的新概念，Prompt Engineering 的进化版。不只是"怎么写好提示词"，而是设计整套"给 AI 看什么信息"的策略，包括记忆、工具、历史、检索结果等。',tech:'Anthropic 定义为"在 LLM 推理过程中，策划和维护最优 token 集合的策略集合"。核心技术：Offloading（卸载）、Reduction（压缩）、Retrieval（检索）、Isolation（隔离）。',related:['PromptEngineering','ContextRot','RAG'],isNew:true},
-      PromptEngineering:{zh:'提示词工程',en:'Prompt Engineering',emoji:'✍️',plain:'研究"怎么写好提示词"的技术。通过精心设计 prompt 的措辞、结构、示例，让 AI 给出更准确、更有用的答案。',tech:'技术包括：role prompting、CoT、few-shot、格式约束、XML/JSON 结构化、negative prompting 等。2022-2024 年的核心技能，正在被 Context Engineering 所超越。',related:['ContextEngineering','CoT','SystemPrompt'],isNew:false},
-      AgentEngineering:{zh:'智能体工程',en:'Agent Engineering',emoji:'🛠️',plain:'专门构建和部署 AI Agent 系统的工程实践。负责设计 Agent 的规划逻辑、工具接入、错误处理、人机协作等，是 2025 年最热门的 AI 岗位之一。',tech:'涵盖：Agent 架构设计（单/多 Agent）、工具选择与实现、Memory 管理、Eval 体系建立、Agent 安全（防 prompt injection）、成本控制等。',related:['ContextEngineering','Agent','MCP'],isNew:true},
-      Grounding:{zh:'落地 / 事实接地',en:'Grounding',emoji:'⚓',plain:'让 AI 的回答"有据可查"，锚定在真实数据上而不是凭空想象。RAG 就是一种 Grounding 技术。',tech:'通过检索、引用来源、调用工具获取实时数据等方式，使模型生成的内容可以追溯到具体的事实依据，减少幻觉，提升可信度。',related:['RAG','Hallucination'],isNew:false},
+      Agent:{zh:'智能体',en:'AI Agent',emoji:'🤖',plain:'能自主规划、使用工具、完成多步任务的 AI。不只是"聊天"，而是真的能帮你订机票、写代码、查邮件、发报告。',tech:'Agent = LLM + Tools + Memory + Planning。通过 ReAct（推理-行动）循环实现：模型推理 → 调用工具 → 获取结果 → 继续推理，直到完成目标。',related:['FunctionCalling','MCP','AgentLoop','grp_agent'],isNew:false},
+      AgentLoop:{zh:'Agent 循环',en:'Agent Loop',emoji:'↻',plain:'AI Agent 工作的基本节拍：想一想 → 做一步 → 看结果 → 再想 → 再做……循环直到任务完成。',tech:'每轮循环：① LLM 推理 → 输出 tool_use ② 应用层执行工具 ③ tool_result 回填 messages ④ 触发下一轮 LLM 调用。无 tool_use 时输出最终答案，循环结束。',related:['Agent','FunctionCalling','ReAct','grp_agent'],isNew:false},
+      ReAct:{zh:'推理-行动框架',en:'ReAct (Reasoning + Acting)',emoji:'🔄',plain:'让 AI 交替进行"思考"和"行动"的框架。先想清楚下一步做什么，做完看结果，再想，如此循环，比直接行动更可靠。',tech:'Yao et al. 2022 提出，在 prompt 中交替生成 Thought（推理）和 Action（工具调用）步骤，比纯推理或纯行动表现更好，是大多数 Agent 框架的基础。',related:['CoT','Agent','AgentLoop','FunctionCalling'],isNew:false},
+      MCP:{zh:'模型上下文协议',en:'Model Context Protocol (MCP)',emoji:'🔌',plain:'Anthropic 2024 年推出的开放标准，让 AI 模型能统一接入各种外部工具和数据源，就像 USB 接口一样——一种协议接所有工具。',tech:'基于 JSON-RPC 的客户端-服务器协议。MCP Server 暴露 Tools/Resources/Prompts，MCP Client（LLM 应用）按标准协议调用。降低工具集成碎片化问题。',related:['FunctionCalling','Agent','grp_agent'],isNew:false},
+      AgenticAI:{zh:'Agentic AI',en:'Agentic AI',emoji:'🚀',plain:'能自主行动、完成复杂多步任务的 AI 系统的统称。区别于单纯聊天的 AI，Agentic AI 会自己规划步骤、调用工具、处理错误、循环执行直到完成目标。',tech:'特征：Planning（规划）、Tool Use（工具调用）、Memory（记忆）、Multi-step Execution（多步执行）。2025 年企业 AI 应用的主流形态，代表产品：Claude Code、Devin、AutoGPT 等。',related:['Agent','AgentLoop','ContextEngineering','grp_agent'],isNew:true},
+      ContextEngineering:{zh:'上下文工程',en:'Context Engineering',emoji:'🏗️',plain:'2025 年最火的新概念，Prompt Engineering 的进化版。不只是"怎么写好提示词"，而是设计整套"给 AI 看什么信息"的策略，包括记忆、工具、历史、检索结果等。',tech:'Anthropic 定义为"在 LLM 推理过程中，策划和维护最优 token 集合的策略集合"。核心技术：Offloading（卸载）、Reduction（压缩）、Retrieval（检索）、Isolation（隔离）。',related:['PromptEngineering','ContextRot','RAG','grp_eng'],isNew:true},
+      PromptEngineering:{zh:'提示词工程',en:'Prompt Engineering',emoji:'✍️',plain:'研究"怎么写好提示词"的技术。通过精心设计 prompt 的措辞、结构、示例，让 AI 给出更准确、更有用的答案。',tech:'技术包括：role prompting、CoT、few-shot、格式约束、XML/JSON 结构化、negative prompting 等。2022-2024 年的核心技能，正在被 Context Engineering 所超越。',related:['ContextEngineering','CoT','SystemPrompt','grp_eng','grp_prompteng'],isNew:false},
+      AgentEngineering:{zh:'智能体工程',en:'Agent Engineering',emoji:'🛠️',plain:'专门构建和部署 AI Agent 系统的工程实践。负责设计 Agent 的规划逻辑、工具接入、错误处理、人机协作等，是 2025 年最热门的 AI 岗位之一。',tech:'涵盖：Agent 架构设计（单/多 Agent）、工具选择与实现、Memory 管理、Eval 体系建立、Agent 安全（防 prompt injection）、成本控制等。',related:['ContextEngineering','Agent','MCP','grp_eng'],isNew:true},
+      Grounding:{zh:'落地 / 事实接地',en:'Grounding',emoji:'⚓',plain:'让 AI 的回答"有据可查"，锚定在真实数据上而不是凭空想象。RAG 就是一种 Grounding 技术。',tech:'通过检索、引用来源、调用工具获取实时数据等方式，使模型生成的内容可以追溯到具体的事实依据，减少幻觉，提升可信度。',related:['RAG','Hallucination','grp_eng'],isNew:false},
+      grp_decode:{zh:'解码参数',en:'Decoding Parameters',emoji:'🎛️',plain:'控制模型逐词生成文本时的行为策略。通过调整温度、Top-P 等参数，在"创造性"与"确定性"之间取得平衡——写代码用低温，写诗用高温。',tech:'模型每步输出 logits（原始分数），经 softmax 转为概率分布。Temperature 缩放分布熵，Top-P（nucleus sampling）截断低概率尾部，Top-K 限制候选数量。',related:['Temperature','LLM'],isNew:false},
+      grp_prompteng:{zh:'提示工程',en:'Prompt Engineering',emoji:'✍️',plain:'设计和优化给模型的输入文本，引导其生成更准确、更有用的输出。是使用大模型的核心基础技能，也是 Context Engineering 的前身。',tech:'通过角色设定、思维链（CoT）、少样本示例（few-shot）、结构化格式约束等手段控制模型行为。核心设计对象包括 System Prompt、User Message 和 Few-shot Examples。',related:['Prompt','SystemPrompt','CoT','ZeroFewShot','ContextEngineering'],isNew:false},
+      grp_toolagent:{zh:'工具与智能体',en:'Tools & Agents',emoji:'🛠️',plain:'让模型不止于"说"，还能"做"——调用外部工具、执行代码、查询数据库。是 AI 从对话助手走向自主智能体的关键能力跃迁。',tech:'模型通过 Function Calling 输出结构化 tool_use JSON，应用层执行后回填结果。ReAct 框架交替进行推理（Thought）和行动（Action），构成 Agent 决策循环的基础。',related:['FunctionCalling','ReAct','Agent','AgentLoop'],isNew:false},
+      grp_inferboost:{zh:'推理增强',en:'Inference Enhancement',emoji:'📈',plain:'通过增加推理阶段的计算量来提升模型能力，而非单纯扩大训练规模。是 2024-2025 年最重要的技术突破方向之一。',tech:'核心是 Test-Time Compute Scaling：在推理时通过多次采样、内部思维链展开、树搜索或蒙特卡洛方法，用更多计算换取更高准确率。o1/o3、DeepSeek-R1 均基于此范式。',related:['ReasoningModel','InferenceScaling','CoT'],isNew:false},
+      grp_agent:{zh:'智能体',en:'AI Agents',emoji:'🤖',plain:'能自主规划、使用工具、完成多步任务的 AI 系统。区别于单纯聊天的 AI，智能体会自己制定计划、调用工具、处理错误、循环执行直到达成目标。',tech:'Agent = LLM + Tools + Memory + Planning。通过 Agent Loop（推理→工具调用→获取结果→继续推理）实现自主多步执行。2025 年企业 AI 应用的主流形态，代表产品如 Claude Code、Devin 等。',related:['Agent','AgentLoop','MCP','AgenticAI','FunctionCalling'],isNew:false},
+      grp_eng:{zh:'工程实践',en:'Engineering Practices',emoji:'🏗️',plain:'构建和运营 AI 系统所需的工程方法论。涵盖上下文管理、提示设计、智能体架构、事实可靠性保障等核心能力，是 2025 年最热门的 AI 职业方向。',tech:'Context Engineering 策划推理时的最优 token 集合；Prompt Engineering 设计输入策略；Agent Engineering 管理智能体架构与安全；Grounding 通过检索与引用确保事实可靠性。',related:['ContextEngineering','PromptEngineering','AgentEngineering','Grounding','RAG'],isNew:false},
     };
 
-    const JARGON_CATS = [
-      { id:'基础概念', label:'🧠 基础概念', items:['LLM','Token','Tokenizer','Embedding','ContextWindow','Temperature','Hallucination','ContextRot'] },
-      { id:'训练阶段', label:'📚 训练阶段', items:['Pretrain','SFT','RLHF','DPO','FineTuning','LoRA','Alignment'] },
-      { id:'推理与调用', label:'💬 推理与调用', items:['Prompt','SystemPrompt','ZeroFewShot','CoT','FunctionCalling','ReAct','InferenceScaling','ReasoningModel'] },
-      { id:'架构', label:'◈ 架构', items:['Transformer','Attention','MoE','Multimodal'] },
-      { id:'应用与职业', label:'🚀 应用与职业', items:['RAG','VectorDB','Agent','AgentLoop','MCP','AgenticAI','ContextEngineering','PromptEngineering','AgentEngineering','Grounding'] },
+    const JARGON_TREE = [
+      { id:'cat_basics', label:'1. 基础概念', sub:'模型的核心原语', color:'#00ffa0', children:[
+        { type:'term', key:'LLM' },
+        { type:'term', key:'Token' },
+        { type:'term', key:'Tokenizer' },
+        { type:'term', key:'Embedding' },
+        { type:'term', key:'ContextWindow' },
+      ]},
+      { id:'cat_arch', label:'2. 模型架构', sub:'模型怎么搭起来的', color:'#00ffa0', children:[
+        { type:'group', key:'Transformer', children:[
+          { type:'term', key:'Attention' },
+        ]},
+        { type:'term', key:'MoE' },
+        { type:'term', key:'Multimodal' },
+      ]},
+      { id:'cat_train', label:'3. 训练流程', sub:'预训练 → 微调 → 对齐', color:'#00ffa0', children:[
+        { type:'term', key:'Pretrain' },
+        { type:'group', key:'FineTuning', children:[
+          { type:'term', key:'SFT' },
+          { type:'term', key:'LoRA' },
+        ]},
+        { type:'group', key:'Alignment', children:[
+          { type:'term', key:'RLHF' },
+          { type:'term', key:'DPO' },
+        ]},
+      ]},
+      { id:'cat_infer', label:'4. 推理与使用', sub:'怎么用这个模型', color:'#00ffa0', children:[
+        { type:'group', key:'grp_decode', children:[
+          { type:'term', key:'Temperature' },
+        ]},
+        { type:'group', key:'grp_prompteng', children:[
+          { type:'term', key:'Prompt' },
+          { type:'term', key:'SystemPrompt' },
+          { type:'term', key:'ZeroFewShot' },
+          { type:'term', key:'CoT' },
+        ]},
+        { type:'group', key:'grp_toolagent', children:[
+          { type:'term', key:'FunctionCalling' },
+          { type:'term', key:'ReAct' },
+        ]},
+        { type:'group', key:'grp_inferboost', children:[
+          { type:'term', key:'ReasoningModel' },
+          { type:'term', key:'InferenceScaling' },
+        ]},
+      ]},
+      { id:'cat_app', label:'5. 应用与工程', sub:'落地层', color:'#00ffa0', children:[
+        { type:'term', key:'RAG' },
+        { type:'term', key:'VectorDB' },
+        { type:'group', key:'grp_agent', children:[
+          { type:'term', key:'Agent' },
+          { type:'term', key:'AgentLoop' },
+          { type:'term', key:'MCP' },
+          { type:'term', key:'AgenticAI' },
+        ]},
+        { type:'group', key:'grp_eng', children:[
+          { type:'term', key:'ContextEngineering' },
+          { type:'term', key:'PromptEngineering' },
+          { type:'term', key:'AgentEngineering' },
+          { type:'term', key:'Grounding' },
+        ]},
+      ]},
+      { id:'cat_limit', label:'6. 局限与问题', sub:'失败模式 / 现象', color:'#ffa657', children:[
+        { type:'term', key:'Hallucination' },
+        { type:'term', key:'ContextRot' },
+      ]},
     ];
 
     const jargonInfo = selectedJargon ? JARGON_DATA[selectedJargon] : null;
 
-    const jargonTree = JARGON_CATS.map(cat => {
-      const expanded = !!expandedCats[cat.id];
-      return {
-        label: cat.label, expanded,
-        expandIcon: expanded ? '▾' : '▸',
-        headerStyle: { display:'flex', alignItems:'center', padding:'6px 14px', cursor:'pointer', background: expanded ? 'rgba(0,255,160,0.04)' : 'transparent', borderLeft: expanded ? '2px solid rgba(0,255,160,0.3)' : '2px solid transparent', userSelect:'none' },
-        catLabelStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'600', color: expanded ? '#c9d1d9' : '#6e7681' },
-        toggleExpand: () => this.setState(s => ({ expandedCats: { ...s.expandedCats, [cat.id]: !s.expandedCats[cat.id] } })),
-        items: cat.items.map(key => {
-          const d = JARGON_DATA[key];
-          const isSelected = key === selectedJargon;
-          return {
-            label: d ? (d.emoji + ' ' + d.zh) : key,
+    // Build flat tree list
+    const jargonTree = [];
+    const toggleNode = (id) => this.setState(s => ({ expandedNodes: { ...s.expandedNodes, [id]: !s.expandedNodes[id] } }));
+    const selectJargon = (key) => this.setState({ selectedJargon: key });
+
+    JARGON_TREE.forEach(cat => {
+      const catExp = !!expandedNodes[cat.id];
+      jargonTree.push({
+        type:'cat', onClick: () => toggleNode(cat.id),
+        indicatorIcon: catExp ? '▾' : '▸',
+        indicatorStyle: { fontSize:'10px', color:cat.color, marginRight:'5px', width:'12px', textAlign:'center', flexShrink:'0' },
+        labelStyle: { fontFamily:'"JetBrains Mono",monospace', fontSize:'11px', fontWeight:'700', color: catExp ? '#c9d1d9' : '#6e7681' },
+        label: cat.label + '  ' + cat.sub,
+        itemStyle: { display:'flex', alignItems:'center', padding:'6px 12px', cursor:'pointer', background: catExp ? 'rgba(0,255,160,0.03)' : 'transparent', borderLeft: '2px solid ' + (catExp ? cat.color : 'transparent'), userSelect:'none' },
+        isNew: false,
+      });
+      if (!catExp) return;
+      cat.children.forEach(child => {
+        if (child.type === 'group') {
+          const gd = JARGON_DATA[child.key];
+          const grpExp = !!expandedNodes[child.key];
+          const gSel = child.key === selectedJargon;
+          jargonTree.push({
+            type:'group', onClick: () => this.setState(s => ({ expandedNodes: { ...s.expandedNodes, [child.key]: !s.expandedNodes[child.key] }, selectedJargon: child.key })),
+            indicatorIcon: grpExp ? '▾' : '▸',
+            indicatorStyle: { fontSize:'10px', color: gSel ? '#00ffa0' : '#6e7681', marginRight:'5px', width:'12px', textAlign:'center', flexShrink:'0' },
+            labelStyle: { fontSize:'11.5px', fontWeight:'500', color: gSel ? '#00ffa0' : '#b0b8c0' },
+            label: gd ? (gd.emoji + ' ' + gd.zh) : child.key,
+            itemStyle: { display:'flex', alignItems:'center', padding:'4px 12px 4px 24px', cursor:'pointer', background: gSel ? 'rgba(0,255,160,0.08)' : 'transparent', borderLeft: gSel ? '2px solid #00ffa0' : '2px solid transparent', userSelect:'none' },
+            isNew: false,
+          });
+          if (!grpExp) return;
+          child.children.forEach(gc => {
+            const d = JARGON_DATA[gc.key];
+            const isSel = gc.key === selectedJargon;
+            jargonTree.push({
+              type:'term', onClick: () => selectJargon(gc.key),
+              indicatorIcon: '·',
+              indicatorStyle: { fontSize:'14px', color: isSel ? '#00ffa0' : '#484f58', marginRight:'5px', width:'12px', textAlign:'center', flexShrink:'0', lineHeight:'1' },
+              labelStyle: { fontSize:'11px', color: isSel ? '#00ffa0' : '#8b949e' },
+              label: d ? (d.emoji + ' ' + d.zh) : gc.key,
+              itemStyle: { display:'flex', alignItems:'center', padding:'3px 12px 3px 40px', cursor:'pointer', background: isSel ? 'rgba(0,255,160,0.08)' : 'transparent', borderLeft: isSel ? '2px solid #00ffa0' : '2px solid transparent', userSelect:'none' },
+              isNew: d ? d.isNew : false,
+            });
+          });
+        } else {
+          const d = JARGON_DATA[child.key];
+          const isSel = child.key === selectedJargon;
+          jargonTree.push({
+            type:'term', onClick: () => selectJargon(child.key),
+            indicatorIcon: '·',
+            indicatorStyle: { fontSize:'14px', color: isSel ? '#00ffa0' : '#484f58', marginRight:'5px', width:'12px', textAlign:'center', flexShrink:'0', lineHeight:'1' },
+            labelStyle: { fontSize:'11px', color: isSel ? '#00ffa0' : '#8b949e' },
+            label: d ? (d.emoji + ' ' + d.zh) : child.key,
+            itemStyle: { display:'flex', alignItems:'center', padding:'3px 12px 3px 24px', cursor:'pointer', background: isSel ? 'rgba(0,255,160,0.08)' : 'transparent', borderLeft: isSel ? '2px solid #00ffa0' : '2px solid transparent', userSelect:'none' },
             isNew: d ? d.isNew : false,
-            select: () => this.setState({ selectedJargon: key }),
-            style: { display:'flex', alignItems:'center', padding:'5px 14px 5px 28px', cursor:'pointer', background: isSelected ? 'rgba(0,255,160,0.1)' : 'transparent', borderLeft: isSelected ? '2px solid #00ffa0' : '2px solid transparent', fontSize:'12px', color: isSelected ? '#00ffa0' : '#8b949e', transition:'all 0.15s' }
-          };
-        })
-      };
+          });
+        }
+      });
     });
 
     const jargonRelated = jargonInfo ? (jargonInfo.related || []).map(key => {

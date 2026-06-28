@@ -71,10 +71,6 @@
               <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
               <option value="qwen/qwen3-235b-a22b">qwen/qwen3-235b-a22b</option>
             </optgroup>
-            <optgroup label="── 演示模式 ──">
-              <option value="demo/gpt-4o">demo/gpt-4o</option>
-              <option value="demo/claude">demo/claude</option>
-            </optgroup>
           </select>
           <button onClick="{{ toggleCOT }}" style="{{ toggleCOTStyle }}"><span>🧠</span><span>思维链</span></button>
         </div>
@@ -416,7 +412,7 @@
 class Component extends DCLogic {
   state = {
     model: 'openai/gpt-4o',
-    toggles: { streaming: true, fc: false, cot: false, search: false },
+    toggles: { streaming: true, cot: false },
     params: { maxTokens: 4096, temperature: 1.0, topP: 1.0, freqPenalty: 1.0, presPenalty: 1.0 },
     pipelinePhase: 0,
     streamingText: '',
@@ -426,7 +422,6 @@ class Component extends DCLogic {
     inputText: '用一句话解释什么是 Transformer',
     metrics: { tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0, totalTokens: 128000 },
     isRunning: false,
-    showAutoSteps: false,
     autoSteps: [],
     _runId: 0,
     estPromptTokens: 0,
@@ -453,15 +448,6 @@ class Component extends DCLogic {
   _tick(fn, ms) { const t = setInterval(fn, ms); this._timers.push(t); return t; }
   _clearAll() { this._timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this._timers = []; }
 
-  _useRealApi() {
-    let apiKey = this.state.apiKey;
-    try {
-      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      if (s.apiKey) apiKey = s.apiKey;
-    } catch(e) {}
-    return !!(apiKey && apiKey.trim());
-  }
-
   handleRun() {
     const { isRunning, inputText, history, metrics, sysPrompt } = this.state;
     if (isRunning || !inputText.trim()) return;
@@ -472,126 +458,13 @@ class Component extends DCLogic {
     const estPromptTokens = this._estimateTokens(sysPrompt) + newHistory.reduce((s, m) => s + this._estimateTokens(m.content), 0);
     this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', _lastOutput: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens, _inputKey: this.state._inputKey + 1 });
 
-    const useReal = this._useRealApi();
     this._schedule(() => this.setState({ pipelinePhase: 2 }), 350);
     this._schedule(() => this.setState({ pipelinePhase: 3 }), 700);
     this._schedule(() => this.setState({ pipelinePhase: 4 }), 1050);
     this._schedule(() => {
       this.setState({ pipelinePhase: 5 });
-      if (useReal) {
-        this._streamReal(rid, newHistory);
-      } else {
-        this._streamDemo(rid);
-      }
-    }, useReal ? 1550 : 2200);
-  }
-
-  _streamDemo(rid) {
-    const { toggles, estPromptTokens, sysPrompt, history } = this.state;
-    const lastUser = [...history].reverse().find(m => m.role === 'user');
-    const question = lastUser ? lastUser.content : this.state.inputText;
-    const result = this._genDemoResponse(sysPrompt, question, history, toggles.cot);
-    const ans = typeof result === 'string' ? result : result.answer;
-    const cotText = typeof result === 'string' ? '' : result.thinking;
-    const estInput = estPromptTokens || 28;
-    const _finishDemo = (finalAns, isCot) => {
-      const outTok = Math.round(finalAns.length * 0.42);
-      const m = this.state.metrics;
-      const am = { role: 'assistant', content: finalAns, id: `a${rid}`, cot: isCot || false, _outTok: outTok, _tps: m.tps, _ttft: m.ttft };
-      this.setState(s => ({ isRunning: false, pipelinePhase: 7, streamingText: '', _lastOutput: finalAns, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, contextUsed: estInput + outTok } }));
-    };
-
-    if (!toggles.streaming) {
-      const fullText = cotText ? cotText + '\n\n' + ans : ans;
-      this._schedule(() => {
-        if (this.state._runId !== rid) return;
-        const am = { role: 'assistant', content: fullText, id: `a${rid}`, cot: !!cotText, _outTok: outTok, _tps: 0, _ttft: 220 };
-        const outTok = Math.round(fullText.length * 0.42);
-        this.setState(s => ({ isRunning: false, pipelinePhase: 7, streamingText: fullText, history: [...s.history, am], metrics: { ...s.metrics, tps: 0, ttft: 220, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok } }));
-      }, cotText ? 1200 : 600);
-      return;
-    }
-
-    let phase = cotText ? 'cot' : 'answer';
-    let i = 0; const t0 = Date.now();
-    const currentText = () => phase === 'cot' ? cotText : ans;
-    this.setState(s => ({ metrics: { ...s.metrics, ttft: Math.round(155 + Math.random() * 110), inputTokens: estInput }, pipelinePhase: 6 }));
-
-    const iv = this._tick(() => {
-      if (this.state._runId !== rid) { clearInterval(iv); return; }
-      const txt = currentText();
-      if (!txt) { clearInterval(iv); _finishDemo(ans, false); return; }
-      i = Math.min(i + (Math.random() < 0.3 ? 2 : 1), txt.length);
-      const outTok = Math.round(i * 0.42);
-      const tps = Math.min(Math.round(outTok / Math.max((Date.now() - t0) / 1000, 0.01)), 81);
-      const newToken = txt.slice(Math.max(0, i - 2), i);
-      this.setState(s => ({
-        streamingText: (phase === 'cot' ? '🧠 思考中…\n' : '') + txt.slice(0, i),
-        metrics: { ...s.metrics, tps, outputTokens: outTok, inputTokens: estInput, contextUsed: estInput + outTok },
-        autoSteps: [...s.autoSteps, { step: outTok, token: newToken, ctxLen: estInput + outTok }]
-      }));
-      if (i >= txt.length) {
-        if (phase === 'cot' && ans) {
-          // 思维链输出完，切换到正式回答
-          i = 0; phase = 'answer';
-          this._schedule(() => {}, 400);
-        } else {
-          clearInterval(iv);
-          _finishDemo(cotText ? cotText + '\n\n' + ans : ans, !!cotText);
-        }
-      }
-    }, 32);
-  }
-
-  _genDemoResponse(sysPrompt, userInput, history, cot) {
-    const sp = (sysPrompt || '').toLowerCase();
-    const q = userInput || '';
-    const lastAssistant = [...(history || [])].reverse().find(m => m.role === 'assistant');
-    const prevContext = lastAssistant
-      ? `\n\n（之前你回复过：「${lastAssistant.content.slice(0, 80)}」）`
-      : '';
-    const isMultiTurn = (history || []).filter(m => m.role === 'user').length > 1;
-
-    // 各模式的基础回答
-    let answer = '';
-    // 猫娘 / 角色扮演类
-    if (sp.includes('猫娘') || sp.includes('角色扮演') || sp.includes('猫猫')) {
-      if (q.includes('transformer') || q.includes('Transformer'))
-        answer = isMultiTurn
-          ? '喵～主人又问到 Transformer 了呢～上一轮我已经解释过架构层面的东西喵，这次可以从训练细节来补充：它使用注意力计算代替 RNN 序列处理，所以可以并行训练，速度飞快喵！(*＾▽＾)／'
-          : '喵～主人问的是 Transformer 喵！它是一种基于自注意力机制的深度学习架构喵，用并行计算代替了 RNN 的逐步处理，训练效率超高的说～像 GPT、BERT 这些大模型都是用它做的喵！(*^▽^*)';
-      else
-        answer = `喵呜～主人说「${q.length > 40 ? q.slice(0, 40) + '...' : q}」喵～这个问题很有趣呢！${isMultiTurn ? '主人这次问的方向和之前不太一样喵，让我想想……' : '作为一只聪明的小猫娘，我觉得这个问题需要从多个角度来看喵～'}(*´ω｀*) 主人想深入了解的话，可以再具体一点问我喵！${prevContext}`;
-    }
-    // 代码 / 技术专家类
-    else if (sp.includes('代码') || sp.includes('程序员') || sp.includes('编程') || sp.includes('工程师')) {
-      answer = `好的，基于我们${isMultiTurn ? '之前的讨论，' : ''}从技术角度来分析「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题：\n\n${isMultiTurn ? '结合你刚才提到的内容，' : ''}这是一个涉及计算机科学核心概念的话题。从工程实践来看，我们需要关注以下几个方面：\n\n1. **架构设计**：合理的系统架构是解决问题的基础\n2. **性能优化**：在保证正确性的前提下追求效率\n3. **可维护性**：代码的可读性和可扩展性同样重要\n\n如果你有更具体的场景或需求，我可以给出更针对性的建议。`;
-    }
-    // 简短回答类
-    else if (sp.includes('简短') || sp.includes('简洁') || sp.includes('一句话') || sp.includes('简明')) {
-      if (q.includes('transformer') || q.includes('Transformer'))
-        answer = isMultiTurn
-          ? 'Transformer 通过自注意力机制实现高效的序列建模，上一轮提到的并行训练是它相比 RNN 的核心优势。'
-          : 'Transformer 是一种基于自注意力机制的深度学习架构，通过并行计算替代 RNN 序列处理，大幅提升训练效率。';
-      else
-        answer = `关于「${q.length > 30 ? q.slice(0, 30) + '...' : q}」：${isMultiTurn ? '结合上下文来看，' : ''}核心在于理解其基本原理和实际应用场景。`;
-    }
-    // 默认：专业 AI 助手
-    else {
-      const suffix = isMultiTurn
-        ? '\n\n另外，如果你对新话题感兴趣，也可以随时切换方向。'
-        : '\n\n如果你对某个具体方面感兴趣，欢迎继续提问！';
-      answer = `感谢你的提问！关于「${q.length > 40 ? q.slice(0, 40) + '...' : q}」这个问题，让我为你详细解答：\n\nTransformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，它摒弃了 RNN 的逐步处理方式，通过并行计算序列中所有位置之间的相互关系来建模上下文，大幅提升训练效率与长程依赖捕获能力，成为 GPT、BERT、Claude 等现代大语言模型的核心基础。\n\n在实际应用中，Transformer 架构已被广泛用于自然语言处理、计算机视觉、语音识别等多个领域。其核心创新在于自注意力机制，使得模型能够动态关注输入序列中的不同位置，从而更好地理解上下文关系。${suffix}`;
-    }
-
-    if (!cot) return answer;
-
-    // 生成思维链：根据问题类型产出不同的推理过程
-    const thinking = q.includes('transformer') || q.includes('Transformer')
-      ? `嗯，用户问的是关于 Transformer 的问题。让我先理清思路：\n1. Transformer 的核心是"自注意力机制"——它让每个词都能直接看到序列里所有其他词\n2. 相比 RNN/LSTM，Transformer 可以并行计算整个序列，不依赖上一步的输出\n3. 这解决了长程依赖问题，因为信息不需要一步步传递\n4. 所以训练效率大幅提升，这也是 GPT/BERT 能 scaling 到大规模的关键\n→ 基于以上分析，我给出回答：`
-      : `让我思考一下这个问题……\n用户想问的是「${q.slice(0, 20)}」相关的概念。\n1. 首先判断这是否涉及技术原理——如果是，就要从核心概念出发\n2. 考虑用户的背景——用${sp.includes('猫娘') ? '猫娘的口吻' : '清晰易懂的中文'}解释\n3. ${isMultiTurn ? '回顾之前的对话，找到可以呼应的点' : '组织一个结构化的回答'}\n→ 整理好思路后，给出最终答复：`;
-
-    return { thinking, answer };
+      this._streamReal(rid, newHistory);
+    }, 1550);
   }
 
   async _streamReal(rid, history) {
@@ -812,8 +685,6 @@ class Component extends DCLogic {
       'deepseek/deepseek-r1':       { layers: 61,  hidden: 7168,  heads: 128, kvHeads: 128, ctxWindow: 131072, isMoE: true,  arch: 'DeepSeek-R1 (MoE)', family: 'DeepSeek' },
       'meta-llama/llama-3.3-70b-instruct': { layers: 80, hidden: 8192,  heads: 64,  kvHeads: 8,   ctxWindow: 131072, isMoE: false, arch: 'Llama 3.3 (Dense, GQA)', family: 'Meta' },
       'qwen/qwen3-235b-a22b':       { layers: 94,  hidden: 16384, heads: 128, kvHeads: 16,  ctxWindow: 131072, isMoE: true,  arch: 'Qwen3 (MoE)', family: 'Alibaba' },
-      'demo/gpt-4o':                { layers: 120, hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 128000, isMoE: true,  arch: 'GPT-4o (模拟示意)', family: 'Demo' },
-      'demo/claude':                { layers: 96,  hidden: '未公开', heads: '未公开', kvHeads: '未公开', ctxWindow: 200000, isMoE: false, arch: 'Claude (模拟示意)', family: 'Demo' },
     };
     return DB[model] || { layers: '未知', hidden: '未知', heads: '未知', kvHeads: '未知', ctxWindow: 128000, isMoE: false, arch: '未知架构', family: 'Unknown' };
   }
@@ -861,7 +732,7 @@ class Component extends DCLogic {
     }));
   }
 
-  _buildTokenViz(text, actualCount, isReal) {
+  _buildTokenViz(text, actualCount) {
     if (!text || !text.trim()) {
       return { tokens: [], summary: '无输入文本', estCount: 0, actualCount: 0 };
     }
@@ -907,7 +778,7 @@ class Component extends DCLogic {
         },
         idStyle: { fontSize: '8px', color: `${typeColors[seg.type] || '#6e7681'}88` }
       })),
-      summary: isReal && actualCount > 0
+      summary: actualCount > 0
         ? `实际 ${actualCount} tokens · 预估 ${est}（偏差 ${Math.abs(actualCount - est)}）`
         : `预估 ${est} tokens（中文字符 ${(t.match(/[一-鿿]/g) || []).length} 个，英文词块 ${(t.match(/[a-zA-Z]+/g) || []).length} 个）`,
       estCount: est, actualCount: actualCount || 0,
@@ -948,10 +819,7 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning, apiKey } = this.state;
-    const useRealApi = this._useRealApi();
-    const apiStatusText = useRealApi ? '● LIVE · OpenRouter' : '○ 演示模式';
-    const apiStatusStyle = { fontSize: '10px', fontFamily: '"JetBrains Mono",monospace', color: useRealApi ? '#00ffa0' : '#484f58', border: `1px solid ${useRealApi ? 'rgba(0,255,160,0.3)' : '#30363d'}`, borderRadius: '4px', padding: '2px 8px', background: useRealApi ? 'rgba(0,255,160,0.06)' : 'transparent', animation: useRealApi ? 'none' : 'none', flexShrink: 0 };
+    const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning } = this.state;
 
     const TS = (on) => ({ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 10px', background: on ? 'rgba(0,255,160,0.08)' : 'transparent', border: `1px solid ${on ? 'rgba(0,255,160,0.32)' : '#30363d'}`, borderRadius: '4px', cursor: 'pointer', color: on ? '#00ffa0' : '#6e7681', fontSize: '11px', fontFamily: '"JetBrains Mono",monospace', whiteSpace: 'nowrap', transition: 'all 0.15s ease' });
 
@@ -973,7 +841,7 @@ class Component extends DCLogic {
     const lastUser = [...history].reverse().find(m => m.role === 'user');
     const pendingMsg = (!isRunning && inputText.trim()) ? [{ role: 'user', content: inputText, _pending: true }] : [];
     const msgsForPipeline = [sysMsg, ...history, ...pendingMsg];
-    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.cot ? { reasoning: true, reasoning_effort: 'medium' } : {}), ...(toggles.search ? { web_search: true } : {}) };
+    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.cot ? { reasoning: true, reasoning_effort: 'medium' } : {}) };
 
     // Stage 1: Context cards
     const contextCards = this._buildContextCards(sysPrompt, history, inputText);
@@ -981,7 +849,7 @@ class Component extends DCLogic {
     const msgCount = contextCards.length;
 
     // Stage 3: Tokenization (dynamic, based on actual user input)
-    const tokenViz = this._buildTokenViz(inputText || (lastUser ? lastUser.content : ''), metrics.inputTokens, useRealApi);
+    const tokenViz = this._buildTokenViz(inputText || (lastUser ? lastUser.content : ''), metrics.inputTokens);
 
     // Stage 4: Model profile
     const arch = this._modelArch(model);
@@ -999,12 +867,11 @@ class Component extends DCLogic {
       'google/gemini-2.5-flash': [0.15, 0.6],
       'deepseek/deepseek-chat-v3-0324': [0.27, 1.1], 'deepseek/deepseek-r1': [0.55, 2.19],
       'meta-llama/llama-3.3-70b-instruct': [0.12, 0.3], 'qwen/qwen3-235b-a22b': [0.23, 0.9],
-      'gpt-4o': [5, 15], 'claude-3-5-sonnet': [3, 15], 'gemini-1.5-pro': [1.25, 5],
     };
     const [ip, op] = prices[model] || [1, 3];
     const costUSD = (metrics.inputTokens / 1e6 * ip + metrics.outputTokens / 1e6 * op);
     const costDisplay = metrics.inputTokens > 0 || metrics.outputTokens > 0
-      ? (useRealApi ? `$${costUSD.toFixed(6)}` : `¥ ${(costUSD * 7.2).toFixed(5)}`)
+      ? `$${costUSD.toFixed(6)}`
       : '--';
 
     const sliders = [
@@ -1057,11 +924,9 @@ class Component extends DCLogic {
 
     return {
       model, setModel: (e) => this.setState({ model: e.target.value }),
-      apiStatusText, apiStatusStyle, useRealApi,
       toggles,
       toggleCOT: () => this.setState(s => ({ toggles: { ...s.toggles, cot: !s.toggles.cot } })),
-      toggleSearch: () => this.setState(s => ({ toggles: { ...s.toggles, search: !s.toggles.search } })),
-      toggleCOTStyle: TS(toggles.cot), toggleSearchStyle: TS(toggles.search),
+      toggleCOTStyle: TS(toggles.cot),
       sessionRounds: history.filter(m => m.role === 'user').length,
       contextDisplay: `${metrics.contextUsed.toLocaleString()} / ${metrics.totalTokens.toLocaleString()}`,
       sysPrompt, updateSysPrompt: (e) => this.setState({ sysPrompt: e.target.value }),

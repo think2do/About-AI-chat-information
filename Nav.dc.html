@@ -60,10 +60,29 @@
         <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#e6edf3; font-weight:600">⚙ 设置</span>
         <button onClick="{{ toggleSettings }}" style="background:transparent; border:none; color:#6e7681; font-size:18px; cursor:pointer; line-height:1">×</button>
       </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">API PROVIDER</div>
+        <select value="{{ provider }}" onChange="{{ updateProvider }}" style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none">
+          <option value="openrouter">OpenRouter</option>
+          <option value="aihubmix">AI HubMix</option>
+          <option value="packy">Packy API</option>
+          <option value="custom">Custom OpenAI-compatible</option>
+        </select>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">{{ providerLabel }} API KEY</div>
+        <input type="password" value="{{ apiKey }}" onInput="{{ updateApiKey }}" placeholder="{{ apiKeyPlaceholder }}" style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
+        <div style="font-size:10px; color:#484f58; margin-top:5px; font-family:'JetBrains Mono',monospace">Key 只保存在当前浏览器 localStorage，不会写入仓库</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">BASE URL</div>
+        <input type="text" value="{{ baseUrl }}" onInput="{{ updateBaseUrl }}" placeholder="https://example.com/v1" style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
+        <div style="font-size:10px; color:#484f58; margin-top:5px; font-family:'JetBrains Mono',monospace">会自动请求 BASE URL + /chat/completions</div>
+      </div>
       <div style="margin-bottom:20px">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">OPENROUTER API KEY</div>
-        <input type="password" value="{{ apiKey }}" onInput="{{ updateApiKey }}" placeholder="sk-or-v1-..." style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
-        <div style="font-size:10px; color:#484f58; margin-top:5px; font-family:'JetBrains Mono',monospace">在 openrouter.ai 注册获取 Key，费用由你自行承担</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#484f58; letter-spacing:0.08em; margin-bottom:8px">MODEL ID</div>
+        <input type="text" value="{{ model }}" onInput="{{ updateModel }}" placeholder="{{ modelPlaceholder }}" style="width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 12px; outline:none"></input>
+        <div style="font-size:10px; color:#484f58; margin-top:5px; font-family:'JetBrains Mono',monospace">{{ providerHelp }}</div>
       </div>
       <button onClick="{{ saveSettings }}" style="width:100%; padding:9px; background:#00ffa0; border:none; border-radius:6px; color:#0d1117; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer">保存</button>
     </div>
@@ -72,27 +91,74 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:56,&quot;height&quot;:400},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chat&quot;,&quot;lab&quot;,&quot;code&quot;,&quot;jargon&quot;],&quot;default&quot;:&quot;chat&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
+  _defaultProviders() {
+    return {
+      openrouter: { label: 'OpenRouter', apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o' },
+      aihubmix: { label: 'AI HubMix', apiKey: '', baseUrl: 'https://aihubmix.com/v1', model: '' },
+      packy: { label: 'Packy API', apiKey: '', baseUrl: 'https://www.packyapi.com/v1', model: '' },
+      custom: { label: 'Custom', apiKey: '', baseUrl: '', model: '' }
+    };
+  }
+
+  _loadSettings() {
+    const defaults = this._defaultProviders();
+    try {
+      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
+      const providers = { ...defaults };
+      const savedProviders = s.providers && typeof s.providers === 'object' ? s.providers : {};
+      Object.keys(providers).forEach(k => {
+        providers[k] = { ...providers[k], ...(savedProviders[k] || {}) };
+      });
+      if (s.apiKey && !savedProviders.openrouter?.apiKey) {
+        providers.openrouter.apiKey = s.apiKey;
+      }
+      const provider = providers[s.provider] ? s.provider : 'openrouter';
+      return { provider, providers };
+    } catch(e) {
+      return { provider: 'openrouter', providers: defaults };
+    }
+  }
+
+  _activeConfig(settings = null) {
+    const s = settings || this.state;
+    return (s.providers && s.providers[s.provider]) || this._defaultProviders().openrouter;
+  }
+
+  _setProviderField(field, value) {
+    this.setState(s => ({
+      providers: {
+        ...s.providers,
+        [s.provider]: { ...s.providers[s.provider], [field]: value }
+      }
+    }));
+  }
+
   state = {
     showSettings: false,
-    apiKey: ''
+    provider: 'openrouter',
+    providers: this._defaultProviders()
   };
 
   componentDidMount() {
-    try {
-      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      this.setState({ apiKey: s.apiKey || '' });
-    } catch(e) {}
+    this.setState(this._loadSettings());
   }
 
   saveSettings() {
-    const { apiKey } = this.state;
-    try { localStorage.setItem('llm_viz_settings', JSON.stringify({ apiKey })); } catch(e) {}
+    const { provider, providers } = this.state;
+    try { localStorage.setItem('llm_viz_settings', JSON.stringify({ provider, providers })); } catch(e) {}
     this.setState({ showSettings: false });
   }
 
   renderVals() {
-    const { showSettings, apiKey } = this.state;
+    const { showSettings, provider, providers } = this.state;
     const active = this.props.active || 'chat';
+    const cfg = this._activeConfig();
+    const help = {
+      openrouter: 'OpenRouter 模型通常形如 openai/gpt-4o、anthropic/claude-sonnet-4',
+      aihubmix: '填写 AI HubMix 控制台里可用的 OpenAI-compatible 模型 ID',
+      packy: '填写 Packy 当前 token group 有权限的模型 ID，例如控制台 /v1/models 中可见的模型',
+      custom: '适用于任意 OpenAI-compatible 服务，需手动填写 Base URL 和 Model ID'
+    };
     const NS = (page) => ({
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       height: '56px', cursor: 'pointer',
@@ -112,8 +178,18 @@ class Component extends DCLogic {
       toggleSettings: () => this.setState(s => ({ showSettings: !s.showSettings })),
       closeOnBg: (e) => { if (e.target === e.currentTarget) this.setState({ showSettings: false }); },
       stopProp: (e) => e.stopPropagation(),
-      apiKey,
-      updateApiKey: (e) => this.setState({ apiKey: e.target.value }),
+      provider,
+      providerLabel: cfg.label || provider,
+      apiKey: cfg.apiKey || '',
+      baseUrl: cfg.baseUrl || '',
+      model: cfg.model || '',
+      apiKeyPlaceholder: provider === 'openrouter' ? 'sk-or-v1-...' : 'Bearer token',
+      modelPlaceholder: provider === 'openrouter' ? 'openai/gpt-4o' : '例如 gpt-4o-mini / claude-fable-5',
+      providerHelp: help[provider] || help.custom,
+      updateProvider: (e) => this.setState({ provider: e.target.value }),
+      updateApiKey: (e) => this._setProviderField('apiKey', e.target.value),
+      updateBaseUrl: (e) => this._setProviderField('baseUrl', e.target.value),
+      updateModel: (e) => this._setProviderField('model', e.target.value),
       saveSettings: () => this.saveSettings(),
     };
   }

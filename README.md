@@ -666,12 +666,20 @@ DC 页面可通过在 `<head>` 中（非 `<helmet>` 内）添加 `<script>` 标�
 **全局状态：** 仅用户 API 设置跨页共享，存储在 `localStorage['llm_viz_settings']`：
 
 ```js
-{ apiKey: 'sk-or-v1-...' }
+{
+  provider: 'openrouter', // openrouter | aihubmix | packy | custom
+  providers: {
+    openrouter: { apiKey: 'sk-or-v1-...', baseUrl: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o' },
+    aihubmix: { apiKey: '', baseUrl: 'https://aihubmix.com/v1', model: '' },
+    packy: { apiKey: '', baseUrl: 'https://www.packyapi.com/v1', model: '' },
+    custom: { apiKey: '', baseUrl: '', model: '' }
+  }
+}
 ```
 
 - **写入：** Nav 设置弹窗点击「保存」时调用 `saveSettings()` → `localStorage.setItem`
-- **读取：** index.html 在 `componentDidMount` 中读取；`_streamReal` 方法中也实时读取（确保 Nav 保存后无需刷新页面）
-- **跨 Tab 同步：** `window.addEventListener('storage', ...)` 实现（浏览器原生能力）
+- **读取：** index.html 在 `componentDidMount` 中读取；`handleRun` / `_streamReal` 中也实时读取（确保 Nav 保存后无需刷新页面）
+- **旧配置兼容：** 若存在旧版 `{ apiKey }`，会自动迁移为 OpenRouter Key 使用
 
 **Nav 导航项与 active prop 对应：**
 
@@ -685,7 +693,7 @@ DC 页面可通过在 `<head>` 中（非 `<helmet>` 内）添加 `<script>` 标�
 
 ### 4.4 API 集成
 
-仅在 `index.html`（Chat 页）中使用。用户需自行配置 OpenRouter API Key。
+仅在 `index.html`（Chat 页）中使用。支持 OpenRouter、AI HubMix、Packy API 和任意 OpenAI-compatible 自定义端点。用户需自行配置对应 Provider 的 API Key、Base URL 和 Model ID。
 
 **流程：**
 
@@ -703,17 +711,18 @@ DC 页面可通过在 `<head>` 中（非 `<helmet>` 内）添加 `<script>` 标�
 **API 详情：**
 
 ```
-端点：POST https://openrouter.ai/api/v1/chat/completions
+端点：POST {baseUrl}/chat/completions
 Headers：
   Authorization: Bearer {apiKey}
   Content-Type: application/json
-  HTTP-Referer: https://llm-viz.app
-  X-Title: LLM Mechanism Viz
+  HTTP-Referer: https://llm-viz.app  // 仅 OpenRouter
+  X-Title: LLM Mechanism Viz         // 仅 OpenRouter
 Body：
   {
     model, messages, max_tokens, temperature, top_p,
+    frequency_penalty, presence_penalty,
     stream: true,
-    ...(cot ? { reasoning: true, reasoning_effort: 'medium' } : {})
+    ...(provider === 'openrouter' && cot ? { reasoning: true, reasoning_effort: 'medium' } : {})
   }
 响应：SSE (text/event-stream)
   逐行解析 data: {...} JSON
@@ -721,7 +730,14 @@ Body：
   提取 usage → 更新输入/输出 token 计数
 ```
 
-**无 API Key 时：** API 调用直接返回错误（状态码 + 错误信息），错误消息以 `❌` 前缀显示在对话气泡中。
+**Key 与模型要求：**
+
+- API Key 不要求固定前缀，只要是所选 Provider 可用的 Bearer Token。
+- OpenRouter 默认使用现有下拉模型 ID（如 `openai/gpt-4o`）。
+- AI HubMix / Packy API / Custom 使用可编辑 Model ID；必须填写当前 Key 有权限访问的模型。
+- Packy API 的默认 Base URL 为 `https://www.packyapi.com/v1`；AI HubMix 默认 Base URL 为 `https://aihubmix.com/v1`，均可在设置中覆盖。Packy 如需优化线路，可按官方文档改用 `https://api-slb.packyapi.com/v1`；AI HubMix 如遇主域名访问问题，可改用备用域名 `https://api.inferera.com/v1`。
+
+**缺少 API Key / Base URL / Model ID 时：** 前端直接显示带 `❌` 前缀的错误气泡，不会发送无效请求。
 
 **模型定价（$ / 1M tokens，代码中硬编码）：**
 

@@ -60,19 +60,31 @@
         </div>
         <!-- Model + Toggles bar -->
         <div style="padding:7px 12px; border-top:1px solid #30363d; flex-shrink:0; background:#0a0e14; display:flex; align-items:center; gap:5px; flex-wrap:wrap">
-          <select onChange="{{ setModel }}" style="background:#21262d; border:1px solid #30363d; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer; margin-right:4px">
-            <optgroup label="── OpenRouter ──">
-              <option value="openai/gpt-4o">openai/gpt-4o</option>
-              <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
-              <option value="anthropic/claude-sonnet-4">anthropic/claude-sonnet-4</option>
-              <option value="anthropic/claude-3-5-haiku">anthropic/claude-3-5-haiku</option>
-              <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
-              <option value="deepseek/deepseek-chat-v3-0324">deepseek/deepseek-chat-v3-0324</option>
-              <option value="deepseek/deepseek-r1">deepseek/deepseek-r1</option>
-              <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
-              <option value="qwen/qwen3-235b-a22b">qwen/qwen3-235b-a22b</option>
-            </optgroup>
+          <select value="{{ provider }}" onChange="{{ setProvider }}" style="background:#21262d; border:1px solid #30363d; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer; margin-right:4px">
+            <option value="openrouter">OpenRouter</option>
+            <option value="aihubmix">AI HubMix</option>
+            <option value="packy">Packy API</option>
+            <option value="custom">Custom</option>
           </select>
+          <sc-if value="{{ isOpenRouterProvider }}" hint-placeholder-val="{{ true }}">
+            <select value="{{ model }}" onChange="{{ setModel }}" style="background:#21262d; border:1px solid #30363d; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer; margin-right:4px">
+              <optgroup label="── OpenRouter ──">
+                <option value="openai/gpt-4o">openai/gpt-4o</option>
+                <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+                <option value="anthropic/claude-sonnet-4">anthropic/claude-sonnet-4</option>
+                <option value="anthropic/claude-3-5-haiku">anthropic/claude-3-5-haiku</option>
+                <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+                <option value="deepseek/deepseek-chat-v3-0324">deepseek/deepseek-chat-v3-0324</option>
+                <option value="deepseek/deepseek-r1">deepseek/deepseek-r1</option>
+                <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct</option>
+                <option value="qwen/qwen3-235b-a22b">qwen/qwen3-235b-a22b</option>
+              </optgroup>
+            </select>
+          </sc-if>
+          <sc-if value="{{ isCustomProvider }}" hint-placeholder-val="{{ false }}">
+            <input type="text" value="{{ model }}" onInput="{{ setModelText }}" placeholder="{{ modelPlaceholder }}" style="background:#21262d; border:1px solid #30363d; color:#e6edf3; font-family:'JetBrains Mono',monospace; font-size:11px; padding:4px 8px; border-radius:4px; min-width:220px; margin-right:4px"></input>
+          </sc-if>
+          <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#484f58; margin-right:auto">{{ providerEndpoint }}</span>
           <button onClick="{{ toggleCOT }}" style="{{ toggleCOTStyle }}"><span>🧠</span><span>思维链</span></button>
         </div>
         <!-- Input area -->
@@ -411,8 +423,76 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
+  _defaultProviders() {
+    return {
+      openrouter: { label: 'OpenRouter', apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o' },
+      aihubmix: { label: 'AI HubMix', apiKey: '', baseUrl: 'https://aihubmix.com/v1', model: '' },
+      packy: { label: 'Packy API', apiKey: '', baseUrl: 'https://www.packyapi.com/v1', model: '' },
+      custom: { label: 'Custom', apiKey: '', baseUrl: '', model: '' }
+    };
+  }
+
+  _loadSettings() {
+    const defaults = this._defaultProviders();
+    try {
+      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
+      const providers = { ...defaults };
+      const savedProviders = s.providers && typeof s.providers === 'object' ? s.providers : {};
+      Object.keys(providers).forEach(k => {
+        providers[k] = { ...providers[k], ...(savedProviders[k] || {}) };
+      });
+      if (s.apiKey && !savedProviders.openrouter?.apiKey) {
+        providers.openrouter.apiKey = s.apiKey;
+      }
+      const provider = providers[s.provider] ? s.provider : 'openrouter';
+      return { provider, providers };
+    } catch(e) {
+      return { provider: 'openrouter', providers: defaults };
+    }
+  }
+
+  _activeProvider(settings = null) {
+    const s = settings || this.state;
+    const providers = s.providers || this._defaultProviders();
+    return providers[s.provider] || providers.openrouter || this._defaultProviders().openrouter;
+  }
+
+  _normalizeBaseUrl(baseUrl) {
+    return String(baseUrl || '').trim().replace(/\/+$/, '');
+  }
+
+  _chatCompletionsUrl(baseUrl) {
+    const clean = this._normalizeBaseUrl(baseUrl);
+    if (!clean) return '';
+    return clean.endsWith('/chat/completions') ? clean : clean + '/chat/completions';
+  }
+
+  _saveProviderSettings(provider, patch) {
+    const current = this._loadSettings();
+    const active = current.providers[provider] || this._defaultProviders()[provider] || {};
+    const next = {
+      provider,
+      providers: {
+        ...current.providers,
+        [provider]: { ...active, ...patch }
+      }
+    };
+    try { localStorage.setItem('llm_viz_settings', JSON.stringify(next)); } catch(e) {}
+    this.setState({
+      provider,
+      providers: next.providers,
+      model: next.providers[provider].model || '',
+      apiKey: next.providers[provider].apiKey || '',
+      apiBaseUrl: next.providers[provider].baseUrl || ''
+    });
+    return next;
+  }
+
   state = {
     model: 'openai/gpt-4o',
+    provider: 'openrouter',
+    providers: this._defaultProviders(),
+    apiBaseUrl: 'https://openrouter.ai/api/v1',
     toggles: { streaming: true, cot: false },
     params: { maxTokens: 4096, temperature: 1.0, topP: 1.0, freqPenalty: 1.0, presPenalty: 1.0 },
     pipelinePhase: 0,
@@ -435,10 +515,15 @@ class Component extends DCLogic {
   _paramTimer = null;
 
   componentDidMount() {
-    try {
-      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      this.setState({ apiKey: s.apiKey || '' });
-    } catch(e) {}
+    const settings = this._loadSettings();
+    const cfg = this._activeProvider(settings);
+    this.setState({
+      provider: settings.provider,
+      providers: settings.providers,
+      model: cfg.model || '',
+      apiKey: cfg.apiKey || '',
+      apiBaseUrl: cfg.baseUrl || ''
+    });
   }
 
   componentWillUnmount() {
@@ -452,12 +537,31 @@ class Component extends DCLogic {
   handleRun() {
     const { isRunning, inputText, history, metrics, sysPrompt } = this.state;
     if (isRunning || !inputText.trim()) return;
+    const settings = this._loadSettings();
+    const activeCfg = this._activeProvider(settings);
     this._clearAll();
     const rid = Date.now();
     const userMsg = { role: 'user', content: inputText, id: `u${rid}` };
     const newHistory = [...history, userMsg];
     const estPromptTokens = this._estimateTokens(sysPrompt) + newHistory.reduce((s, m) => s + this._estimateTokens(m.content), 0);
-    this.setState({ isRunning: true, pipelinePhase: 1, streamingText: '', _lastOutput: '', history: newHistory, inputText: '', metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 }, autoSteps: [], _runId: rid, estPromptTokens, _inputKey: this.state._inputKey + 1 });
+    this.setState({
+      provider: settings.provider,
+      providers: settings.providers,
+      model: activeCfg.model || '',
+      apiKey: activeCfg.apiKey || '',
+      apiBaseUrl: activeCfg.baseUrl || '',
+      isRunning: true,
+      pipelinePhase: 1,
+      streamingText: '',
+      _lastOutput: '',
+      history: newHistory,
+      inputText: '',
+      metrics: { ...metrics, tps: 0, ttft: 0, inputTokens: 0, outputTokens: 0, contextUsed: 0 },
+      autoSteps: [],
+      _runId: rid,
+      estPromptTokens,
+      _inputKey: this.state._inputKey + 1
+    });
 
     this._schedule(() => this.setState({ pipelinePhase: 2 }), 350);
     this._schedule(() => this.setState({ pipelinePhase: 3 }), 700);
@@ -470,13 +574,59 @@ class Component extends DCLogic {
 
   async _streamReal(rid, history) {
     // 实时读 localStorage，确保 Nav 保存后无需刷新页面
-    let apiKey = this.state.apiKey;
-    try {
-      const s = JSON.parse(localStorage.getItem('llm_viz_settings') || '{}');
-      if (s.apiKey) apiKey = s.apiKey;
-    } catch(e) {}
-    const { model, params, sysPrompt, estPromptTokens } = this.state;
-    const url = 'https://openrouter.ai/api/v1/chat/completions';
+    const settings = this._loadSettings();
+    const activeCfg = this._activeProvider(settings);
+    const provider = settings.provider;
+    const providerLabel = activeCfg.label || provider;
+    const apiKey = activeCfg.apiKey || this.state.apiKey || '';
+    const baseUrl = activeCfg.baseUrl || this.state.apiBaseUrl || '';
+    const model = activeCfg.model || this.state.model || '';
+    const url = this._chatCompletionsUrl(baseUrl);
+    const { params, toggles, sysPrompt, estPromptTokens } = this.state;
+
+    if (!url) {
+      this.setState({ provider, providers: settings.providers, model, apiKey, apiBaseUrl: baseUrl });
+      this._schedule(() => {
+        if (this.state._runId === rid) {
+          this.setState(s => ({
+            isRunning: false,
+            pipelinePhase: 7,
+            history: [...s.history, { role: 'assistant', content: `❌ ${providerLabel} 缺少 Base URL`, id: `err${rid}` }],
+            metrics: { ...s.metrics, tps: 0 }
+          }));
+        }
+      }, 0);
+      return;
+    }
+    if (!apiKey.trim()) {
+      this.setState({ provider, providers: settings.providers, model, apiKey, apiBaseUrl: baseUrl });
+      this._schedule(() => {
+        if (this.state._runId === rid) {
+          this.setState(s => ({
+            isRunning: false,
+            pipelinePhase: 7,
+            history: [...s.history, { role: 'assistant', content: `❌ ${providerLabel} 缺少 API Key，请先在设置里填写`, id: `err${rid}` }],
+            metrics: { ...s.metrics, tps: 0 }
+          }));
+        }
+      }, 0);
+      return;
+    }
+    if (!model.trim()) {
+      this.setState({ provider, providers: settings.providers, model, apiKey, apiBaseUrl: baseUrl });
+      this._schedule(() => {
+        if (this.state._runId === rid) {
+          this.setState(s => ({
+            isRunning: false,
+            pipelinePhase: 7,
+            history: [...s.history, { role: 'assistant', content: `❌ ${providerLabel} 缺少 Model ID，请先在设置或顶部模型栏填写`, id: `err${rid}` }],
+            metrics: { ...s.metrics, tps: 0 }
+          }));
+        }
+      }, 0);
+      return;
+    }
+    this.setState({ provider, providers: settings.providers, model, apiKey, apiBaseUrl: baseUrl });
 
     const messages = [
       { role: 'system', content: sysPrompt },
@@ -489,7 +639,10 @@ class Component extends DCLogic {
       max_tokens: params.maxTokens,
       temperature: params.temperature,
       top_p: params.topP,
+      frequency_penalty: params.freqPenalty,
+      presence_penalty: params.presPenalty,
       stream: true,
+      ...(provider === 'openrouter' && toggles.cot ? { reasoning: true, reasoning_effort: 'medium' } : {})
     };
 
     const t0 = Date.now();
@@ -525,15 +678,17 @@ class Component extends DCLogic {
         headers: {
           'Authorization': `Bearer ${apiKey.trim()}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://llm-viz.app',
-          'X-Title': 'LLM Mechanism Viz'
+          ...(provider === 'openrouter' ? {
+            'HTTP-Referer': 'https://llm-viz.app',
+            'X-Title': 'LLM Mechanism Viz'
+          } : {})
         },
         body: JSON.stringify(body)
       });
 
       if (!res.ok) {
         const errText = await res.text();
-        let msg = `API 错误 ${res.status}`;
+        let msg = `${providerLabel} API 错误 ${res.status}`;
         try { const j = JSON.parse(errText); msg = j.error?.message || j.message || msg; } catch(e) {}
         _finish(msg); return;
       }
@@ -788,9 +943,9 @@ class Component extends DCLogic {
     };
   }
 
-  _buildModelProfile(model, arch) {
+  _buildModelProfile(model, arch, endpoint) {
     return {
-      model, endpoint: 'POST https://openrouter.ai/api/v1/chat/completions',
+      model, endpoint: endpoint ? 'POST ' + endpoint : 'POST (未设置 Base URL)',
       archLabel: arch.arch,
       layers: arch.layers, hidden: arch.hidden, heads: arch.heads, kvHeads: arch.kvHeads,
       ctxWindow: arch.ctxWindow ? (arch.ctxWindow >= 1000000 ? `${(arch.ctxWindow/1000000).toFixed(1)}M` : arch.ctxWindow >= 1000 ? `${(arch.ctxWindow/1000).toFixed(0)}K` : `${arch.ctxWindow}`) : '未知',
@@ -820,7 +975,11 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const { model, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning } = this.state;
+    const { model, provider, toggles, params, pipelinePhase, streamingText, changedParam, sysPrompt, history, inputText, metrics, isRunning } = this.state;
+    const providerCfg = this._activeProvider();
+    const endpoint = this._chatCompletionsUrl(providerCfg.baseUrl || this.state.apiBaseUrl || '');
+    const isOpenRouterProvider = provider === 'openrouter';
+    const isCustomProvider = !isOpenRouterProvider;
 
     const TS = (on) => ({ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 10px', background: on ? 'rgba(0,255,160,0.08)' : 'transparent', border: `1px solid ${on ? 'rgba(0,255,160,0.32)' : '#30363d'}`, borderRadius: '4px', cursor: 'pointer', color: on ? '#00ffa0' : '#6e7681', fontSize: '11px', fontFamily: '"JetBrains Mono",monospace', whiteSpace: 'nowrap', transition: 'all 0.15s ease' });
 
@@ -842,7 +1001,7 @@ class Component extends DCLogic {
     const lastUser = [...history].reverse().find(m => m.role === 'user');
     const pendingMsg = (!isRunning && inputText.trim()) ? [{ role: 'user', content: inputText, _pending: true }] : [];
     const msgsForPipeline = [sysMsg, ...history, ...pendingMsg];
-    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(toggles.cot ? { reasoning: true, reasoning_effort: 'medium' } : {}) };
+    const reqObj = { model, messages: msgsForPipeline.map(m => ({ role: m.role, content: m.content.length > 40 ? m.content.slice(0, 40) + '...' : m.content })), max_tokens: params.maxTokens, temperature: params.temperature, top_p: params.topP, frequency_penalty: params.freqPenalty, presence_penalty: params.presPenalty, stream: toggles.streaming, ...(isOpenRouterProvider && toggles.cot ? { reasoning: true, reasoning_effort: 'medium' } : {}) };
 
     // Stage 1: Context cards
     const contextCards = this._buildContextCards(sysPrompt, history, inputText);
@@ -854,7 +1013,7 @@ class Component extends DCLogic {
 
     // Stage 4: Model profile
     const arch = this._modelArch(model);
-    const modelProfile = this._buildModelProfile(model, arch);
+    const modelProfile = this._buildModelProfile(model, arch, endpoint);
 
     // Stage 5: Model-specific transformer layers
     const transformerLayers = this._buildTransformerLayers(arch, pipelinePhase);
@@ -924,7 +1083,15 @@ class Component extends DCLogic {
     const liveOutputText = streamingText || this.state._lastOutput;
 
     return {
-      model, setModel: (e) => this.setState({ model: e.target.value }),
+      model,
+      provider,
+      isOpenRouterProvider,
+      isCustomProvider,
+      providerEndpoint: endpoint ? endpoint.replace(/^https?:\/\//, '') : '未设置 endpoint',
+      modelPlaceholder: provider === 'aihubmix' ? '填写 AI HubMix 模型 ID' : provider === 'packy' ? '填写 Packy 模型 ID' : '填写模型 ID',
+      setProvider: (e) => this._saveProviderSettings(e.target.value, {}),
+      setModel: (e) => this._saveProviderSettings(provider, { model: e.target.value }),
+      setModelText: (e) => this._saveProviderSettings(provider, { model: e.target.value }),
       toggles,
       toggleCOT: () => this.setState(s => ({ toggles: { ...s.toggles, cot: !s.toggles.cot } })),
       toggleCOTStyle: TS(toggles.cot),

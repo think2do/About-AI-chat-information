@@ -45,7 +45,8 @@ body {
   font-family: 'JetBrains Mono', 'Inter', monospace;
   font-size: 13px;
   line-height: 1.6;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden; /* the app shell (layout.tsx) is fixed to 100vh; panes scroll internally */
 }
 
 /* ===== Links ===== */

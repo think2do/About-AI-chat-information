@@ -9,3 +9,13 @@ export type {
   JobQuestion,
   JobListResponse,
 } from "./content";
+export type {
+  CodeTool,
+  CodeCommand,
+  CodeToolCategory,
+  CodeCommandCategory,
+  SimStep,
+  AgentStep,
+  HiddenFeature,
+  CodeResponse,
+} from "./content";

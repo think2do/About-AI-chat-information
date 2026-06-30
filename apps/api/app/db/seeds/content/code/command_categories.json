@@ -1,0 +1,27 @@
+[
+  {
+    "slug": "setup",
+    "label": "设置 & 配置",
+    "sort_order": 0
+  },
+  {
+    "slug": "workflow",
+    "label": "日常工作流",
+    "sort_order": 1
+  },
+  {
+    "slug": "git",
+    "label": "代码审查 & Git",
+    "sort_order": 2
+  },
+  {
+    "slug": "debug",
+    "label": "调试 & 诊断",
+    "sort_order": 3
+  },
+  {
+    "slug": "advanced",
+    "label": "高级 & 实验性",
+    "sort_order": 4
+  }
+]

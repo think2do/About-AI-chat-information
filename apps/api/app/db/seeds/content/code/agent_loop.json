@@ -1,0 +1,101 @@
+[
+  {
+    "slug": "agent-0",
+    "sort_order": 0,
+    "num": "1",
+    "title": "Input",
+    "src": "src/input.ts",
+    "desc": "用户键入内容，Claude Code 通过 readline 接口捕获原始输入，处理特殊键位（Ctrl+C 中断、Ctrl+B 后台化等）。",
+    "code": "/resume 恢复会话  /help 查看命令  Ctrl+C 中断"
+  },
+  {
+    "slug": "agent-1",
+    "sort_order": 1,
+    "num": "2",
+    "title": "Message",
+    "src": "src/messages.ts",
+    "desc": "原始输入被封装为 HumanMessage 对象，附加元数据（时间戳、会话 ID）。",
+    "code": "{ role: \"user\", content: \"...\", timestamp: 1234567890 }"
+  },
+  {
+    "slug": "agent-2",
+    "sort_order": 2,
+    "num": "3",
+    "title": "History",
+    "src": "src/history.ts",
+    "desc": "新消息追加到会话历史。若超过 context window，自动 compact 压缩早期历史。",
+    "code": "history.push(message)  // 自动管理 token 预算"
+  },
+  {
+    "slug": "agent-3",
+    "sort_order": 3,
+    "num": "4",
+    "title": "System",
+    "src": "src/system.ts",
+    "desc": "读取 CLAUDE.md 项目记忆、工具权限配置、MCP 服务器信息，拼装 system prompt。",
+    "code": "system = basePrompt + projectMemory + toolDefs + mcpTools"
+  },
+  {
+    "slug": "agent-4",
+    "sort_order": 4,
+    "num": "5",
+    "title": "API",
+    "src": "src/api.ts",
+    "desc": "调用 Anthropic /v1/messages，传入完整 messages + tools 定义，开启流式响应。",
+    "code": "client.messages.stream({ model, messages, tools, system })"
+  },
+  {
+    "slug": "agent-5",
+    "sort_order": 5,
+    "num": "6",
+    "title": "Tokens",
+    "src": "src/tokens.ts",
+    "desc": "统计输入/输出 token，追踪 context 占用率，接近上限时触发 compact 策略。",
+    "code": "inputTokens: 2847  outputTokens: 312  contextUsed: 14%"
+  },
+  {
+    "slug": "agent-6",
+    "sort_order": 6,
+    "num": "7",
+    "title": "Tools?",
+    "src": "src/tools.ts",
+    "desc": "解析模型响应，判断是 text_block（直接回答）还是 tool_use_block（需要执行工具）。",
+    "code": "if (block.type === \"tool_use\") → 进入工具执行\nelse → 直接渲染文本"
+  },
+  {
+    "slug": "agent-7",
+    "sort_order": 7,
+    "num": "8",
+    "title": "Loop",
+    "src": "src/loop.ts",
+    "desc": "工具结果回写历史，触发下一轮 API 调用。支持无限循环直到无工具调用。",
+    "code": "do { result = await callAPI() } while (hasToolUse(result))"
+  },
+  {
+    "slug": "agent-8",
+    "sort_order": 8,
+    "num": "9",
+    "title": "Render",
+    "src": "src/render.ts",
+    "desc": "最终文本响应流式渲染到终端：Markdown 解析、代码块语法高亮、链接处理。",
+    "code": "marked.parse(text) → ANSI 着色 → 流式输出到 stdout"
+  },
+  {
+    "slug": "agent-9",
+    "sort_order": 9,
+    "num": "10",
+    "title": "Hooks",
+    "src": "src/hooks.ts",
+    "desc": "触发 PostToolUse / Stop 钩子，执行用户配置的自定义脚本（如自动 git commit）。",
+    "code": "hooks.emit(\"Stop\", { sessionId, cost, tokens })"
+  },
+  {
+    "slug": "agent-10",
+    "sort_order": 10,
+    "num": "11",
+    "title": "Await",
+    "src": "src/main.ts",
+    "desc": "重新显示提示符，等待用户下一条输入，Agent Loop 进入下一次迭代。",
+    "code": "→ 回到 Step 1: Input"
+  }
+]

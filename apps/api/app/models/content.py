@@ -63,3 +63,81 @@ class JobListResponse(BaseModel):
     total: int
     all_tags: list[JobTag]
     items: list[JobSummary]
+
+
+# --- Code (Spec 011) ---
+
+
+class CodeTool(BaseModel):
+    name: str
+    emoji: str
+    title: str
+    plain: str
+    example: str
+    isExp: bool
+
+
+class CodeCommand(BaseModel):
+    cmd: str
+    emoji: str
+    title: str
+    plain: str
+    example: str
+    isExp: bool
+
+
+class CodeToolCategory(BaseModel):
+    slug: str
+    label: str
+    count: int
+    tools: list[CodeTool]
+
+
+class CodeCommandCategory(BaseModel):
+    slug: str
+    label: str
+    count: int
+    commands: list[CodeCommand]
+
+
+class SimSeq(BaseModel):
+    tag: str
+    tagColor: str
+    title: str
+    desc: str
+    code: str | None = None
+
+
+class SimStep(BaseModel):
+    terminal: list[str]
+    seq: SimSeq
+
+
+class AgentStep(BaseModel):
+    num: str
+    title: str
+    src: str
+    desc: str
+    code: str | None = None
+
+
+class HiddenFeature(BaseModel):
+    name: str
+    desc: str
+
+
+class CodeToolsGroup(BaseModel):
+    categories: list[CodeToolCategory]
+
+
+class CodeCommandsGroup(BaseModel):
+    categories: list[CodeCommandCategory]
+
+
+class CodeResponse(BaseModel):
+    module: Literal["code"] = "code"
+    tools: CodeToolsGroup
+    commands: CodeCommandsGroup
+    simulator: list[SimStep]
+    agentLoop: list[AgentStep]
+    hidden: list[HiddenFeature]

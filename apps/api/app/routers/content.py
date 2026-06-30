@@ -7,8 +7,13 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Response
 
-from app.models.content import JargonResponse, JobListResponse, JobQuestion
-from app.services.content_service import get_jargon, get_job, list_jobs
+from app.models.content import (
+    CodeResponse,
+    JargonResponse,
+    JobListResponse,
+    JobQuestion,
+)
+from app.services.content_service import get_code, get_jargon, get_job, list_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +61,19 @@ async def job_detail(job_id: str, response: Response):
 
     if data is None:
         raise HTTPException(status_code=404, detail="题目不存在")
+
+    response.headers["Cache-Control"] = "public, max-age=300"
+    return data
+
+
+@router.get("/code", response_model=CodeResponse)
+async def code(response: Response):
+    """Aggregate Code page data: tools / commands / simulator / agentLoop / hidden."""
+    try:
+        data = await get_code()
+    except Exception:
+        logger.exception("Failed to load code content")
+        raise HTTPException(status_code=500, detail="内容服务暂时不可用")
 
     response.headers["Cache-Control"] = "public, max-age=300"
     return data

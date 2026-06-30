@@ -57,3 +57,64 @@ export interface JobListResponse {
   all_tags: JobTag[];
   items: JobSummary[];
 }
+
+// --- Code (Spec 011) ---
+
+export interface CodeTool {
+  name: string;
+  emoji: string;
+  title: string;
+  plain: string;
+  example: string;
+  isExp: boolean;
+}
+
+export interface CodeCommand {
+  cmd: string;
+  emoji: string;
+  title: string;
+  plain: string;
+  example: string;
+  isExp: boolean;
+}
+
+export interface CodeToolCategory {
+  slug: string;
+  label: string;
+  count: number;
+  tools: CodeTool[];
+}
+
+export interface CodeCommandCategory {
+  slug: string;
+  label: string;
+  count: number;
+  commands: CodeCommand[];
+}
+
+export interface SimStep {
+  terminal: string[];
+  seq: { tag: string; tagColor: string; title: string; desc: string; code: string | null };
+}
+
+export interface AgentStep {
+  num: string;
+  title: string;
+  src: string;
+  desc: string;
+  code: string | null;
+}
+
+export interface HiddenFeature {
+  name: string;
+  desc: string;
+}
+
+export interface CodeResponse {
+  module: "code";
+  tools: { categories: CodeToolCategory[] };
+  commands: { categories: CodeCommandCategory[] };
+  simulator: SimStep[];
+  agentLoop: AgentStep[];
+  hidden: HiddenFeature[];
+}

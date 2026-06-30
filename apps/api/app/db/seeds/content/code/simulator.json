@@ -1,0 +1,169 @@
+[
+  {
+    "slug": "sim-0",
+    "sort_order": 0,
+    "terminal": [
+      "$ claude",
+      "✓ 欢迎回来！已加载项目上下文",
+      "> 帮我找出项目里所有的 TODO 注释"
+    ],
+    "seq": {
+      "tag": "用户",
+      "tagColor": "#7ee787",
+      "title": "用户输入提示词",
+      "desc": "用户在终端键入指令，Claude Code 接收原始输入。",
+      "code": null
+    }
+  },
+  {
+    "slug": "sim-1",
+    "sort_order": 1,
+    "terminal": [
+      "◈ 读取 CLAUDE.md ...",
+      "项目上下文: 28 个文件, 4.2k tokens"
+    ],
+    "seq": {
+      "tag": "CC",
+      "tagColor": "#00ffa0",
+      "title": "注入系统提示词",
+      "desc": "Claude Code 读取 CLAUDE.md、项目记忆和工具权限，构建 system prompt。",
+      "code": "system: \"You are Claude Code...\\n当前项目: /users/proj\\n可用工具: Bash, FileRead...\""
+    }
+  },
+  {
+    "slug": "sim-2",
+    "sort_order": 2,
+    "terminal": [
+      "组装消息历史 (3 轮, 1.2k tokens) ..."
+    ],
+    "seq": {
+      "tag": "CC",
+      "tagColor": "#00ffa0",
+      "title": "消息历史组装",
+      "desc": "将 system prompt + 历史对话 + 本次用户消息组装为 messages 数组。",
+      "code": "messages: [\n  {role:\"system\", content:\"...\"},\n  {role:\"user\",   content:\"帮我找...\"}\n]"
+    }
+  },
+  {
+    "slug": "sim-3",
+    "sort_order": 3,
+    "terminal": [
+      "→ 调用 Claude claude-sonnet-4 API ..."
+    ],
+    "seq": {
+      "tag": "LLM",
+      "tagColor": "#d2a8ff",
+      "title": "发起 API 调用",
+      "desc": "Claude Code 向 Anthropic API 发送请求，携带完整 messages 和工具定义。",
+      "code": "POST /v1/messages\nmodel: claude-sonnet-4\ntools: [Bash, FileRead, Grep...]"
+    }
+  },
+  {
+    "slug": "sim-4",
+    "sort_order": 4,
+    "terminal": [
+      "◌ 模型思考中 ..."
+    ],
+    "seq": {
+      "tag": "LLM",
+      "tagColor": "#d2a8ff",
+      "title": "模型推理 (thinking)",
+      "desc": "模型分析用户意图，决定需要调用 Bash 工具执行 grep 命令。",
+      "code": "<thinking>\n需要用 Bash 执行 grep -r \"TODO\" 来\n搜索所有 TODO 注释...\n</thinking>"
+    }
+  },
+  {
+    "slug": "sim-5",
+    "sort_order": 5,
+    "terminal": [
+      "⚡ tool_use: Bash",
+      "grep -r \"TODO\" src/"
+    ],
+    "seq": {
+      "tag": "LLM",
+      "tagColor": "#d2a8ff",
+      "title": "输出 tool_use",
+      "desc": "模型返回结构化工具调用意图（不是真正执行），Claude Code 解析后执行。",
+      "code": "{\n  \"type\": \"tool_use\",\n  \"name\": \"Bash\",\n  \"input\": {\"command\":\"grep -r \\\"TODO\\\" src/\"}\n}"
+    }
+  },
+  {
+    "slug": "sim-6",
+    "sort_order": 6,
+    "terminal": [
+      "⚙ 执行 Bash 命令 ...",
+      "src/query.ts:42:   // TODO: add retry logic",
+      "src/tools.ts:108:  // TODO: validate input",
+      "... 14 more results"
+    ],
+    "seq": {
+      "tag": "Tools",
+      "tagColor": "#ffa657",
+      "title": "工具执行",
+      "desc": "Claude Code 真正执行 bash 命令，获取结果，Claude 本身不直接访问系统。",
+      "code": "stdout: \"src/query.ts:42: // TODO...\\nsrc/tools.ts:108: // TODO...\\n...\""
+    }
+  },
+  {
+    "slug": "sim-7",
+    "sort_order": 7,
+    "terminal": [
+      "tool_result 回填消息历史 ...",
+      "触发第 2 轮 API 调用 ↻"
+    ],
+    "seq": {
+      "tag": "CC",
+      "tagColor": "#00ffa0",
+      "title": "结果回填 → 循环",
+      "desc": "工具结果包装为 tool_result 追加到 messages，触发新一轮 LLM 调用——这就是 Agent Loop。",
+      "code": "{role:\"tool\", content:\"src/query.ts:42...\"}"
+    }
+  },
+  {
+    "slug": "sim-8",
+    "sort_order": 8,
+    "terminal": [
+      "→ 第 2 轮 API 调用 ...",
+      "◌ 基于工具结果生成回答 ..."
+    ],
+    "seq": {
+      "tag": "LLM",
+      "tagColor": "#d2a8ff",
+      "title": "基于结果生成回答",
+      "desc": "模型拿到真实工具执行结果，生成有依据的自然语言最终回复。",
+      "code": null
+    }
+  },
+  {
+    "slug": "sim-9",
+    "sort_order": 9,
+    "terminal": [
+      "共找到 16 个 TODO 注释：",
+      "• src/query.ts:42   — add retry logic",
+      "• src/tools.ts:108  — validate input",
+      "... 及 14 处更多"
+    ],
+    "seq": {
+      "tag": "CC",
+      "tagColor": "#00ffa0",
+      "title": "渲染输出",
+      "desc": "Claude Code 将模型回复流式渲染到终端，Markdown 格式化，代码块高亮。",
+      "code": null
+    }
+  },
+  {
+    "slug": "sim-10",
+    "sort_order": 10,
+    "terminal": [
+      "",
+      ">  ▌"
+    ],
+    "seq": {
+      "tag": "CC",
+      "tagColor": "#00ffa0",
+      "title": "等待下一条指令",
+      "desc": "Agent Loop 完成一次完整循环，终端重新出现提示符，等待用户下一条指令。",
+      "code": null
+    }
+  }
+]

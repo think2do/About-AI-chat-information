@@ -1,0 +1,50 @@
+[
+  {
+    "slug": "hidden-0",
+    "sort_order": 0,
+    "name": "Buddy",
+    "desc": "一只住在终端里的虚拟宠物。物种和稀有度由你的账号 ID 派生，陪伴你的每次编码会话。"
+  },
+  {
+    "slug": "hidden-1",
+    "sort_order": 1,
+    "name": "Kairos",
+    "desc": "持久运行模式，在会话间整合记忆，支持自主后台行动，无需用户在场持续干预。"
+  },
+  {
+    "slug": "hidden-2",
+    "sort_order": 2,
+    "name": "UltraPlan",
+    "desc": "使用 Opus 级模型进行超长规划，支持最多 30 分钟执行窗口，用于复杂多步任务。"
+  },
+  {
+    "slug": "hidden-3",
+    "sort_order": 3,
+    "name": "Coordinator Mode",
+    "desc": "主 Agent 将任务拆解，在独立 git worktree 中并行派遣多个工作 Agent，汇总结果。"
+  },
+  {
+    "slug": "hidden-4",
+    "sort_order": 4,
+    "name": "Bridge",
+    "desc": "从手机或浏览器远程控制 Claude Code，完整远程会话，含权限审批界面。"
+  },
+  {
+    "slug": "hidden-5",
+    "sort_order": 5,
+    "name": "Daemon Mode",
+    "desc": "使用 --bg 标志在后台运行会话，底层使用 tmux 管理持久会话，关闭终端后继续运行。"
+  },
+  {
+    "slug": "hidden-6",
+    "sort_order": 6,
+    "name": "UDS Inbox",
+    "desc": "多个 Claude Code 会话通过 Unix 域套接字互相通信、传递消息，实现多智能体协作。"
+  },
+  {
+    "slug": "hidden-7",
+    "sort_order": 7,
+    "name": "Auto-Dream",
+    "desc": "会话结束后，AI 自动回顾发生的事情，整理并组织学到的知识写入项目记忆。"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "file",
+    "label": "文件操作",
+    "sort_order": 0
+  },
+  {
+    "slug": "exec",
+    "label": "代码执行",
+    "sort_order": 1
+  },
+  {
+    "slug": "search",
+    "label": "搜索 & 抓取",
+    "sort_order": 2
+  },
+  {
+    "slug": "agent",
+    "label": "Agent & 任务",
+    "sort_order": 3
+  },
+  {
+    "slug": "plan",
+    "label": "规划模式",
+    "sort_order": 4
+  },
+  {
+    "slug": "mcp",
+    "label": "MCP",
+    "sort_order": 5
+  },
+  {
+    "slug": "system",
+    "label": "系统",
+    "sort_order": 6
+  },
+  {
+    "slug": "experimental",
+    "label": "实验性",
+    "sort_order": 7
+  }
+]

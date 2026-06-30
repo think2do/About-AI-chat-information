@@ -129,6 +129,84 @@ def _load_job():
     return cat_rows, item_rows, meta_rows
 
 
+def _load_code():
+    base = SEEDS_DIR / "code"
+    tool_cats = _read_json(base / "tool_categories.json")
+    cmd_cats = _read_json(base / "command_categories.json")
+    tools = _read_json(base / "tools.json")
+    commands = _read_json(base / "commands.json")
+    simulator = _read_json(base / "simulator.json")
+    agent = _read_json(base / "agent_loop.json")
+    hidden = _read_json(base / "hidden.json")
+
+    cat_rows = [
+        {
+            "category_id": f"code:tool:{c['slug']}",
+            "module": "code",
+            "slug": c["slug"],
+            "label": c["label"],
+            "item_type": "tool",
+            "sort_order": c["sort_order"],
+        }
+        for c in tool_cats
+    ] + [
+        {
+            "category_id": f"code:command:{c['slug']}",
+            "module": "code",
+            "slug": c["slug"],
+            "label": c["label"],
+            "item_type": "command",
+            "sort_order": c["sort_order"],
+        }
+        for c in cmd_cats
+    ]
+
+    def _item(item_type, slug, title, sort_order, payload, category_id=None):
+        return {
+            "item_id": f"code:{item_type}:{slug}",
+            "module": "code",
+            "item_type": item_type,
+            "category_id": category_id,
+            "slug": slug,
+            "title": title,
+            "difficulty": None,
+            "company": None,
+            "sort_order": sort_order,
+            "payload": payload,
+        }
+
+    item_rows = []
+    for t in tools:
+        item_rows.append(_item(
+            "tool", t["slug"], t["title"], t["sort_order"],
+            {"name": t["name"], "emoji": t["emoji"], "plain": t["plain"], "example": t["example"], "isExp": t["isExp"]},
+            category_id=f"code:tool:{t['category_slug']}",
+        ))
+    for c in commands:
+        item_rows.append(_item(
+            "command", c["slug"], c["title"], c["sort_order"],
+            {"cmd": c["cmd"], "emoji": c["emoji"], "plain": c["plain"], "example": c["example"], "isExp": c["isExp"]},
+            category_id=f"code:command:{c['category_slug']}",
+        ))
+    for s in simulator:
+        item_rows.append(_item(
+            "sim-step", s["slug"], s["seq"]["title"], s["sort_order"],
+            {"terminal": s["terminal"], "seq": s["seq"]},
+        ))
+    for s in agent:
+        item_rows.append(_item(
+            "agent-step", s["slug"], s["title"], s["sort_order"],
+            {"num": s["num"], "title": s["title"], "src": s["src"], "desc": s["desc"], "code": s["code"]},
+        ))
+    for f in hidden:
+        item_rows.append(_item(
+            "hidden-feature", f["slug"], f["name"], f["sort_order"],
+            {"name": f["name"], "desc": f["desc"]},
+        ))
+
+    return cat_rows, item_rows, []
+
+
 MODULE_REGISTRY = {
     "jargon": {
         "loader": _load_jargon,
@@ -141,6 +219,11 @@ MODULE_REGISTRY = {
         "item_type": "question",
         "expected_categories": 5,
         "expected_items": 100,
+    },
+    "code": {
+        "loader": _load_code,
+        "expected_categories": 13,
+        "expected_items": 177,
     },
 }
 
@@ -228,8 +311,8 @@ async def _seed_module(db, module: str, spec: dict, force: bool) -> dict:
     )
     actual_cats = (await cur.fetchone())["n"]
     cur = await db.execute(
-        "SELECT COUNT(*) AS n FROM content_items WHERE module = ? AND item_type = ?",
-        (module, spec["item_type"]),
+        "SELECT COUNT(*) AS n FROM content_items WHERE module = ?",
+        (module,),
     )
     actual_items = (await cur.fetchone())["n"]
     if (

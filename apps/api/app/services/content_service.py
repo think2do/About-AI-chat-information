@@ -224,3 +224,16 @@ async def get_lab() -> dict:
         "inference": inference,
         "rag": rag,
     }
+
+
+async def get_chat_pipeline() -> dict:
+    """The 7 pipeline-stage teaching cards (Spec 013)."""
+    async with get_db() as db:
+        cur = await db.execute(
+            """SELECT payload FROM content_items
+                WHERE module='chat' AND item_type='pipeline-stage'
+                ORDER BY sort_order"""
+        )
+        rows = await cur.fetchall()
+    stages = [json.loads(r["payload"]) for r in rows]
+    return {"module": "chat", "stages": stages}

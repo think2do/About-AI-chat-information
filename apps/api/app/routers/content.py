@@ -8,6 +8,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Response
 
 from app.models.content import (
+    ChatPipelineResponse,
     CodeResponse,
     JargonResponse,
     JobListResponse,
@@ -15,6 +16,7 @@ from app.models.content import (
     LabResponse,
 )
 from app.services.content_service import (
+    get_chat_pipeline,
     get_code,
     get_jargon,
     get_job,
@@ -93,6 +95,19 @@ async def lab(response: Response):
         data = await get_lab()
     except Exception:
         logger.exception("Failed to load lab content")
+        raise HTTPException(status_code=500, detail="内容服务暂时不可用")
+
+    response.headers["Cache-Control"] = "public, max-age=300"
+    return data
+
+
+@router.get("/chat/pipeline", response_model=ChatPipelineResponse)
+async def chat_pipeline(response: Response):
+    """The 7 pipeline-stage teaching cards."""
+    try:
+        data = await get_chat_pipeline()
+    except Exception:
+        logger.exception("Failed to load chat pipeline content")
         raise HTTPException(status_code=500, detail="内容服务暂时不可用")
 
     response.headers["Cache-Control"] = "public, max-age=300"

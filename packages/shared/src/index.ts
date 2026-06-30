@@ -31,3 +31,4 @@ export type {
   TrainingData,
   LabResponse,
 } from "./content";
+export type { PipelineStageContent, ChatPipelineResponse } from "./content";

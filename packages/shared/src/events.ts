@@ -14,6 +14,13 @@ export interface DeltaEvent {
   timestamp: string;
 }
 
+/** Emitted for each chain-of-thought (reasoning) chunk, when CoT is enabled. */
+export interface ReasoningEvent {
+  event: "reasoning";
+  content: string;
+  timestamp: string;
+}
+
 /** Emitted when Provider returns token usage info (optional — some Providers don't). */
 export interface UsageEvent {
   event: "usage";
@@ -50,6 +57,7 @@ export interface CancelledEvent {
 export type ChatStreamEvent =
   | RequestStartedEvent
   | DeltaEvent
+  | ReasoningEvent
   | UsageEvent
   | CompletedEvent
   | ErrorEvent

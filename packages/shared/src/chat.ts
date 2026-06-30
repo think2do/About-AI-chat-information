@@ -8,12 +8,24 @@ export interface ChatMessage {
 
 /** LLM model parameters configurable by the student. */
 export interface ModelParams {
-  temperature: number; // 0–2, step 0.01, default 1
-  topP: number; // 0.01–1, step 0.01, default 1
-  maxTokens: number; // 16–4096, step 16, default 1024
+  temperature: number; // 0–2, step 0.01, default 0.7
+  topP: number; // 0–1, step 0.01, default 1
+  maxTokens: number; // 1–4096, default 2048
   frequencyPenalty: number; // 0–2, step 0.01, default 0
   presencePenalty: number; // 0–2, step 0.01, default 0
   reasoningEnabled?: boolean; // default false
+}
+
+/** Request body for POST /api/chat/stream */
+export interface ChatStreamRequest {
+  session_id: string;
+  provider: "openrouter" | "aihubmix" | "packy" | "custom";
+  base_url: string;
+  model: string;
+  api_key: string;
+  messages: ChatMessage[];
+  params: ModelParams;
+  stream: true;
 }
 
 /** Performance metrics for a completed chat request. */

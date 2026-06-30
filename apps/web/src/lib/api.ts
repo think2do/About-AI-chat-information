@@ -78,6 +78,7 @@ export async function sendMessage(
   onError: (error: Error) => void,
   onComplete: () => void,
   signal?: AbortSignal,
+  conversationId?: string | null,
 ): Promise<void> {
   const settings = getSettings();
   if (!settings) {
@@ -105,6 +106,7 @@ export async function sendMessage(
       presence_penalty: params.presencePenalty ?? 0,
     },
     stream: true,
+    ...(conversationId ? { conversation_id: conversationId } : {}),
   };
 
   for await (const event of streamChat(body, { signal, onComplete })) {

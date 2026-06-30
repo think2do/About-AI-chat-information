@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A **pure front-end static website** — an interactive teaching tool for visualizing how LLMs work (Chinese-language UI). No backend, no package manager, no build step. All files are served as-is. See `README.md` for the full feature/design spec and `AGENTS.md` for contributor conventions.
+A **monorepo web application** (Next.js + FastAPI) — an interactive teaching tool for visualizing how LLMs work (Chinese-language UI). See `README.md` for the full feature/design spec and `AGENTS.md` for contributor conventions.
+
+**Current Spec**: 003-session-conversation → see `specs/003-session-conversation/plan.md` for architectural context.
 
 ## Commands
 
@@ -66,5 +68,6 @@ Create `Name.dc.html` (English PascalCase) with `<script src="./support.js">` in
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+specs/001-project-scaffold/plan.md
 <!-- SPECKIT END -->

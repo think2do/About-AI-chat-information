@@ -1,7 +1,12 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: [UNVERSIONED] → 1.0.0 (initial ratification)
+  Version change: [UNVERSIONED] → 1.0.0 (initial ratification) → 1.0.1 (2026-07-01)
+
+  1.0.1 amendment (PATCH — wording clarification):
+  - 教学内容存储方案由「packages/content typed TS modules」更正为
+    「DB-backed content（SQLite + JSON fixtures），经后端 /api/content/* 提供」，
+    与 Spec 009（取代 005）落地的架构一致。仅措辞澄清，不改变任何 MUST 原则。
 
   Added sections:
   - I.   关注点分离 (Separation of Concerns)
@@ -22,8 +27,8 @@
   - .specify/templates/plan-template.md      ✅ aligned — "Constitution Check" gate supports Principle II
   - .specify/templates/spec-template.md       ✅ aligned — requirements & user scenarios support Principles II, III, IV
   - .specify/templates/tasks-template.md      ✅ aligned — testing tasks support Principle IV; phased structure supports Principle V
-  - README.md                                 ⚠ pending — still describes current static HTML architecture; update post-refactor
-  - CLAUDE.md                                 ⚠ pending — still describes DC framework conventions; update post-refactor
+  - README.md                                 ✅ updated (2026-07-01) — monorepo + 内容入 SQLite 现状
+  - CLAUDE.md                                 ✅ updated (2026-07-01) — monorepo + 内容入 SQLite 现状
 
   Follow-up TODOs: none — all placeholders resolved
 -->
@@ -196,8 +201,10 @@ apps/
   api/          # FastAPI + Python 后端
 
 packages/
-  content/      # Lab / Code / Jargon / Job 教学内容与题库（typed modules）
+  content/      # 已归档（不再使用）；教学内容改由 SQLite + JSON fixtures 提供（见 Spec 009）
   shared/       # API schema、Provider config、共享类型定义
+
+apps/api/app/db/seeds/content/   # 教学内容 JSON fixtures（Lab/Code/Jargon/Job/Chat），内容唯一来源
 
 docs/
   architecture/ # 架构文档与决策记录
@@ -217,7 +224,7 @@ docs/
 | Chat、Lab、Code、Jargon、Job 五页迁移 | 账号登录系统 |
 | FastAPI Chat streaming gateway | 教师后台 / 管理员 UI |
 | 匿名 session + conversation 保存 | 服务器统一托管 API Key |
-| Typed content modules | RAG 真实知识库 |
+| DB-backed content（SQLite + JSON fixtures，经 /api/content/* 提供） | RAG 真实知识库 |
 | 30 天数据过期 | 复杂权限系统 |
 | API Key 浏览器保存、后端临时转发 | 视觉大改版 |
 
@@ -253,4 +260,4 @@ MUST 遵守其原则和约束。当其他文档与本 Constitution 冲突时，�
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-06-30
+**Version**: 1.0.1 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-07-01

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { JargonResponse, JargonTerm } from "@teaching-tool/shared";
+import GradientText from "@/components/bits/GradientText";
+import FadeIn from "@/components/bits/FadeIn";
 
 export default function JargonPage() {
   const [data, setData] = useState<JargonResponse | null>(null);
@@ -47,7 +49,7 @@ export default function JargonPage() {
     <div style={{ display: "flex", height: "100%", color: "#c9d1d9", fontFamily: "Inter, sans-serif" }}>
       <aside style={{ width: 280, minWidth: 280, height: "100vh", background: "#0a0e14", borderRight: "1px solid #21262d", overflow: "auto", padding: "16px 0" }}>
         <div style={{ padding: "0 16px 16px", borderBottom: "1px solid #21262d", marginBottom: 8 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: "JetBrains Mono, monospace" }}>📖 黑话词典</h2>
+          <h2 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: "JetBrains Mono, monospace" }}><GradientText>📖 黑话词典</GradientText></h2>
           <p style={{ fontSize: 11, color: "#484f58", marginTop: 4 }}>
             {loading ? "加载中…" : `${total} 个术语 · ${categories.length} 大分类`}
           </p>
@@ -80,6 +82,7 @@ export default function JargonPage() {
         ))}
       </aside>
       <main style={{ flex: 1, padding: 32, overflow: "auto" }}>
+        <FadeIn key={selectedSlug ?? "none"}>
         {term ? (
           <div>
             <div style={{ fontSize: 32, marginBottom: 12 }}>{term.emoji}</div>
@@ -102,6 +105,7 @@ export default function JargonPage() {
             </p>
           </div>
         )}
+        </FadeIn>
       </main>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LabResponse, RagStep, InferStep } from "@teaching-tool/shared";
+import GradientText from "@/components/bits/GradientText";
 
 const TABS = [
   { id: "training", label: "训练对比", emoji: "🎓" },
@@ -57,7 +58,7 @@ export default function LabPage() {
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "12px 24px", borderBottom: "1px solid #21262d", background: "#0a0e14" }}>
-        <h1 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: mono }}>🧪 Lab / 交互实验室</h1>
+        <h1 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: mono }}><GradientText>🧪 Lab / 交互实验室</GradientText></h1>
       </div>
       <div style={{ display: "flex", borderBottom: "1px solid #21262d", background: "#0a0e14", overflowX: "auto" }}>
         {TABS.map((t) => (

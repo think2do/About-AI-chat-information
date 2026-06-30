@@ -47,6 +47,7 @@
 - [ ] T012 [P] Create `apps/web/tsconfig.json` with strict mode, path alias to `@teaching-tool/shared`
 - [ ] T013 [P] Create `apps/web/next.config.ts` with base config (no special features yet)
 - [ ] T014 [P] Create `apps/web/.env.example` with `NEXT_PUBLIC_API_URL=http://localhost:8000`
+- [ ] T014a [P] Create `apps/web/src/app/globals.css` — CSS reset, dark theme base variables (`#0d1117` bg, `#0a0e14` secondary, `#161b22` card, `#21262d` input, `#30363d` border; `#00ffa0` accent green, `#e6edf3`/`#c9d1d9`/`#8b949e` text hierarchy), custom scrollbar (5px, `#30363d` thumb), JetBrains Mono + Inter font-face imports from Google Fonts CDN
 
 **Checkpoint**: `apps/api` 启动后 `/health` 返回 200；`apps/web` 可启动 dev server
 
@@ -97,8 +98,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Create `apps/web/src/components/NavSidebar.tsx` — 56px wide left sidebar with 5 nav items (Chat/Lab/Code/名词/求职) + settings button; active item with green left border `#00ffa0`; dark background `#0a0e14`
-- [ ] T027 [US3] Create `apps/web/src/app/layout.tsx` — AppShell: flex row layout with NavSidebar + `<main>` content area; import `styles.css` equivalent (inline global styles or CSS module); set page background `#0d1117`, font JetBrains Mono + Inter via Google Fonts
+- [ ] T026 [US3] Create `apps/web/src/components/NavSidebar.tsx` — 56px wide left sidebar with 5 nav items (Chat/Lab/Code/名词/求职, each with emoji icon + 9px Inter label) + ⚙ settings button at bottom; settings button onClick shows a placeholder toast/alert "设置面板将在 Spec 004 实现"; active item highlighted with green left border `#00ffa0` on `rgba(0,255,160,0.06)` background; inactive items `#6e7681`; sidebar background `#0a0e14`
+- [ ] T027 [US3] Create `apps/web/src/app/layout.tsx` — AppShell: import `globals.css`; flex row layout with NavSidebar + `<main>` content area; set page background `#0d1117`; wrap children in main container
 - [ ] T028 [P] [US3] Create `apps/web/src/app/page.tsx` — Chat placeholder page with title "Chat / Playground" and status text "Chat streaming gateway will be implemented in Spec 002"
 - [ ] T029 [P] [US3] Create `apps/web/src/app/lab/page.tsx` — Lab placeholder page with title "实验室" and sub-tab structure placeholder
 - [ ] T030 [P] [US3] Create `apps/web/src/app/code/page.tsx` — Code placeholder page with title "Claude Code" and sub-tab structure placeholder
@@ -142,7 +143,7 @@
 
 - Dockerfiles before docker-compose (US1)
 - Individual type files before index.ts re-export (US2)
-- NavSidebar before layout before pages (US3 — layout depends on sidebar)
+- Globals.css + NavSidebar before layout before pages (US3 — layout depends on sidebar + styles)
 
 ### Parallel Opportunities
 

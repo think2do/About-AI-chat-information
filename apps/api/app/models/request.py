@@ -37,6 +37,7 @@ class ChatStreamRequest(BaseModel):
     messages: list[ChatMessage] = Field(..., min_length=1)
     params: ModelParams = Field(default_factory=ModelParams)
     stream: bool = Field(default=True)
+    conversation_id: str | None = Field(default=None)
 
     @field_validator("session_id")
     @classmethod

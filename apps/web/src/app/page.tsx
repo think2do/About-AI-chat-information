@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ChatArea from "@/components/ChatArea";
 import ChatInput from "@/components/ChatInput";
 import ConversationList from "@/components/ConversationList";
 import ErrorBubble from "@/components/ErrorBubble";
-import PipelineVisualization from "@/components/PipelineVisualization";
+import PipelineDetail from "@/components/PipelineDetail";
 import ModelParamsPanel from "@/components/ModelParamsPanel";
-import PerformanceMetrics from "@/components/PerformanceMetrics";
+import ThreePane from "@/components/layout/ThreePane";
 import { sendMessage, validateBeforeSend } from "@/lib/api";
+import { color, mono } from "@/lib/theme";
 import type { ChatStreamEvent } from "@teaching-tool/shared";
 
 interface DisplayMessage {
@@ -45,13 +46,26 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [pipelinePhase, setPipelinePhase] = useState(0);
+  const [showConvList, setShowConvList] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState("你是一个专业的 AI 技术助手，请用简洁清晰的中文回答问题。");
+  const [chatConfig, setChatConfig] = useState({ provider: "", model: "" });
   const [modelParams, setModelParams] = useState({
     temperature: 0.7, topP: 1.0, maxTokens: 2048, frequencyPenalty: 0, presencePenalty: 0, reasoningEnabled: false,
   });
-  const [metrics, setMetrics] = useState<{ ttftMs?: number; tps?: number; inputTokens?: number; outputTokens?: number; totalTokens?: number; costUsd?: number; show: boolean }>({ show: false });
+  const [metrics, setMetrics] = useState<{ ttftMs?: number; tps?: number; inputTokens?: number; outputTokens?: number; totalTokens?: number; show: boolean }>({ show: false });
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load conversation messages when selecting
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("llm_viz_settings");
+      if (raw) {
+        const s = JSON.parse(raw);
+        const p = s.activeProvider || "openrouter";
+        setChatConfig({ provider: p, model: s.providers?.[p]?.model || s.model || "" });
+      }
+    } catch { /* ignore */ }
+  }, [refreshTrigger]);
+
   const handleSelectConversation = useCallback(async (conv: { conversation_id: string }) => {
     setConversationId(conv.conversation_id);
     try {
@@ -91,28 +105,24 @@ export default function ChatPage() {
 
     setError(null);
     setMetrics({ show: false });
-    setPipelinePhase(1); // Phase 1: 上下文组装
+    setPipelinePhase(1);
     const userMsg: DisplayMessage = { role: "user", content: text };
     const assistantMsg: DisplayMessage = { role: "assistant", content: "", isStreaming: true };
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setIsStreaming(true);
 
-    // Simulate pipeline phases by timer (visual teaching tool)
     const phaseTimers: ReturnType<typeof setTimeout>[] = [];
-    phaseTimers.push(setTimeout(() => setPipelinePhase(2), 350));   // Phase 2: 请求编码
-    phaseTimers.push(setTimeout(() => setPipelinePhase(3), 700));   // Phase 3: 分词预处理
-    phaseTimers.push(setTimeout(() => setPipelinePhase(4), 1050));  // Phase 4: API 调度
-    phaseTimers.push(setTimeout(() => setPipelinePhase(5), 1550));  // Phase 5: Transformer 推理
+    phaseTimers.push(setTimeout(() => setPipelinePhase(2), 350));
+    phaseTimers.push(setTimeout(() => setPipelinePhase(3), 700));
+    phaseTimers.push(setTimeout(() => setPipelinePhase(4), 1050));
+    phaseTimers.push(setTimeout(() => setPipelinePhase(5), 1550));
 
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const allMessages = [...messages, userMsg].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const sys = systemPrompt.trim() ? [{ role: "system" as const, content: systemPrompt.trim() }] : [];
+    const allMessages = [...sys, ...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
 
-    // Per-message metrics measurement (TTFT / TPS / output tokens).
     let t0 = 0;
     let outTok = 0;
     let ttftMs: number | undefined;
@@ -123,7 +133,8 @@ export default function ChatPage() {
         case "delta":
           if (ttftMs === undefined) ttftMs = Date.now() - t0;
           outTok++;
-          if (pipelinePhase < 6) setPipelinePhase(6); // Phase 6: 自回归解码
+          if (pipelinePhase < 6) setPipelinePhase(6);
+          setMetrics((prev) => ({ ...prev, ttftMs, outputTokens: outTok }));
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
@@ -147,12 +158,7 @@ export default function ChatPage() {
           break;
 
         case "usage":
-          setMetrics((prev) => ({
-            ...prev,
-            inputTokens: event.prompt_tokens,
-            outputTokens: event.completion_tokens,
-            totalTokens: event.total_tokens,
-          }));
+          setMetrics((prev) => ({ ...prev, inputTokens: event.prompt_tokens, outputTokens: event.completion_tokens, totalTokens: event.total_tokens }));
           break;
 
         case "error":
@@ -171,18 +177,15 @@ export default function ChatPage() {
         case "cancelled":
           setPipelinePhase(0);
         case "completed": {
-          setPipelinePhase(7); // Phase 7: 响应完成
+          setPipelinePhase(7);
           const elapsed = Math.max((Date.now() - t0) / 1000, 0.01);
           const tps = outTok > 0 ? Math.round(outTok / elapsed) : undefined;
+          setMetrics((prev) => ({ ...prev, tps, ttftMs, outputTokens: outTok, show: true }));
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
             if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
-              updated[lastIdx] = {
-                ...updated[lastIdx],
-                isStreaming: false,
-                ...(outTok > 0 ? { ttftMs, tps, outputTokens: outTok } : {}),
-              };
+              updated[lastIdx] = { ...updated[lastIdx], isStreaming: false, ...(outTok > 0 ? { ttftMs, tps, outputTokens: outTok } : {}) };
             }
             return updated;
           });
@@ -206,11 +209,8 @@ export default function ChatPage() {
     const onComplete = () => {
       setIsStreaming(false);
       abortRef.current = null;
-      setMetrics((prev) => ({ ...prev, show: true }));
       setRefreshTrigger((t) => t + 1);
-      if (!conversationId) {
-        setTimeout(() => setRefreshTrigger((t) => t + 1), 500);
-      }
+      if (!conversationId) setTimeout(() => setRefreshTrigger((t) => t + 1), 500);
     };
 
     t0 = Date.now();
@@ -219,7 +219,7 @@ export default function ChatPage() {
     } catch {
       setIsStreaming(false);
     }
-  }, [messages, conversationId, modelParams, pipelinePhase]);
+  }, [messages, conversationId, modelParams, pipelinePhase, systemPrompt]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -229,43 +229,69 @@ export default function ChatPage() {
   }, []);
 
   const handleDismissError = useCallback(() => setError(null), []);
+  const visibleCount = messages.filter((m) => m.role !== "system").length;
+
+  const headerBtn = (active: boolean) => ({
+    padding: "4px 10px", borderRadius: 5, cursor: "pointer", fontSize: 11, fontFamily: mono,
+    background: active ? "rgba(0,255,160,0.1)" : "transparent",
+    border: `1px solid ${active ? color.green : color.border}`,
+    color: active ? color.green : color.textTertiary,
+  });
 
   return (
-    <div style={{ display: "flex", height: "100%" }}>
-      {/* Conversation sidebar */}
-      <ConversationList
-        sessionId={sessionId}
-        activeId={conversationId}
-        onSelect={handleSelectConversation}
-        onNew={handleNewConversation}
-        onDelete={handleDeleteConversation}
-        refreshTrigger={refreshTrigger}
-      />
-
-      {/* Chat main area */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Header */}
-        <div style={{
-          padding: "12px 24px", borderBottom: "1px solid #21262d", background: "#0a0e14",
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <h1 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: "JetBrains Mono, monospace" }}>
-            💬 Chat
-          </h1>
-          <span style={{ fontSize: 11, color: "#484f58" }}>/ Playground</span>
-        </div>
-
-        {error && <ErrorBubble error={error} onDismiss={handleDismissError} />}
-        <PipelineVisualization activePhase={pipelinePhase} isStreaming={isStreaming} />
-        <ModelParamsPanel
-          params={modelParams}
-          onChange={(p) => setModelParams({ ...p, reasoningEnabled: p.reasoningEnabled ?? false })}
-          collapsed={messages.length > 0}
-          messageCount={messages.filter((m) => m.role !== "system").length}
+    <div style={{ display: "flex", height: "100%", minWidth: 0 }}>
+      {showConvList && (
+        <ConversationList
+          sessionId={sessionId}
+          activeId={conversationId}
+          onSelect={handleSelectConversation}
+          onNew={handleNewConversation}
+          onDelete={handleDeleteConversation}
+          refreshTrigger={refreshTrigger}
         />
-        <ChatArea messages={messages} />
-        <PerformanceMetrics {...metrics} />
-        <ChatInput onSend={handleSend} onCancel={handleCancel} isStreaming={isStreaming} />
+      )}
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <ThreePane
+          leftWidth={420}
+          left={
+            <PipelineDetail
+              activePhase={pipelinePhase}
+              isStreaming={isStreaming}
+              messages={messages}
+              systemPrompt={systemPrompt}
+              params={modelParams}
+              provider={chatConfig.provider}
+              model={chatConfig.model}
+              metrics={metrics}
+            />
+          }
+          rightWidth={340}
+          right={
+            <ModelParamsPanel
+              params={modelParams}
+              onChange={(p) => setModelParams({ ...p, reasoningEnabled: p.reasoningEnabled ?? false })}
+              systemPrompt={systemPrompt}
+              onSystemPromptChange={setSystemPrompt}
+              messageCount={visibleCount}
+            />
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0 }}>
+            {/* Header / info bar */}
+            <div style={{ padding: "10px 20px", borderBottom: `1px solid ${color.borderSubtle}`, background: color.bgSecondary, display: "flex", alignItems: "center", gap: 10 }}>
+              <h1 style={{ fontSize: 13, fontWeight: 600, color: color.textPrimary, fontFamily: mono }}>💬 Chat</h1>
+              <span style={{ fontSize: 10, color: color.textFaint, fontFamily: mono }}>{chatConfig.provider || "—"} · {chatConfig.model || "未配置"}</span>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setShowConvList((v) => !v)} style={headerBtn(showConvList)}>📁 历史</button>
+              <button onClick={handleNewConversation} style={headerBtn(false)}>＋ 新对话</button>
+            </div>
+
+            {error && <ErrorBubble error={error} onDismiss={handleDismissError} />}
+            <ChatArea messages={messages} />
+            <ChatInput onSend={handleSend} onCancel={handleCancel} isStreaming={isStreaming} />
+          </div>
+        </ThreePane>
       </div>
     </div>
   );

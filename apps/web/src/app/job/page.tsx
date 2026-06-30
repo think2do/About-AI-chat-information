@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { JobListResponse, JobQuestion } from "@teaching-tool/shared";
+import GradientText from "@/components/bits/GradientText";
+import FadeIn from "@/components/bits/FadeIn";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   "简单": "#00ffa0",
@@ -73,7 +75,7 @@ export default function JobPage() {
     <div style={{ display: "flex", height: "100%", color: "#c9d1d9", fontFamily: "Inter, sans-serif" }}>
       <aside style={{ width: 320, minWidth: 320, height: "100vh", background: "#0a0e14", borderRight: "1px solid #21262d", overflow: "auto", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "16px", borderBottom: "1px solid #21262d" }}>
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: mono }}>💼 求职题库</h2>
+          <h2 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: mono }}><GradientText>💼 求职题库</GradientText></h2>
           <p style={{ fontSize: 11, color: "#484f58", marginTop: 4 }}>
             {loading ? "加载中…" : `${data?.total ?? 0} 道面试题 · ${Math.max(allTags.length - 1, 0)} 个分类`}
           </p>
@@ -111,6 +113,7 @@ export default function JobPage() {
         </div>
       </aside>
       <main style={{ flex: 1, padding: 32, overflow: "auto" }}>
+        <FadeIn key={selectedId ?? "none"}>
         {detailLoading ? (
           <div style={{ textAlign: "center", paddingTop: 80, color: "#484f58", fontFamily: mono, fontSize: 13 }}>正在加载题目…</div>
         ) : detail ? (
@@ -170,6 +173,7 @@ export default function JobPage() {
             </p>
           </div>
         )}
+        </FadeIn>
       </main>
     </div>
   );

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import ChatArea from "@/components/ChatArea";
 import ChatInput from "@/components/ChatInput";
 import ConversationList from "@/components/ConversationList";
 import ErrorBubble from "@/components/ErrorBubble";
+import PipelineVisualization from "@/components/PipelineVisualization";
+import ModelParamsPanel from "@/components/ModelParamsPanel";
+import PerformanceMetrics from "@/components/PerformanceMetrics";
 import { sendMessage, validateBeforeSend } from "@/lib/api";
 import type { ChatStreamEvent } from "@teaching-tool/shared";
 
@@ -36,6 +39,11 @@ export default function ChatPage() {
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [pipelinePhase, setPipelinePhase] = useState(0);
+  const [modelParams, setModelParams] = useState({
+    temperature: 0.7, topP: 1.0, maxTokens: 2048, frequencyPenalty: 0, presencePenalty: 0,
+  });
+  const [metrics, setMetrics] = useState<{ ttftMs?: number; tps?: number; inputTokens?: number; outputTokens?: number; totalTokens?: number; costUsd?: number; show: boolean }>({ show: false });
   const abortRef = useRef<AbortController | null>(null);
 
   // Load conversation messages when selecting
@@ -77,10 +85,19 @@ export default function ChatPage() {
     }
 
     setError(null);
+    setMetrics({ show: false });
+    setPipelinePhase(1); // Phase 1: 上下文组装
     const userMsg: DisplayMessage = { role: "user", content: text };
     const assistantMsg: DisplayMessage = { role: "assistant", content: "", isStreaming: true };
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setIsStreaming(true);
+
+    // Simulate pipeline phases by timer (visual teaching tool)
+    const phaseTimers: ReturnType<typeof setTimeout>[] = [];
+    phaseTimers.push(setTimeout(() => setPipelinePhase(2), 350));   // Phase 2: 请求编码
+    phaseTimers.push(setTimeout(() => setPipelinePhase(3), 700));   // Phase 3: 分词预处理
+    phaseTimers.push(setTimeout(() => setPipelinePhase(4), 1050));  // Phase 4: API 调度
+    phaseTimers.push(setTimeout(() => setPipelinePhase(5), 1550));  // Phase 5: Transformer 推理
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -93,6 +110,7 @@ export default function ChatPage() {
     const onEvent = (event: ChatStreamEvent) => {
       switch (event.event) {
         case "delta":
+          if (pipelinePhase < 6) setPipelinePhase(6); // Phase 6: 自回归解码
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
@@ -102,8 +120,19 @@ export default function ChatPage() {
             return updated;
           });
           break;
+
+        case "usage":
+          setMetrics((prev) => ({
+            ...prev,
+            inputTokens: event.prompt_tokens,
+            outputTokens: event.completion_tokens,
+            totalTokens: event.total_tokens,
+          }));
+          break;
+
         case "error":
           setError({ message: event.message, retryable: event.retryable, code: event.code });
+          setPipelinePhase(0);
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
@@ -113,8 +142,11 @@ export default function ChatPage() {
             return updated;
           });
           break;
+
         case "cancelled":
+          setPipelinePhase(0);
         case "completed":
+          setPipelinePhase(7); // Phase 7: 响应完成
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
@@ -142,11 +174,9 @@ export default function ChatPage() {
     const onComplete = () => {
       setIsStreaming(false);
       abortRef.current = null;
-      // Refresh conversation list
+      setMetrics((prev) => ({ ...prev, show: true }));
       setRefreshTrigger((t) => t + 1);
-      // If this was a new conversation, get the conversation_id from the saved result
       if (!conversationId) {
-        // The backend creates a new conversation — next load will show it
         setTimeout(() => setRefreshTrigger((t) => t + 1), 500);
       }
     };
@@ -161,6 +191,7 @@ export default function ChatPage() {
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
     setIsStreaming(false);
+    setPipelinePhase(0);
     setRefreshTrigger((t) => t + 1);
   }, []);
 
@@ -192,7 +223,10 @@ export default function ChatPage() {
         </div>
 
         {error && <ErrorBubble error={error} onDismiss={handleDismissError} />}
+        <PipelineVisualization activePhase={pipelinePhase} isStreaming={isStreaming} />
+        <ModelParamsPanel params={modelParams} onChange={setModelParams} collapsed={messages.length > 0} />
         <ChatArea messages={messages} />
+        <PerformanceMetrics {...metrics} />
         <ChatInput onSend={handleSend} onCancel={handleCancel} isStreaming={isStreaming} />
       </div>
     </div>

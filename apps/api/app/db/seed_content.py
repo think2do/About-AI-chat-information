@@ -81,7 +81,52 @@ def _load_jargon():
         }
         for t in terms
     ]
-    return cat_rows, item_rows
+    return cat_rows, item_rows, []
+
+
+def _load_job():
+    base = SEEDS_DIR / "job"
+    categories = _read_json(base / "categories.json")
+    questions = _read_json(base / "questions.json")
+    all_tags = _read_json(base / "all_tags.json")
+
+    cat_rows = [
+        {
+            "category_id": f"job:{c['slug']}",
+            "module": "job",
+            "slug": c["slug"],
+            "label": c["label"],
+            "item_type": c["item_type"],
+            "sort_order": c["sort_order"],
+        }
+        for c in categories
+    ]
+    item_rows = [
+        {
+            "item_id": f"job:question:{q['id']}",
+            "module": "job",
+            "item_type": "question",
+            "category_id": f"job:{q['category_slug']}",
+            "slug": q["id"],
+            "title": q["title"],
+            "difficulty": q["difficulty"],
+            "company": q["company"],
+            "sort_order": q["sort_order"],
+            "payload": {
+                "tag": q["tag"],
+                "tags": q["tags"],
+                "answer": q["answer"],
+                "code": q["code"],
+                "codeLabel": q["codeLabel"],
+                "codeLines": q["codeLines"],
+                "keyPoints": q["keyPoints"],
+                "related": q["related"],
+            },
+        }
+        for q in questions
+    ]
+    meta_rows = [{"module": "job", "meta_key": "all_tags", "payload": all_tags}]
+    return cat_rows, item_rows, meta_rows
 
 
 MODULE_REGISTRY = {
@@ -91,11 +136,17 @@ MODULE_REGISTRY = {
         "expected_categories": 6,
         "expected_items": 36,
     },
+    "job": {
+        "loader": _load_job,
+        "item_type": "question",
+        "expected_categories": 5,
+        "expected_items": 100,
+    },
 }
 
 
 async def _seed_module(db, module: str, spec: dict, force: bool) -> dict:
-    cat_rows, item_rows = spec["loader"]()
+    cat_rows, item_rows, meta_rows = spec["loader"]()
 
     # Fixture-level integrity check (catches deleted/duplicated fixtures
     # deterministically, independent of current DB state).
@@ -119,6 +170,20 @@ async def _seed_module(db, module: str, spec: dict, force: bool) -> dict:
                    item_type = excluded.item_type,
                    sort_order = excluded.sort_order""",
             c,
+        )
+
+    for m in meta_rows:
+        await db.execute(
+            """INSERT INTO content_meta (module, meta_key, payload)
+               VALUES (:module, :meta_key, :payload)
+               ON CONFLICT(module, meta_key) DO UPDATE SET
+                   payload = excluded.payload,
+                   updated_at = datetime('now')""",
+            {
+                "module": m["module"],
+                "meta_key": m["meta_key"],
+                "payload": json.dumps(m["payload"], ensure_ascii=False),
+            },
         )
 
     inserted = updated = unchanged = 0

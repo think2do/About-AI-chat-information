@@ -27,3 +27,39 @@ class JargonResponse(BaseModel):
     module: Literal["jargon"] = "jargon"
     total: int
     categories: list[JargonCategory]
+
+
+# --- Job (Spec 010) ---
+
+
+class JobTag(BaseModel):
+    key: str
+    label: str
+    emoji: str
+    count: int
+
+
+class JobSummary(BaseModel):
+    id: str
+    title: str
+    category: str
+    tag: str
+    difficulty: str
+    company: str
+    tags: list[str]
+
+
+class JobQuestion(JobSummary):
+    answer: str
+    code: str | None = None
+    codeLabel: str | None = None
+    codeLines: int | None = None
+    keyPoints: list[str]
+    related: list[str]
+
+
+class JobListResponse(BaseModel):
+    module: Literal["job"] = "job"
+    total: int
+    all_tags: list[JobTag]
+    items: list[JobSummary]

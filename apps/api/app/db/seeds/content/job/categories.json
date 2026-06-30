@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "architecture",
+    "label": "系统架构",
+    "item_type": "question",
+    "sort_order": 1
+  },
+  {
+    "slug": "model-selection",
+    "label": "模型选型",
+    "item_type": "question",
+    "sort_order": 2
+  },
+  {
+    "slug": "evaluation",
+    "label": "评测指标",
+    "item_type": "question",
+    "sort_order": 3
+  },
+  {
+    "slug": "project-challenges",
+    "label": "项目挑战",
+    "item_type": "question",
+    "sort_order": 4
+  },
+  {
+    "slug": "product-strategy",
+    "label": "产品策略",
+    "item_type": "question",
+    "sort_order": 5
+  }
+]

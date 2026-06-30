@@ -22,3 +22,38 @@ export interface JargonResponse {
   total: number;
   categories: JargonCategory[];
 }
+
+// --- Job (Spec 010) ---
+
+export interface JobTag {
+  key: string;
+  label: string;
+  emoji: string;
+  count: number;
+}
+
+export interface JobSummary {
+  id: string;
+  title: string;
+  category: string;
+  tag: string;
+  difficulty: string;
+  company: string;
+  tags: string[];
+}
+
+export interface JobQuestion extends JobSummary {
+  answer: string;
+  code: string | null;
+  codeLabel: string | null;
+  codeLines: number | null;
+  keyPoints: string[];
+  related: string[];
+}
+
+export interface JobListResponse {
+  module: "job";
+  total: number;
+  all_tags: JobTag[];
+  items: JobSummary[];
+}

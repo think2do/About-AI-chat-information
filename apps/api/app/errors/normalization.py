@@ -1,7 +1,7 @@
 """Error normalization — map Provider-specific errors to unified error codes."""
 
 import httpx
-from app.errors.codes import ErrorCode
+from app.errors import ErrorCode
 
 
 def normalize_provider_error(

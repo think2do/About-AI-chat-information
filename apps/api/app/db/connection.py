@@ -9,7 +9,7 @@ from app.db.schema import SCHEMA_SQL
 
 DB_PATH = os.environ.get(
     "DATABASE_URL",
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "teaching_tool.db"),
+    os.path.join(os.path.dirname(__file__), "..", "..", "data", "teaching_tool.db"),
 )
 
 # Normalize path (resolve relative to project)

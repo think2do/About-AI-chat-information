@@ -24,6 +24,7 @@ interface ErrorInfo {
 }
 
 function getOrCreateSessionId(): string {
+  if (typeof window === "undefined") return "";
   let sid = localStorage.getItem("teaching_tool_session_id");
   if (!sid) {
     sid = `anon_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`;

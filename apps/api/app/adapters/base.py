@@ -10,7 +10,7 @@ from typing import AsyncIterator
 import httpx
 
 from app.models.request import ChatStreamRequest
-from app.errors.codes import ErrorCode
+from app.errors import ErrorCode
 
 
 class BaseProviderAdapter(ABC):

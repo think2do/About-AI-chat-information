@@ -9,7 +9,7 @@ from typing import AsyncIterator
 import httpx
 
 from app.adapters.base import BaseProviderAdapter
-from app.errors.codes import ErrorCode
+from app.errors import ErrorCode
 from app.errors.normalization import normalize_provider_error
 from app.models.request import ChatStreamRequest
 

@@ -63,3 +63,8 @@ This is the one thing that requires reading multiple files to understand. The pr
 
 ## Adding a page
 Create `Name.dc.html` (English PascalCase) with `<script src="./support.js">` in `<head>`, an `<x-dc>` template (`<helmet>` pulls in `styles.css` + Google Fonts), and a `DCLogic` class. Then register it in `Nav.dc.html` (add the `<a href>`, add the nav style entry, extend the `active` prop options). No build needed — open the file in a browser.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

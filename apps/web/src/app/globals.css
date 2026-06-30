@@ -1,0 +1,77 @@
+/* AI Teaching Tool — Global Styles (Dark Terminal Aesthetic) */
+
+/* ===== Reset ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== Font Face ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ===== Base Variables ===== */
+:root {
+  /* Backgrounds (dark to light) */
+  --bg-page: #0d1117;
+  --bg-secondary: #0a0e14;
+  --bg-card: #161b22;
+  --bg-input: #21262d;
+  --border-default: #30363d;
+
+  /* Text hierarchy */
+  --text-primary: #e6edf3;
+  --text-secondary: #c9d1d9;
+  --text-tertiary: #8b949e;
+  --text-disabled: #6e7681;
+  --text-faint: #484f58;
+
+  /* Functional colors */
+  --accent-green: #00ffa0;
+  --accent-blue: #58a6ff;
+  --accent-purple: #d2a8ff;
+  --accent-orange: #ffa657;
+  --accent-red: #ff7b72;
+  --accent-success: #7ee787;
+}
+
+/* ===== Body ===== */
+html,
+body {
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', 'Inter', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ===== Links ===== */
+a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}

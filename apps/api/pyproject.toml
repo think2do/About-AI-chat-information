@@ -1,0 +1,16 @@
+[project]
+name = "teaching-tool-api"
+version = "0.1.0"
+description = "AI Teaching Tool — FastAPI Backend"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.0",
+]

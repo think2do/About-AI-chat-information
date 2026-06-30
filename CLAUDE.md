@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **monorepo web application** (Next.js + FastAPI) — an interactive teaching tool for visualizing how LLMs work (Chinese-language UI). See `README.md` for the full feature/design spec and `AGENTS.md` for contributor conventions.
 
-**Current Spec**: 003-session-conversation → see `specs/003-session-conversation/plan.md` for architectural context.
+**Current Spec**: 004-provider-settings → see `specs/003-session-conversation/plan.md` for architectural context.
 
 ## Commands
 

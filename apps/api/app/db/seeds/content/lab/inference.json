@@ -1,0 +1,92 @@
+[
+  {
+    "slug": "infer-0",
+    "sort_order": 0,
+    "num": "01",
+    "icon": "💬",
+    "title": "用户输入",
+    "desc": "用户在客户端输入「你好，在吗」，点击发送按钮。",
+    "code": null
+  },
+  {
+    "slug": "infer-1",
+    "sort_order": 1,
+    "num": "02",
+    "icon": "📦",
+    "title": "消息封装 messages[ ]",
+    "desc": "客户端将 system prompt、历史对话和本次 user 消息拼成 messages 数组，准备发送。",
+    "code": "{\n  \"role\": \"system\", \"content\": \"你是...\"\n},\n{\n  \"role\": \"user\",  \"content\": \"你好，在吗\"\n}"
+  },
+  {
+    "slug": "infer-2",
+    "sort_order": 2,
+    "num": "03",
+    "icon": "🌐",
+    "title": "API 请求",
+    "desc": "客户端向模型服务端发起 HTTP POST，携带 model、temperature、max_tokens 等参数。",
+    "code": "POST https://api.openai.com/v1/chat/completions\nAuthorization: Bearer sk-...\nContent-Type: application/json"
+  },
+  {
+    "slug": "infer-3",
+    "sort_order": 3,
+    "num": "04",
+    "icon": "≋",
+    "title": "Tokenizer 分词",
+    "desc": "服务端把输入文本切分成 token 序列。「你好，在吗」→ [15429, 11, 29885, 30982]（4 tokens）。",
+    "code": "你好  →  15429\n，    →  11\n在吗  →  29885 30982"
+  },
+  {
+    "slug": "infer-4",
+    "sort_order": 4,
+    "num": "05",
+    "icon": "⬡",
+    "title": "Embedding 映射",
+    "desc": "每个 token ID 查询 Embedding 矩阵，转换为高维浮点向量（如 4096 维），作为模型输入。",
+    "code": "15429 → [0.12, -0.87, 0.34, ... ] (4096-dim)"
+  },
+  {
+    "slug": "infer-5",
+    "sort_order": 5,
+    "num": "06",
+    "icon": "◈",
+    "title": "Transformer 前向传播 [示意]",
+    "desc": "向量经过 N 层（如 32 层）Transformer Block：每层先做 Self-Attention，再经过 FFN 变换，逐层提炼语义表示。",
+    "code": "Layer 1: Self-Attention + FFN\nLayer 2: Self-Attention + FFN\n...  x32 层  ...\nLayer 32: -> 输出隐向量"
+  },
+  {
+    "slug": "infer-6",
+    "sort_order": 6,
+    "num": "07",
+    "icon": "📊",
+    "title": "Logits 计算与 Softmax",
+    "desc": "最后一层隐向量经 LM Head 线性变换，得到词表上每个 token 的得分（logits），再经 softmax 转为概率分布。",
+    "code": "\"你\"   -> 0.003\n\"在\"   -> 0.021\n\"好\"   -> 0.412  <- 最高\n\"嗯\"   -> 0.187\n...（共 ~32000 个候选）"
+  },
+  {
+    "slug": "infer-7",
+    "sort_order": 7,
+    "num": "08",
+    "icon": "🎲",
+    "title": "采样解码（自回归循环）",
+    "desc": "根据 temperature / top-p 从概率分布中采样出下一个 token，追加到序列末尾，再从第 06 步重新前向传播——每次只生成一个 token，循环往复。",
+    "code": "Step 1: -> \"好\"\nStep 2: -> \"的\"\nStep 3: -> \"，\"\n...\n（每步都是一次完整前向传播）"
+  },
+  {
+    "slug": "infer-8",
+    "sort_order": 8,
+    "num": "09",
+    "icon": "🛑",
+    "title": "遇到终止条件",
+    "desc": "当模型生成 EOS（End-of-Sequence）token，或已达到 max_tokens 上限时，停止自回归循环。",
+    "code": "Generated: \"好的，我在～有什么需要帮忙的？\"\n-> 遇到 EOS，停止生成\n输出 token 总数: 12"
+  },
+  {
+    "slug": "infer-9",
+    "sort_order": 9,
+    "num": "10",
+    "icon": "✅",
+    "title": "返回响应",
+    "desc": "服务端将生成的 token 序列通过 Tokenizer 解码回文字，经 API 返回给客户端，客户端展示最终回复。",
+    "code": "HTTP 200 OK\n{\n  \"choices\": [{\n    \"message\": {\n      \"role\": \"assistant\",\n      \"content\": \"好的，我在～有什么需要帮忙的？\"\n    }\n  }]\n}"
+  }
+]

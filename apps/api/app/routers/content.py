@@ -12,8 +12,15 @@ from app.models.content import (
     JargonResponse,
     JobListResponse,
     JobQuestion,
+    LabResponse,
 )
-from app.services.content_service import get_code, get_jargon, get_job, list_jobs
+from app.services.content_service import (
+    get_code,
+    get_jargon,
+    get_job,
+    get_lab,
+    list_jobs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +80,19 @@ async def code(response: Response):
         data = await get_code()
     except Exception:
         logger.exception("Failed to load code content")
+        raise HTTPException(status_code=500, detail="内容服务暂时不可用")
+
+    response.headers["Cache-Control"] = "public, max-age=300"
+    return data
+
+
+@router.get("/lab", response_model=LabResponse)
+async def lab(response: Response):
+    """Aggregate Lab page data: training / functionCall / tokenizer / inference / rag."""
+    try:
+        data = await get_lab()
+    except Exception:
+        logger.exception("Failed to load lab content")
         raise HTTPException(status_code=500, detail="内容服务暂时不可用")
 
     response.headers["Cache-Control"] = "public, max-age=300"

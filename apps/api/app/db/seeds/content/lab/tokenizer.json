@@ -1,0 +1,199 @@
+{
+  "modes": [
+    {
+      "key": "mode0",
+      "label": "早期 vs 现在",
+      "intro": "以「你好」2个汉字为例，各模型每汉字消耗 token 数：",
+      "groups": [
+        {
+          "title": "早期模型（~2021）",
+          "titleColor": "#ff7b72",
+          "bars": [
+            {
+              "label": "国外模型（GPT-3 等）",
+              "value": "3.5 tokens / 汉字",
+              "valueColor": "#ff7b72",
+              "widthPct": 100,
+              "barColor": "#ff7b72",
+              "sample": null
+            },
+            {
+              "label": "国内模型（文心等）",
+              "value": "1.0 token / 汉字",
+              "valueColor": "#ffa657",
+              "widthPct": 29,
+              "barColor": "#ffa657",
+              "sample": null
+            }
+          ]
+        },
+        {
+          "title": "现在模型（~2024+）",
+          "titleColor": "#00ffa0",
+          "bars": [
+            {
+              "label": "国外模型（GPT-4o 等）",
+              "value": "1.0 token / 汉字",
+              "valueColor": "#7ee787",
+              "widthPct": 29,
+              "barColor": "#7ee787",
+              "sample": null
+            },
+            {
+              "label": "国内模型（Qwen、DeepSeek 等）",
+              "value": "0.5 token / 汉字",
+              "valueColor": "#00ffa0",
+              "widthPct": 14,
+              "barColor": "#00ffa0",
+              "sample": null
+            }
+          ]
+        }
+      ],
+      "note": {
+        "text": "从早期到现在，国外模型中文 token 效率提升了 3.5×；国内模型持续领先，甚至达到 0.5 token/汉字（比英文还节省）。",
+        "color": "#00ffa0"
+      }
+    },
+    {
+      "key": "mode1",
+      "label": "早期：中文 vs 英文",
+      "intro": "早期模型（~2021），同等信息量下的分词效率：",
+      "groups": [
+        {
+          "title": "国外模型（GPT-3）",
+          "titleColor": "#484f58",
+          "bars": [
+            {
+              "label": "中文",
+              "value": "3.5 tokens / 字",
+              "valueColor": "#ff7b72",
+              "widthPct": 100,
+              "barColor": "rgba(255,123,114,0.3)",
+              "sample": "你｜好 → 7 tok"
+            },
+            {
+              "label": "英文",
+              "value": "0.27 tokens / 字母",
+              "valueColor": "#7ee787",
+              "widthPct": 30,
+              "barColor": "rgba(126,231,135,0.3)",
+              "sample": "Hello → 2 tok"
+            }
+          ]
+        },
+        {
+          "title": "国内模型（文心一言等）",
+          "titleColor": "#484f58",
+          "bars": [
+            {
+              "label": "中文",
+              "value": "1.0 token / 字",
+              "valueColor": "#ffa657",
+              "widthPct": 29,
+              "barColor": "rgba(255,166,87,0.3)",
+              "sample": "你好 → 2 tok"
+            },
+            {
+              "label": "英文",
+              "value": "0.27 tokens / 字母",
+              "valueColor": "#7ee787",
+              "widthPct": 30,
+              "barColor": "rgba(126,231,135,0.3)",
+              "sample": "Hello → 2 tok"
+            }
+          ]
+        }
+      ],
+      "note": {
+        "text": "早期国外模型的中文分词效率极低，同等中文内容消耗的 token 数约为英文的 13 倍。",
+        "color": "#ff7b72"
+      }
+    },
+    {
+      "key": "mode2",
+      "label": "现在：中文 vs 英文",
+      "intro": "现在模型（~2024+），同等信息量下的分词效率：",
+      "groups": [
+        {
+          "title": "国外模型（GPT-4o）",
+          "titleColor": "#484f58",
+          "bars": [
+            {
+              "label": "中文",
+              "value": "1.0 token / 字",
+              "valueColor": "#7ee787",
+              "widthPct": 29,
+              "barColor": "rgba(126,231,135,0.3)",
+              "sample": "你好 → 2 tok"
+            },
+            {
+              "label": "英文",
+              "value": "0.27 tokens / 字母",
+              "valueColor": "#7ee787",
+              "widthPct": 30,
+              "barColor": "rgba(126,231,135,0.3)",
+              "sample": "Hello → 2 tok"
+            }
+          ]
+        },
+        {
+          "title": "国内模型（Qwen、DeepSeek 等）",
+          "titleColor": "#484f58",
+          "bars": [
+            {
+              "label": "中文",
+              "value": "0.5 token / 字",
+              "valueColor": "#00ffa0",
+              "widthPct": 14,
+              "barColor": "rgba(0,255,160,0.3)",
+              "sample": "你好 → 1 tok"
+            },
+            {
+              "label": "英文",
+              "value": "0.27 tokens / 字母",
+              "valueColor": "#7ee787",
+              "widthPct": 30,
+              "barColor": "rgba(126,231,135,0.3)",
+              "sample": "Hello → 2 tok"
+            }
+          ]
+        }
+      ],
+      "note": {
+        "text": "现在国内模型的中文分词效率甚至超过了英文，0.5 token/字 意味着使用中文反而比英文更省 token。",
+        "color": "#00ffa0"
+      }
+    }
+  ],
+  "quickref": {
+    "title": "TOKEN 效率速查",
+    "cards": [
+      {
+        "label": "早期国外（GPT-3）",
+        "zh": "3.5×",
+        "zhColor": "#ff7b72",
+        "en": "1.0×"
+      },
+      {
+        "label": "早期国内（文心等）",
+        "zh": "1.0×",
+        "zhColor": "#ffa657",
+        "en": "1.0×"
+      },
+      {
+        "label": "现在国外（GPT-4o）",
+        "zh": "1.0×",
+        "zhColor": "#7ee787",
+        "en": "1.0×"
+      },
+      {
+        "label": "现在国内（Qwen / DS）",
+        "zh": "0.5×",
+        "zhColor": "#00ffa0",
+        "en": "1.0×"
+      }
+    ],
+    "footnote": "× 为每汉字/每英文单词消耗的 token 倍率，越低越省。"
+  }
+}

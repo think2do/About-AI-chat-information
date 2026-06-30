@@ -118,3 +118,83 @@ export interface CodeResponse {
   agentLoop: AgentStep[];
   hidden: HiddenFeature[];
 }
+
+// --- Lab (Spec 012) ---
+
+export interface FcStep {
+  icon: string;
+  label: string;
+  color: string;
+  content: string | null;
+  jsonObj: unknown | null;
+  isCode: boolean;
+  highlight: boolean;
+}
+
+export interface InferStep {
+  num: string;
+  icon: string;
+  title: string;
+  desc: string;
+  code: string | null;
+}
+
+export interface RagStep {
+  num: string;
+  icon: string;
+  title: string;
+  desc: string;
+  code: string | null;
+  phase: string | null;
+  phaseColor: string | null;
+}
+
+export interface TokenizerBar {
+  label: string;
+  value: string;
+  valueColor: string;
+  widthPct: number;
+  barColor: string;
+  sample: string | null;
+}
+
+export interface TokenizerGroup {
+  title: string;
+  titleColor: string;
+  bars: TokenizerBar[];
+}
+
+export interface TokenizerMode {
+  key: string;
+  label: string;
+  intro: string;
+  groups: TokenizerGroup[];
+  note: { text: string; color: string };
+}
+
+export interface TokenizerQuickCard {
+  label: string;
+  zh: string;
+  zhColor: string;
+  en: string;
+}
+
+export interface TokenizerData {
+  modes: TokenizerMode[];
+  quickref: { title: string; cards: TokenizerQuickCard[]; footnote: string };
+}
+
+export interface TrainingData {
+  defaultQuestion: string;
+  baseTemplate: string;
+  sftAnswer: string;
+}
+
+export interface LabResponse {
+  module: "lab";
+  training: TrainingData | null;
+  functionCall: FcStep[];
+  tokenizer: TokenizerData | null;
+  inference: InferStep[];
+  rag: RagStep[];
+}

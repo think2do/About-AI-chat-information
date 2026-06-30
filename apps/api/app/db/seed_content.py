@@ -207,6 +207,51 @@ def _load_code():
     return cat_rows, item_rows, []
 
 
+def _load_lab():
+    base = SEEDS_DIR / "lab"
+    fc = _read_json(base / "function_call.json")
+    infer = _read_json(base / "inference.json")
+    rag = _read_json(base / "rag.json")
+    training = _read_json(base / "training.json")
+    tokenizer = _read_json(base / "tokenizer.json")
+
+    def _item(item_type, slug, title, sort_order, payload):
+        return {
+            "item_id": f"lab:{item_type}:{slug}",
+            "module": "lab",
+            "item_type": item_type,
+            "category_id": None,
+            "slug": slug,
+            "title": title,
+            "difficulty": None,
+            "company": None,
+            "sort_order": sort_order,
+            "payload": payload,
+        }
+
+    item_rows = []
+    for s in fc:
+        item_rows.append(_item("fc-step", s["slug"], s["label"], s["sort_order"], {
+            "icon": s["icon"], "label": s["label"], "color": s["color"],
+            "content": s["content"], "jsonObj": s["jsonObj"], "isCode": s["isCode"], "highlight": s["highlight"],
+        }))
+    for s in infer:
+        item_rows.append(_item("infer-step", s["slug"], s["title"], s["sort_order"], {
+            "num": s["num"], "icon": s["icon"], "title": s["title"], "desc": s["desc"], "code": s["code"],
+        }))
+    for s in rag:
+        item_rows.append(_item("rag-step", s["slug"], s["title"], s["sort_order"], {
+            "num": s["num"], "icon": s["icon"], "title": s["title"], "desc": s["desc"],
+            "code": s["code"], "phase": s["phase"], "phaseColor": s["phaseColor"],
+        }))
+
+    meta_rows = [
+        {"module": "lab", "meta_key": "training", "payload": training},
+        {"module": "lab", "meta_key": "tokenizer", "payload": tokenizer},
+    ]
+    return [], item_rows, meta_rows
+
+
 MODULE_REGISTRY = {
     "jargon": {
         "loader": _load_jargon,
@@ -224,6 +269,11 @@ MODULE_REGISTRY = {
         "loader": _load_code,
         "expected_categories": 13,
         "expected_items": 177,
+    },
+    "lab": {
+        "loader": _load_lab,
+        "expected_categories": 0,
+        "expected_items": 25,
     },
 }
 

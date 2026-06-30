@@ -13,6 +13,10 @@ apps/
 packages/
   shared/       # 前后端共享类型定义
   content/      # 已归档：教学内容改由后端 SQLite + JSON fixtures 提供（见 specs/009）
+
+specs/          # Spec Kit 规范（每个功能一个 NNN-name/，含 spec/plan/tasks/...）
+docs/           # 架构与部署文档
+legacy/         # 重构前的 DC 静态原型（已存档，仅作历史/对照，勿编辑；见 legacy/README.md）
 ```
 
 > **教学内容架构**：Lab / Code / Jargon / Job / Chat 的教学内容存放在后端 SQLite，

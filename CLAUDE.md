@@ -6,25 +6,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **monorepo web application** (Next.js + FastAPI) — an interactive teaching tool for visualizing how LLMs work (Chinese-language UI). See `README.md` for the full feature/design spec and `AGENTS.md` for contributor conventions.
 
-**Status**: Migrated to a monorepo (Next.js + FastAPI). Specs 001–008 (scaffold → deploy) and **009–013 (teaching content → SQLite)** are merged on `junxiang`. The old root `*.dc.html` / `support.js` / `Job.data.js` files are kept as historical reference only — **do not edit them**; all work happens under `apps/` and `packages/`.
+**Status**: Migrated to a monorepo (Next.js + FastAPI). Specs 001–008 (scaffold → deploy), **009–013 (teaching content → SQLite)**, **014 (Chat interactions)**, **015 (UI redesign)** are merged on `junxiang`. The **pre-refactor DC prototype is archived under `legacy/`** (see `legacy/README.md`) — for historical reference/comparison only; **do not edit it**. All work happens under `apps/`, `packages/`, `specs/`.
 
-## Commands
+## Runbook (local dev, checks, content)
 
 ```sh
-# Backend (FastAPI)
+# Backend (FastAPI) — :8000
 cd apps/api
 python -m app.db.seed_content              # import teaching content (idempotent)
 uvicorn app.main:app --reload --port 8000
 python -m pytest tests/ -q                 # backend tests
 
-# Frontend (Next.js)
+# Frontend (Next.js) — :3000
 cd apps/web
-npm install
+npm install                                # once
 npm run dev                                # http://localhost:3000
-npm run typecheck                          # tsc --noEmit
+npm run typecheck                          # tsc --noEmit  (frontend has no test runner; typecheck + manual QA)
+
+# Old DC prototype (for visual comparison) — :8090
+cd legacy && python3 -m http.server 8090 --bind 127.0.0.1   # → /index.html
 ```
 
-The frontend proxies `/api/*` to the backend (`next.config.ts` rewrites). Dev startup auto-seeds content unless `SEED_CONTENT_ON_STARTUP=0`.
+- Frontend proxies `/api/*` to the backend (`apps/web/next.config.ts` rewrites). Dev startup auto-seeds content unless `SEED_CONTENT_ON_STARTUP=0`.
+- **Content edit loop**: edit `apps/api/app/db/seeds/content/<module>/*.json` → re-run the seeder (idempotent; fails loudly on count mismatch) → the `/api/content/*` endpoint serves it. The `.db` is generated/gitignored — fixtures are the source of truth.
+- **QA**: open `:3000`, walk the 5 pages (Chat / Lab / Code / Jargon / Job); compare against `legacy/` on `:8090` when needed. Watch the browser console.
+- API keys live only in the browser (`localStorage['llm_viz_settings']`); configure via the in-app ⚙ Settings before using Chat.
 
 ## Architecture — monorepo
 
@@ -42,12 +48,31 @@ The frontend proxies `/api/*` to the backend (`next.config.ts` rewrites). Dev st
 - `apps/web/src/app/page.tsx` + `lib/{api,sse-client}.ts`: builds a request, streams SSE from `POST /api/chat/stream`. API keys live **only** in browser `localStorage['llm_viz_settings']` and are forwarded transiently by the backend — never persisted/logged.
 - Anonymous sessions + conversations persist in SQLite (Spec 003); 30-day expiry; hashed IP/UA only.
 
+## Spec Kit workflow
+
+Every non-trivial feature is a numbered **Spec** under `specs/NNN-name/`. This repo uses the Spec Kit toolchain (skills invoked as `/speckit-*`); follow it for feature work.
+
+- **Numbering** is auto-derived from the `specs/` directory (next sequential `NNN`), **not** from git history.
+- **Serial flow per spec**: `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` → `/speckit-implement`. Artifacts land in `specs/NNN-name/`: `spec.md`, `plan.md` (+ `research.md` / `data-model.md` / `contracts/` / `quickstart.md`), `tasks.md`, `checklists/`.
+- **Branching**: the `before_specify` git hook creates branch `NNN-name`; develop there, then `git merge --no-ff` into `junxiang` when the spec is done.
+- **Config/state** (all file-based): `.specify/feature.json` (active feature dir), `.specify/extensions.yml` (hooks — auto git-commit after each step + agent-context refresh), `.specify/memory/constitution.md` (governance; each `plan.md` must pass the **Constitution Check**), `.specify/templates/`.
+- **Constitution first**: "先改 Spec 后改代码". If a new spec conflicts with an existing one, **supersede or amend** it explicitly (e.g. Spec 009 superseded 005; record it at the top of the new spec).
+- The `<!-- SPECKIT -->` block at the bottom of this file points to the current spec's plan; keep it pointing at the active spec.
+
+## Commit strategy
+
+- **Per spec ≈ 5 commits** on the spec branch: `[Spec Kit] Add spec: NNN` → `Add plan: NNN` → `Add tasks: NNN` → (`Fix analyze findings: NNN` if any) → `[Spec Kit] Implement: NNN (N tasks)`, then a `merge: 合并 NNN → junxiang` (`--no-ff`).
+- **Loose changes** (bug fixes, docs, chores not tied to a spec) are **separate standalone commits** with Conventional prefixes — `fix(web): …`, `docs: …`, `docs(constitution): …`, `chore: …`.
+- Messages are mostly **Chinese**; end every commit with the `Co-Authored-By:` trailer.
+- **Never commit** the runtime `.db` (gitignored; content source = JSON fixtures) or API keys / base URLs with creds.
+- **Push only `junxiang`, and only when explicitly asked** (don't push the per-spec `NNN-*` branches or `main`).
+- The fine commit granularity is intentional (constitution Principle V — traceability). Spec Kit is file-based and never reads git history, so squashing/keeping commits is purely a style choice and never affects the tooling.
+
 ## Conventions
 
 - **Design system is fixed** (dark terminal aesthetic). Do not introduce new colors or fonts. Only main accent is brand green `#00ffa0`; secondary accents from existing blue/purple/orange. Fonts: JetBrains Mono (code/data/labels) and Inter (prose) only.
-- Styling is inline `style={}` in components (no CSS modules/Tailwind); shared resets in `apps/web/src/app/globals.css`.
+- Styling is inline `style={}` in components (no CSS modules/Tailwind); shared design tokens in `apps/web/src/lib/theme.ts`, resets/keyframes in `apps/web/src/app/globals.css`.
 - Handler/state names are descriptive verbs (`toggleSettings`, `setModel`).
-- Spec Kit workflow: each feature is a numbered Spec under `specs/NNN-*` (`spec → plan → tasks → analyze → implement → merge`), 5 commits + a merge into `junxiang`. Commit messages mostly Chinese; `.db` and API keys never committed.
 
 ## Adding a teaching-content module (the 009 pattern, reused by 010–013)
 1. Add fixtures `apps/api/app/db/seeds/content/<module>/*.json`.

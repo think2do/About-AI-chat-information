@@ -7,7 +7,7 @@
 
 ## Project Structure & Module Organization
 
-This repository is now a monorepo web application for an LLM teaching tool, with the older static DC prototype still present at the root.
+This repository is now a monorepo web application for an LLM teaching tool. The older static DC prototype is archived under `legacy/` (historical reference only).
 
 - `apps/web/` is the primary frontend: Next.js 15, React 19, TypeScript, App Router.
   - `apps/web/src/app/` contains routes such as Chat, Lab, Code, Jargon, and Job.
@@ -21,8 +21,8 @@ This repository is now a monorepo web application for an LLM teaching tool, with
 - `packages/shared/` stores frontend TypeScript contract types for chat, provider settings, pipeline events, and stream events.
 - `packages/content/` is reserved for teaching-content modules.
 - `specs/` contains feature specs, plans, tasks, contracts, and acceptance notes. Check the relevant spec before broad product changes.
-- Root files such as `index.html`, `Lab.dc.html`, `Code.dc.html`, `Jargon.dc.html`, `Job.dc.html`, `Nav.dc.html`, `Job.data.js`, `styles.css`, and `support.js` are the legacy static/DC prototype. Keep them only when the task explicitly touches the prototype.
-- `support.js` is generated DC runtime code; do not edit it manually.
+- `legacy/` holds the archived static/DC prototype (`index.html`, `*.dc.html`, `Nav.dc.html`, `Job.data.js`, `styles.css`, `support.js`). Touch it only when a task explicitly targets the prototype. See `legacy/README.md`.
+- `legacy/support.js` is generated DC runtime code; do not edit it manually.
 - `apps/api/data/teaching_tool.db` is runtime SQLite data. Do not change or commit it unless the user explicitly asks to update stored local data.
 
 ## Build, Test, and Development Commands
@@ -68,18 +68,18 @@ cd apps/api && python -m compileall app
 docker compose config
 ```
 
-For legacy DC prototype validation only, serve the repository root on a port that does not conflict with the API:
+For legacy DC prototype validation only, serve the `legacy/` folder on a non-conflicting port:
 
 ```sh
-python3 -m http.server 8080 --bind 127.0.0.1
+cd legacy && python3 -m http.server 8090 --bind 127.0.0.1
 ```
 
-Then open `http://127.0.0.1:8080/index.html`.
+Then open `http://127.0.0.1:8090/index.html`.
 
 Quick JavaScript syntax check for embedded DC scripts:
 
 ```sh
-node -e "for (const f of ['index.html','Nav.dc.html','Lab.dc.html','Code.dc.html','Jargon.dc.html','Job.dc.html']) { const s=require('fs').readFileSync(f,'utf8'); for (const m of s.matchAll(/<script[^>]*data-dc-script[^>]*>([\\s\\S]*?)<\\/script>/g)) new Function(m[1]); console.log(f,'OK') }"
+node -e "for (const f of ['legacy/index.html','legacy/Nav.dc.html','legacy/Lab.dc.html','legacy/Code.dc.html','legacy/Jargon.dc.html','legacy/Job.dc.html']) { const s=require('fs').readFileSync(f,'utf8'); for (const m of s.matchAll(/<script[^>]*data-dc-script[^>]*>([\\s\\S]*?)<\\/script>/g)) new Function(m[1]); console.log(f,'OK') }"
 ```
 
 ## Coding Style & Naming Conventions
@@ -91,7 +91,7 @@ node -e "for (const f of ['index.html','Nav.dc.html','Lab.dc.html','Code.dc.html
 - Backend routers should stay thin. Put provider orchestration in services and provider-specific behavior in adapters.
 - Keep API errors normalized and user-friendly in Chinese. Do not leak provider raw errors when they may contain credentials or sensitive request details.
 - If updating shared request/event shapes, update `packages/shared/`, frontend usage, backend models, and the relevant spec/contract together.
-- For legacy `.dc.html` work, keep the existing `<x-dc>` plus `<script type="text/x-dc" data-dc-script>` pattern. Put shared animations or global element rules in `styles.css`.
+- For legacy `.dc.html` work (under `legacy/`), keep the existing `<x-dc>` plus `<script type="text/x-dc" data-dc-script>` pattern. Put shared animations or global element rules in `legacy/styles.css`.
 
 ## Testing Guidelines
 

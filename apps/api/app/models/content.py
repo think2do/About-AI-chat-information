@@ -141,3 +141,97 @@ class CodeResponse(BaseModel):
     simulator: list[SimStep]
     agentLoop: list[AgentStep]
     hidden: list[HiddenFeature]
+
+
+# --- Lab (Spec 012) ---
+
+from typing import Any  # noqa: E402
+
+
+class FcStep(BaseModel):
+    icon: str
+    label: str
+    color: str
+    content: str | None = None
+    jsonObj: Any | None = None
+    isCode: bool
+    highlight: bool
+
+
+class InferStep(BaseModel):
+    num: str
+    icon: str
+    title: str
+    desc: str
+    code: str | None = None
+
+
+class RagStep(BaseModel):
+    num: str
+    icon: str
+    title: str
+    desc: str
+    code: str | None = None
+    phase: str | None = None
+    phaseColor: str | None = None
+
+
+class TokenizerBar(BaseModel):
+    label: str
+    value: str
+    valueColor: str
+    widthPct: int
+    barColor: str
+    sample: str | None = None
+
+
+class TokenizerGroup(BaseModel):
+    title: str
+    titleColor: str
+    bars: list[TokenizerBar]
+
+
+class TokenizerNote(BaseModel):
+    text: str
+    color: str
+
+
+class TokenizerMode(BaseModel):
+    key: str
+    label: str
+    intro: str
+    groups: list[TokenizerGroup]
+    note: TokenizerNote
+
+
+class TokenizerQuickCard(BaseModel):
+    label: str
+    zh: str
+    zhColor: str
+    en: str
+
+
+class TokenizerQuickref(BaseModel):
+    title: str
+    cards: list[TokenizerQuickCard]
+    footnote: str
+
+
+class TokenizerData(BaseModel):
+    modes: list[TokenizerMode]
+    quickref: TokenizerQuickref
+
+
+class TrainingData(BaseModel):
+    defaultQuestion: str
+    baseTemplate: str
+    sftAnswer: str
+
+
+class LabResponse(BaseModel):
+    module: Literal["lab"] = "lab"
+    training: TrainingData | None = None
+    functionCall: list[FcStep]
+    tokenizer: TokenizerData | None = None
+    inference: list[InferStep]
+    rag: list[RagStep]

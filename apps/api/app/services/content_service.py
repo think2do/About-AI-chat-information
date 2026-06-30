@@ -189,3 +189,38 @@ async def get_code() -> dict:
         "agentLoop": agent_loop,
         "hidden": hidden,
     }
+
+
+async def get_lab() -> dict:
+    """Aggregate Lab page data (training / functionCall / tokenizer / inference / rag)."""
+    async with get_db() as db:
+        cur = await db.execute(
+            """SELECT item_type, payload FROM content_items
+                WHERE module='lab' ORDER BY item_type, sort_order"""
+        )
+        item_rows = await cur.fetchall()
+        cur = await db.execute(
+            "SELECT meta_key, payload FROM content_meta WHERE module='lab'"
+        )
+        meta_rows = await cur.fetchall()
+
+    fc, inference, rag = [], [], []
+    for row in item_rows:
+        p = json.loads(row["payload"])
+        it = row["item_type"]
+        if it == "fc-step":
+            fc.append(p)
+        elif it == "infer-step":
+            inference.append(p)
+        elif it == "rag-step":
+            rag.append(p)
+
+    meta = {r["meta_key"]: json.loads(r["payload"]) for r in meta_rows}
+    return {
+        "module": "lab",
+        "training": meta.get("training"),
+        "functionCall": fc,
+        "tokenizer": meta.get("tokenizer"),
+        "inference": inference,
+        "rag": rag,
+    }

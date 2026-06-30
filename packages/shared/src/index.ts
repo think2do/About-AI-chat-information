@@ -19,3 +19,15 @@ export type {
   HiddenFeature,
   CodeResponse,
 } from "./content";
+export type {
+  FcStep,
+  InferStep,
+  RagStep,
+  TokenizerBar,
+  TokenizerGroup,
+  TokenizerMode,
+  TokenizerQuickCard,
+  TokenizerData,
+  TrainingData,
+  LabResponse,
+} from "./content";

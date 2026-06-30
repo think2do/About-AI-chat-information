@@ -1,0 +1,112 @@
+[
+  {
+    "slug": "rag-0",
+    "sort_order": 0,
+    "num": "01",
+    "icon": "📂",
+    "title": "原始文档导入",
+    "desc": "收集知识库原始文档（PDF、网页、数据库、Markdown 等），这是 RAG 的离线预处理起点。",
+    "code": "文档来源:\n  - 产品手册.pdf\n  - 官网 FAQ（网页爬取）\n  - 内部 Wiki（Confluence）\n  - 数据库导出.csv",
+    "phase": "建立索引阶段",
+    "phaseColor": "#58a6ff"
+  },
+  {
+    "slug": "rag-1",
+    "sort_order": 1,
+    "num": "02",
+    "icon": "✂",
+    "title": "文档切割（Chunking）",
+    "desc": "将长文档按策略切分成若干 chunk，常见策略：固定大小（512 tokens）、按语义边界、递归分割。",
+    "code": "切片 1: \"Transformer 是一种基于自注意力机制的深度...\"\n切片 2: \"BERT 在预训练阶段使用了掩码语言模型...\"\n\n每片约 512 tokens，重叠 50 tokens",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-2",
+    "sort_order": 2,
+    "num": "03",
+    "icon": "⬡",
+    "title": "Embedding 向量化",
+    "desc": "每个 chunk 送入 Embedding 模型，转换为高维浮点向量，语义相近的文本在向量空间中距离更近。",
+    "code": "切片 1 -> [0.1, 0.3, -0.5, 0.8, ..., 0.5]  (1536-dim)\n切片 2 -> [0.2, 0.4,  0.1, 0.3, ..., 0.6]  (1536-dim)",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-3",
+    "sort_order": 3,
+    "num": "04",
+    "icon": "🗄",
+    "title": "向量存储入库",
+    "desc": "将向量连同原始文本元数据一起写入向量数据库（Pinecone / Chroma / Milvus），建立可检索的索引。",
+    "code": "写入向量数据库:\n  id: \"doc_001_chunk_1\"\n  vector: [0.1, 0.3, -0.5, ...]\n  metadata: { source: \"产品手册.pdf\", page: 3 }",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-4",
+    "sort_order": 4,
+    "num": "05",
+    "icon": "💬",
+    "title": "用户提问",
+    "desc": "用户在应用端输入问题，触发 RAG 检索生成流程（实时阶段开始）。",
+    "code": "用户输入: \"GPT-4 和 GPT-3 相比有哪些主要改进？\"",
+    "phase": "检索生成阶段",
+    "phaseColor": "#00ffa0"
+  },
+  {
+    "slug": "rag-5",
+    "sort_order": 5,
+    "num": "06",
+    "icon": "🔢",
+    "title": "Query 向量化",
+    "desc": "用相同的 Embedding 模型将用户问题转为查询向量，确保与文档向量在同一语义空间内可以比较。",
+    "code": "\"GPT-4 和 GPT-3 相比...\" -> [0.15, 0.28, -0.41, ..., 0.63]",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-6",
+    "sort_order": 6,
+    "num": "07",
+    "icon": "🔍",
+    "title": "向量检索 + Rank 精排",
+    "desc": "查询向量与数据库中所有文档向量做余弦相似度计算，初步召回 Top-20，再经 Rank 模型精排，最终返回 Top-3 最相关切片。",
+    "code": "余弦相似度检索:\n  切片 \"GPT-4 架构改进...\"  相似度: 0.94  <- Top 1\n  切片 \"GPT-3 参数规模...\"  相似度: 0.87  <- Top 2\n  切片 \"多模态能力对比...\"  相似度: 0.81  <- Top 3",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-7",
+    "sort_order": 7,
+    "num": "08",
+    "icon": "📝",
+    "title": "构建增强 Prompt",
+    "desc": "将 Top-3 召回文档切片 + 用户原始问题拼装成增强提示词，作为 LLM 的输入上下文。",
+    "code": "{\n  \"role\": \"system\",\n  \"content\": \"基于以下文档回答问题:\\n[文档1] GPT-4 架构改进...\"\n},\n{\n  \"role\": \"user\",\n  \"content\": \"GPT-4 和 GPT-3 相比有哪些主要改进？\"\n}",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-8",
+    "sort_order": 8,
+    "num": "09",
+    "icon": "◈",
+    "title": "大模型推理生成",
+    "desc": "增强后的 Prompt 送入 LLM，模型基于检索到的真实文档内容生成有依据的回答，而非依赖训练时记忆。",
+    "code": "模型基于文档内容生成:\n\"根据文档显示，GPT-4 相比 GPT-3 的主要改进包括：\n 1. 多模态能力（支持图像输入）\n 2. 更强的推理能力和指令跟随\n 3. 更长的上下文窗口（128K tokens）\"",
+    "phase": null,
+    "phaseColor": null
+  },
+  {
+    "slug": "rag-9",
+    "sort_order": 9,
+    "num": "10",
+    "icon": "✅",
+    "title": "最终答案对比",
+    "desc": "对比有无 RAG 的回答差异，直观体现 RAG 的价值。",
+    "code": "无 RAG（模型直接回答，可能幻觉）:\n  \"GPT-4 有 1 万亿参数...\" <- 未经验证\n\n有 RAG（基于检索文档）:\n  \"根据文档 [第3页]，GPT-4 支持...\" <- 有据可查",
+    "phase": null,
+    "phaseColor": null
+  }
+]

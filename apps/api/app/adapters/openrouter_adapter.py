@@ -39,6 +39,9 @@ class OpenRouterAdapter(BaseProviderAdapter):
             "presence_penalty": req.params.presence_penalty,
             "stream": True,
         }
+        # Chain-of-thought: ask OpenRouter for reasoning tokens when enabled.
+        if req.params.reasoning_enabled:
+            body["reasoning"] = {"effort": "medium"}
         return httpx.Request(
             method="POST",
             url=url,
@@ -65,6 +68,9 @@ class OpenRouterAdapter(BaseProviderAdapter):
 
             choice = (chunk.get("choices") or [{}])[0]
             delta = choice.get("delta", {})
+            reasoning = delta.get("reasoning")
+            if reasoning:
+                yield {"event": "reasoning", "content": reasoning, "timestamp": self._now_iso()}
             content = delta.get("content", "")
             if content:
                 yield {"event": "delta", "content": content, "timestamp": self._now_iso()}

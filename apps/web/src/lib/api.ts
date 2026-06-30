@@ -104,6 +104,7 @@ export async function sendMessage(
       max_tokens: params.maxTokens ?? 2048,
       frequency_penalty: params.frequencyPenalty ?? 0,
       presence_penalty: params.presencePenalty ?? 0,
+      reasoning_enabled: params.reasoningEnabled ?? false,
     },
     stream: true,
     ...(conversationId ? { conversation_id: conversationId } : {}),

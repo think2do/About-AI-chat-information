@@ -15,6 +15,10 @@ interface DisplayMessage {
   role: "user" | "assistant" | "system";
   content: string;
   isStreaming?: boolean;
+  reasoning?: string;
+  ttftMs?: number;
+  tps?: number;
+  outputTokens?: number;
 }
 
 interface ErrorInfo {
@@ -42,7 +46,7 @@ export default function ChatPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [pipelinePhase, setPipelinePhase] = useState(0);
   const [modelParams, setModelParams] = useState({
-    temperature: 0.7, topP: 1.0, maxTokens: 2048, frequencyPenalty: 0, presencePenalty: 0,
+    temperature: 0.7, topP: 1.0, maxTokens: 2048, frequencyPenalty: 0, presencePenalty: 0, reasoningEnabled: false,
   });
   const [metrics, setMetrics] = useState<{ ttftMs?: number; tps?: number; inputTokens?: number; outputTokens?: number; totalTokens?: number; costUsd?: number; show: boolean }>({ show: false });
   const abortRef = useRef<AbortController | null>(null);
@@ -108,15 +112,35 @@ export default function ChatPage() {
       content: m.content,
     }));
 
+    // Per-message metrics measurement (TTFT / TPS / output tokens).
+    let t0 = 0;
+    let outTok = 0;
+    let ttftMs: number | undefined;
+    let reasoningText = "";
+
     const onEvent = (event: ChatStreamEvent) => {
       switch (event.event) {
         case "delta":
+          if (ttftMs === undefined) ttftMs = Date.now() - t0;
+          outTok++;
           if (pipelinePhase < 6) setPipelinePhase(6); // Phase 6: 自回归解码
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
             if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
               updated[lastIdx] = { ...updated[lastIdx], content: updated[lastIdx].content + event.content };
+            }
+            return updated;
+          });
+          break;
+
+        case "reasoning":
+          reasoningText += event.content;
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIdx = updated.length - 1;
+            if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
+              updated[lastIdx] = { ...updated[lastIdx], reasoning: reasoningText };
             }
             return updated;
           });
@@ -146,17 +170,24 @@ export default function ChatPage() {
 
         case "cancelled":
           setPipelinePhase(0);
-        case "completed":
+        case "completed": {
           setPipelinePhase(7); // Phase 7: 响应完成
+          const elapsed = Math.max((Date.now() - t0) / 1000, 0.01);
+          const tps = outTok > 0 ? Math.round(outTok / elapsed) : undefined;
           setMessages((prev) => {
             const updated = [...prev];
             const lastIdx = updated.length - 1;
             if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
-              updated[lastIdx] = { ...updated[lastIdx], isStreaming: false };
+              updated[lastIdx] = {
+                ...updated[lastIdx],
+                isStreaming: false,
+                ...(outTok > 0 ? { ttftMs, tps, outputTokens: outTok } : {}),
+              };
             }
             return updated;
           });
           break;
+        }
       }
     };
 
@@ -182,12 +213,13 @@ export default function ChatPage() {
       }
     };
 
+    t0 = Date.now();
     try {
-      await sendMessage(allMessages, {}, onEvent, onError, onComplete, controller.signal, conversationId);
+      await sendMessage(allMessages, modelParams, onEvent, onError, onComplete, controller.signal, conversationId);
     } catch {
       setIsStreaming(false);
     }
-  }, [messages, conversationId]);
+  }, [messages, conversationId, modelParams, pipelinePhase]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -225,7 +257,12 @@ export default function ChatPage() {
 
         {error && <ErrorBubble error={error} onDismiss={handleDismissError} />}
         <PipelineVisualization activePhase={pipelinePhase} isStreaming={isStreaming} />
-        <ModelParamsPanel params={modelParams} onChange={setModelParams} collapsed={messages.length > 0} />
+        <ModelParamsPanel
+          params={modelParams}
+          onChange={(p) => setModelParams({ ...p, reasoningEnabled: p.reasoningEnabled ?? false })}
+          collapsed={messages.length > 0}
+          messageCount={messages.filter((m) => m.role !== "system").length}
+        />
         <ChatArea messages={messages} />
         <PerformanceMetrics {...metrics} />
         <ChatInput onSend={handleSend} onCancel={handleCancel} isStreaming={isStreaming} />

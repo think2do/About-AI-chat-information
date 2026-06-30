@@ -1,6 +1,23 @@
 version: "3.9"
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-teaching_tool}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-teaching_tool}
+      POSTGRES_DB: ${DB_NAME:-teaching_tool}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-teaching_tool} -d ${DB_NAME:-teaching_tool}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   api:
     build:
       context: ./apps/api
@@ -10,6 +27,11 @@ services:
     volumes:
       - ./apps/api/app:/app/app
       - ./packages:/packages
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///data/teaching_tool.db}
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
@@ -31,3 +53,6 @@ services:
         condition: service_healthy
     environment:
       - NEXT_PUBLIC_API_URL=http://api:8000
+
+volumes:
+  pgdata:

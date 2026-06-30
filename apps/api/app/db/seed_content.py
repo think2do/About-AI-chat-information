@@ -252,6 +252,30 @@ def _load_lab():
     return [], item_rows, meta_rows
 
 
+def _load_chat():
+    base = SEEDS_DIR / "chat"
+    stages = _read_json(base / "pipeline.json")
+    item_rows = [
+        {
+            "item_id": f"chat:pipeline-stage:{s['slug']}",
+            "module": "chat",
+            "item_type": "pipeline-stage",
+            "category_id": None,
+            "slug": s["slug"],
+            "title": s["label"],
+            "difficulty": None,
+            "company": None,
+            "sort_order": s["sort_order"],
+            "payload": {
+                "num": s["num"], "label": s["label"], "short": s["short"],
+                "detail": s["detail"], "color": s["color"],
+            },
+        }
+        for s in stages
+    ]
+    return [], item_rows, []
+
+
 MODULE_REGISTRY = {
     "jargon": {
         "loader": _load_jargon,
@@ -274,6 +298,11 @@ MODULE_REGISTRY = {
         "loader": _load_lab,
         "expected_categories": 0,
         "expected_items": 25,
+    },
+    "chat": {
+        "loader": _load_chat,
+        "expected_categories": 0,
+        "expected_items": 7,
     },
 }
 

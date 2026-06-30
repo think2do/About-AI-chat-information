@@ -198,3 +198,18 @@ export interface LabResponse {
   inference: InferStep[];
   rag: RagStep[];
 }
+
+// --- Chat pipeline (Spec 013) ---
+
+export interface PipelineStageContent {
+  num: string;
+  label: string;
+  short: string;
+  detail: string;
+  color: string;
+}
+
+export interface ChatPipelineResponse {
+  module: "chat";
+  stages: PipelineStageContent[];
+}

@@ -235,3 +235,19 @@ class LabResponse(BaseModel):
     tokenizer: TokenizerData | None = None
     inference: list[InferStep]
     rag: list[RagStep]
+
+
+# --- Chat pipeline (Spec 013) ---
+
+
+class PipelineStageContent(BaseModel):
+    num: str
+    label: str
+    short: str
+    detail: str
+    color: str
+
+
+class ChatPipelineResponse(BaseModel):
+    module: Literal["chat"] = "chat"
+    stages: list[PipelineStageContent]

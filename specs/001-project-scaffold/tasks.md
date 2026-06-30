@@ -24,10 +24,10 @@
 
 **Purpose**: 创建 Monorepo 目录结构和包初始化
 
-- [ ] T001 Create top-level monorepo directory structure: `apps/web/`, `apps/api/`, `packages/shared/`, `packages/content/`
-- [ ] T002 [P] Initialize `packages/shared/package.json` with name `@teaching-tool/shared` and TypeScript config
-- [ ] T003 [P] Initialize `packages/content/package.json` with placeholder README in `packages/content/`
-- [ ] T004 Create root `.env.example` with placeholder entries for `API_PORT`, `WEB_PORT`, `NEXT_PUBLIC_API_URL`
+- [x] T001 Create top-level monorepo directory structure: `apps/web/`, `apps/api/`, `packages/shared/`, `packages/content/`
+- [x] T002 [P] Initialize `packages/shared/package.json` with name `@teaching-tool/shared` and TypeScript config
+- [x] T003 [P] Initialize `packages/content/package.json` with placeholder README in `packages/content/`
+- [x] T004 Create root `.env.example` with placeholder entries for `API_PORT`, `WEB_PORT`, `NEXT_PUBLIC_API_URL`
 
 ---
 
@@ -37,17 +37,17 @@
 
 **⚠️ CRITICAL**: User story 工作必须在此阶段完成后开始
 
-- [ ] T005 Initialize `apps/api/pyproject.toml` with FastAPI + Uvicorn dependencies, Python 3.11+
-- [ ] T006 Create `apps/api/requirements.txt` listing fastapi, uvicorn[standard]
-- [ ] T007 Create `apps/api/app/__init__.py` (empty file)
-- [ ] T008 Create `apps/api/app/main.py` — FastAPI app instance with CORS middleware, root path `/`, include health router
-- [ ] T009 Create `apps/api/app/routers/__init__.py` (empty file)
-- [ ] T010 Create `apps/api/app/routers/health.py` — `GET /health` returning `{"status":"ok","service":"teaching-tool-api","version":"0.1.0"}`
-- [ ] T011 Initialize `apps/web/package.json` with Next.js 15, React 19, TypeScript dependencies
-- [ ] T012 [P] Create `apps/web/tsconfig.json` with strict mode, path alias to `@teaching-tool/shared`
-- [ ] T013 [P] Create `apps/web/next.config.ts` with base config (no special features yet)
-- [ ] T014 [P] Create `apps/web/.env.example` with `NEXT_PUBLIC_API_URL=http://localhost:8000`
-- [ ] T014a [P] Create `apps/web/src/app/globals.css` — CSS reset, dark theme base variables (`#0d1117` bg, `#0a0e14` secondary, `#161b22` card, `#21262d` input, `#30363d` border; `#00ffa0` accent green, `#e6edf3`/`#c9d1d9`/`#8b949e` text hierarchy), custom scrollbar (5px, `#30363d` thumb), JetBrains Mono + Inter font-face imports from Google Fonts CDN
+- [x] T005 Initialize `apps/api/pyproject.toml` with FastAPI + Uvicorn dependencies, Python 3.11+
+- [x] T006 Create `apps/api/requirements.txt` listing fastapi, uvicorn[standard]
+- [x] T007 Create `apps/api/app/__init__.py` (empty file)
+- [x] T008 Create `apps/api/app/main.py` — FastAPI app instance with CORS middleware, root path `/`, include health router
+- [x] T009 Create `apps/api/app/routers/__init__.py` (empty file)
+- [x] T010 Create `apps/api/app/routers/health.py` — `GET /health` returning `{"status":"ok","service":"teaching-tool-api","version":"0.1.0"}`
+- [x] T011 Initialize `apps/web/package.json` with Next.js 15, React 19, TypeScript dependencies
+- [x] T012 [P] Create `apps/web/tsconfig.json` with strict mode, path alias to `@teaching-tool/shared`
+- [x] T013 [P] Create `apps/web/next.config.ts` with base config (no special features yet)
+- [x] T014 [P] Create `apps/web/.env.example` with `NEXT_PUBLIC_API_URL=http://localhost:8000`
+- [x] T014a [P] Create `apps/web/src/app/globals.css` — CSS reset, dark theme base variables (`#0d1117` bg, `#0a0e14` secondary, `#161b22` card, `#21262d` input, `#30363d` border; `#00ffa0` accent green, `#e6edf3`/`#c9d1d9`/`#8b949e` text hierarchy), custom scrollbar (5px, `#30363d` thumb), JetBrains Mono + Inter font-face imports from Google Fonts CDN
 
 **Checkpoint**: `apps/api` 启动后 `/health` 返回 200；`apps/web` 可启动 dev server
 
@@ -61,10 +61,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Create `apps/api/Dockerfile` — Python 3.11-slim base, install requirements, run uvicorn
-- [ ] T016 [P] [US1] Create `apps/web/Dockerfile` — Node 22 base, install deps, run `npm run dev`
-- [ ] T017 [US1] Create root `docker-compose.yml` — web (port 3000) + api (port 8000) services with healthcheck, volumes for hot reload
-- [ ] T018 [US1] Create root `README.md` — project overview, prerequisites, quickstart with docker compose, manual start instructions, project structure diagram
+- [x] T015 [US1] Create `apps/api/Dockerfile` — Python 3.11-slim base, install requirements, run uvicorn
+- [x] T016 [P] [US1] Create `apps/web/Dockerfile` — Node 22 base, install deps, run `npm run dev`
+- [x] T017 [US1] Create root `docker-compose.yml` — web (port 3000) + api (port 8000) services with healthcheck, volumes for hot reload
+- [x] T018 [US1] Create root `README.md` — project overview, prerequisites, quickstart with docker compose, manual start instructions, project structure diagram
 
 **Checkpoint**: `docker compose up -d` 后所有服务健康检查通过
 
@@ -78,13 +78,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T019 [P] [US2] Create `packages/shared/src/provider.ts` — `ProviderId` type and `ProviderConfig` interface per data-model.md
-- [ ] T020 [P] [US2] Create `packages/shared/src/chat.ts` — `ChatMessage`, `ModelParams`, `ChatMetrics` interfaces per data-model.md
-- [ ] T021 [P] [US2] Create `packages/shared/src/pipeline.ts` — `PipelineState` interface per data-model.md
-- [ ] T022 [P] [US2] Create `packages/shared/src/events.ts` — `ChatStreamEvent` union type and `ApiError` interface per data-model.md
-- [ ] T023 [US2] Create `packages/shared/src/index.ts` — re-export all types from provider.ts, chat.ts, pipeline.ts, events.ts
-- [ ] T024 [US2] Create `packages/shared/tsconfig.json` — declaration + emitDeclarationOnly config
-- [ ] T025 [US2] Verify: add a sample type import in `apps/web/src/app/layout.tsx` that references `@teaching-tool/shared`, confirm `tsc --noEmit` passes
+- [x] T019 [P] [US2] Create `packages/shared/src/provider.ts` — `ProviderId` type and `ProviderConfig` interface per data-model.md
+- [x] T020 [P] [US2] Create `packages/shared/src/chat.ts` — `ChatMessage`, `ModelParams`, `ChatMetrics` interfaces per data-model.md
+- [x] T021 [P] [US2] Create `packages/shared/src/pipeline.ts` — `PipelineState` interface per data-model.md
+- [x] T022 [P] [US2] Create `packages/shared/src/events.ts` — `ChatStreamEvent` union type and `ApiError` interface per data-model.md
+- [x] T023 [US2] Create `packages/shared/src/index.ts` — re-export all types from provider.ts, chat.ts, pipeline.ts, events.ts
+- [x] T024 [US2] Create `packages/shared/tsconfig.json` — declaration + emitDeclarationOnly config
+- [x] T025 [US2] Verify: add a sample type import in `apps/web/src/app/layout.tsx` that references `@teaching-tool/shared`, confirm `tsc --noEmit` passes
 
 **Checkpoint**: TypeScript 编译零错误，共享类型包可被前端引用
 
@@ -98,14 +98,14 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Create `apps/web/src/components/NavSidebar.tsx` — 56px wide left sidebar with 5 nav items (Chat/Lab/Code/名词/求职, each with emoji icon + 9px Inter label) + ⚙ settings button at bottom; settings button onClick shows a placeholder toast/alert "设置面板将在 Spec 004 实现"; active item highlighted with green left border `#00ffa0` on `rgba(0,255,160,0.06)` background; inactive items `#6e7681`; sidebar background `#0a0e14`
-- [ ] T027 [US3] Create `apps/web/src/app/layout.tsx` — AppShell: import `globals.css`; flex row layout with NavSidebar + `<main>` content area; set page background `#0d1117`; wrap children in main container
-- [ ] T028 [P] [US3] Create `apps/web/src/app/page.tsx` — Chat placeholder page with title "Chat / Playground" and status text "Chat streaming gateway will be implemented in Spec 002"
-- [ ] T029 [P] [US3] Create `apps/web/src/app/lab/page.tsx` — Lab placeholder page with title "实验室" and sub-tab structure placeholder
-- [ ] T030 [P] [US3] Create `apps/web/src/app/code/page.tsx` — Code placeholder page with title "Claude Code" and sub-tab structure placeholder
-- [ ] T031 [P] [US3] Create `apps/web/src/app/jargon/page.tsx` — Jargon placeholder page with title "黑话词典" and tree + detail panel layout placeholder
-- [ ] T032 [P] [US3] Create `apps/web/src/app/job/page.tsx` — Job placeholder page with title "求职" and list + detail panel layout placeholder
-- [ ] T033 [US3] Create `apps/web/src/app/not-found.tsx` — 404 page with dark theme, "页面未找到" message, link back to home
+- [x] T026 [US3] Create `apps/web/src/components/NavSidebar.tsx` — 56px wide left sidebar with 5 nav items (Chat/Lab/Code/名词/求职, each with emoji icon + 9px Inter label) + ⚙ settings button at bottom; settings button onClick shows a placeholder toast/alert "设置面板将在 Spec 004 实现"; active item highlighted with green left border `#00ffa0` on `rgba(0,255,160,0.06)` background; inactive items `#6e7681`; sidebar background `#0a0e14`
+- [x] T027 [US3] Create `apps/web/src/app/layout.tsx` — AppShell: import `globals.css`; flex row layout with NavSidebar + `<main>` content area; set page background `#0d1117`; wrap children in main container
+- [x] T028 [P] [US3] Create `apps/web/src/app/page.tsx` — Chat placeholder page with title "Chat / Playground" and status text "Chat streaming gateway will be implemented in Spec 002"
+- [x] T029 [P] [US3] Create `apps/web/src/app/lab/page.tsx` — Lab placeholder page with title "实验室" and sub-tab structure placeholder
+- [x] T030 [P] [US3] Create `apps/web/src/app/code/page.tsx` — Code placeholder page with title "Claude Code" and sub-tab structure placeholder
+- [x] T031 [P] [US3] Create `apps/web/src/app/jargon/page.tsx` — Jargon placeholder page with title "黑话词典" and tree + detail panel layout placeholder
+- [x] T032 [P] [US3] Create `apps/web/src/app/job/page.tsx` — Job placeholder page with title "求职" and list + detail panel layout placeholder
+- [x] T033 [US3] Create `apps/web/src/app/not-found.tsx` — 404 page with dark theme, "页面未找到" message, link back to home
 
 **Checkpoint**: 全部 5 个路由可用，404 正常，导航栏 visual style 与当前 Demo 一致
 
@@ -115,10 +115,10 @@
 
 **Purpose**: 最终验证和文档完善
 
-- [ ] T034 Run `tsc --noEmit` in `apps/web/` and fix any type errors
-- [ ] T035 Run `ruff check` (or `python -m py_compile`) in `apps/api/` and fix any errors
-- [ ] T036 Validate quickstart.md scenarios 1-5 pass on a clean checkout
-- [ ] T037 Verify docker compose up → health check → all 5 page routes → docker compose down cycle works end-to-end
+- [x] T034 Run `tsc --noEmit` in `apps/web/` and fix any type errors
+- [x] T035 Run `ruff check` (or `python -m py_compile`) in `apps/api/` and fix any errors
+- [x] T036 Validate quickstart.md scenarios 1-5 pass on a clean checkout
+- [x] T037 Verify docker compose up → health check → all 5 page routes → docker compose down cycle works end-to-end
 
 ---
 

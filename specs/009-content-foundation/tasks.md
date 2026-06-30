@@ -24,9 +24,9 @@ Monorepo Web 结构：后端 `apps/api/app/`、测试 `apps/api/tests/`、前端
 
 **Purpose**: 版本控制卫生与测试脚手架
 
-- [ ] T001 [P] 在根 `.gitignore` 增加 `apps/api/data/*.db`，并执行 `git rm --cached apps/api/data/teaching_tool.db`（保留本地文件），使运行时 SQLite 不再被跟踪（research D6 / Clarifications）
-- [ ] T002 [P] 建立后端测试脚手架：创建 `apps/api/tests/__init__.py` 与 `apps/api/tests/conftest.py`（提供 FastAPI `TestClient` + 临时 SQLite fixture），并在 `apps/api/requirements.txt`（或等价依赖清单）加入 `pytest`
-- [ ] T003 [P] 在 `packages/content/README.md` 顶部标注「已归档，不再使用——教学内容改由后端 SQLite + JSON fixtures 提供（见 specs/009-content-foundation）」，目录与代码保持原样（Clarifications）
+- [x] T001 [P] 在根 `.gitignore` 增加 `apps/api/data/*.db`，并执行 `git rm --cached apps/api/data/teaching_tool.db`（保留本地文件），使运行时 SQLite 不再被跟踪（research D6 / Clarifications）
+- [x] T002 [P] 建立后端测试脚手架：创建 `apps/api/tests/__init__.py` 与 `apps/api/tests/conftest.py`（提供 FastAPI `TestClient` + 临时 SQLite fixture），并在 `apps/api/requirements.txt`（或等价依赖清单）加入 `pytest`
+- [x] T003 [P] 在 `packages/content/README.md` 顶部标注「已归档，不再使用——教学内容改由后端 SQLite + JSON fixtures 提供（见 specs/009-content-foundation）」，目录与代码保持原样（Clarifications）
 
 ---
 
@@ -36,12 +36,12 @@ Monorepo Web 结构：后端 `apps/api/app/`、测试 `apps/api/tests/`、前端
 
 **⚠️ CRITICAL**: 本阶段完成前，任何用户故事不能开工
 
-- [ ] T004 在 `apps/api/app/db/schema.py` 新增 `SCHEMA_SQL_CONTENT`：`content_categories` / `content_items` / `content_meta` 三表 + 三个索引，全部 `CREATE TABLE IF NOT EXISTS`，**不改动** sessions/conversations/messages（data-model.md 表 1-3）
-- [ ] T005 在 `apps/api/app/db/connection.py` 的 `init_db()` 中执行 `SCHEMA_SQL_CONTENT`（与既有 `SCHEMA_SQL` 一同建表），确保启动幂等且不影响既有表（depends T004）
-- [ ] T006 [P] 在 `packages/shared/src/content.ts` 定义 `JargonTerm` / `JargonCategory` / `JargonResponse`，并在 `packages/shared/src/index.ts` 再导出（contracts/content-jargon.md 类型契约）
-- [ ] T007 [P] 在 `apps/api/app/models/content.py` 定义对应 Pydantic 响应模型 `JargonTerm` / `JargonCategory` / `JargonResponse`，字段与 T006 的 TS 类型逐字段一致
-- [ ] T008 [P] 从 `apps/web/src/app/jargon/page.tsx` 的 `CATEGORIES` 抬取数据，生成 `apps/api/app/db/seeds/content/jargon/categories.json`（6 分类，含 slug/label/sort_order，见 data-model.md 映射表）与 `apps/api/app/db/seeds/content/jargon/terms.json`（36 词条，含 category_slug/slug/sort_order/emoji/cn/en/plain/tech），内容逐字段零失真
-- [ ] T009 在 `apps/api/app/db/seed_content.py` 实现**核心幂等导入函数** `seed_content(db, module=None, force=False)`：以**模块注册表**（非 jargon 硬编码）遍历 fixtures，规范化 JSON 计算 `content_hash`，`ON CONFLICT(module,item_type,slug) DO UPDATE`（仅 hash 变化时写）；导入后执行**条数断言**（jargon: 6 分类 / 36 词条），不符则抛错回滚（depends T004, T005, T008；data-model.md「幂等与完整性」、research D2）
+- [x] T004 在 `apps/api/app/db/schema.py` 新增 `SCHEMA_SQL_CONTENT`：`content_categories` / `content_items` / `content_meta` 三表 + 三个索引，全部 `CREATE TABLE IF NOT EXISTS`，**不改动** sessions/conversations/messages（data-model.md 表 1-3）
+- [x] T005 在 `apps/api/app/db/connection.py` 的 `init_db()` 中执行 `SCHEMA_SQL_CONTENT`（与既有 `SCHEMA_SQL` 一同建表），确保启动幂等且不影响既有表（depends T004）
+- [x] T006 [P] 在 `packages/shared/src/content.ts` 定义 `JargonTerm` / `JargonCategory` / `JargonResponse`，并在 `packages/shared/src/index.ts` 再导出（contracts/content-jargon.md 类型契约）
+- [x] T007 [P] 在 `apps/api/app/models/content.py` 定义对应 Pydantic 响应模型 `JargonTerm` / `JargonCategory` / `JargonResponse`，字段与 T006 的 TS 类型逐字段一致
+- [x] T008 [P] 从 `apps/web/src/app/jargon/page.tsx` 的 `CATEGORIES` 抬取数据，生成 `apps/api/app/db/seeds/content/jargon/categories.json`（6 分类，含 slug/label/sort_order，见 data-model.md 映射表）与 `apps/api/app/db/seeds/content/jargon/terms.json`（36 词条，含 category_slug/slug/sort_order/emoji/cn/en/plain/tech），内容逐字段零失真
+- [x] T009 在 `apps/api/app/db/seed_content.py` 实现**核心幂等导入函数** `seed_content(db, module=None, force=False)`：以**模块注册表**（非 jargon 硬编码）遍历 fixtures，规范化 JSON 计算 `content_hash`，`ON CONFLICT(module,item_type,slug) DO UPDATE`（仅 hash 变化时写）；导入后执行**条数断言**（jargon: 6 分类 / 36 词条），不符则抛错回滚（depends T004, T005, T008；data-model.md「幂等与完整性」、research D2）
 
 **Checkpoint**: 基础就绪——内容表可建、Jargon 数据可入库、类型契约就位
 
@@ -55,11 +55,11 @@ Monorepo Web 结构：后端 `apps/api/app/`、测试 `apps/api/tests/`、前端
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] 在 `apps/api/app/services/content_service.py` 实现 `get_jargon(db)`：查询 `content_categories` + `content_items`（module='jargon'），组装为按 `sort_order` 升序的分组树并附 `total`，沿用 `conversation_service.py` 的 `get_db()` 访问模式（depends T004；contracts 响应结构）
-- [ ] T011 [US1] 在 `apps/api/app/routers/content.py` 新建 `APIRouter(prefix="/api/content")`，实现 `GET /jargon`：调用 `get_jargon`，返回 `JargonResponse`，设置 `Cache-Control: public, max-age=300`，空库返回 `total=0/categories=[]`，异常走 `try/except → HTTPException`（沿用 `conversations.py` 模式）（depends T007, T010）
-- [ ] T012 [US1] 在 `apps/api/app/main.py` 注册 `content.router`（与 health/chat/conversations 并列）（depends T011）
-- [ ] T013 [US1] 重构 `apps/web/src/app/jargon/page.tsx`：移除内联 `CATEGORIES`，改 `useEffect` 内 `fetch('/api/content/jargon')`（消费 `@teaching-tool/shared` 的 `JargonResponse` 类型）；副标题词条数**动态计算**（不再硬编码 43）；新增加载 / 空 / 错误状态；保留分类展开折叠与术语选中交互、设计系统不变（research D5；spec FR-016/018）
-- [ ] T014 [P] [US1] 在 `apps/api/tests/test_content_jargon.py` 编写契约测试：`GET /api/content/jargon` → 200，`module=='jargon'`、`total==36`、`len(categories)==6`、首类 `slug=='model-arch'`、各 term 含 `slug/emoji/cn/en/plain/tech` 且非空；空库场景 → `total==0`（depends T011；contracts「契约测试」）
+- [x] T010 [P] [US1] 在 `apps/api/app/services/content_service.py` 实现 `get_jargon(db)`：查询 `content_categories` + `content_items`（module='jargon'），组装为按 `sort_order` 升序的分组树并附 `total`，沿用 `conversation_service.py` 的 `get_db()` 访问模式（depends T004；contracts 响应结构）
+- [x] T011 [US1] 在 `apps/api/app/routers/content.py` 新建 `APIRouter(prefix="/api/content")`，实现 `GET /jargon`：调用 `get_jargon`，返回 `JargonResponse`，设置 `Cache-Control: public, max-age=300`，空库返回 `total=0/categories=[]`，异常走 `try/except → HTTPException`（沿用 `conversations.py` 模式）（depends T007, T010）
+- [x] T012 [US1] 在 `apps/api/app/main.py` 注册 `content.router`（与 health/chat/conversations 并列）（depends T011）
+- [x] T013 [US1] 重构 `apps/web/src/app/jargon/page.tsx`：移除内联 `CATEGORIES`，改 `useEffect` 内 `fetch('/api/content/jargon')`（消费 `@teaching-tool/shared` 的 `JargonResponse` 类型）；副标题词条数**动态计算**（不再硬编码 43）；新增加载 / 空 / 错误状态；保留分类展开折叠与术语选中交互、设计系统不变（research D5；spec FR-016/018）
+- [x] T014 [P] [US1] 在 `apps/api/tests/test_content_jargon.py` 编写契约测试：`GET /api/content/jargon` → 200，`module=='jargon'`、`total==36`、`len(categories)==6`、首类 `slug=='model-arch'`、各 term 含 `slug/emoji/cn/en/plain/tech` 且非空；空库场景 → `total==0`（depends T011；contracts「契约测试」）
 
 **Checkpoint**: MVP 完成——名词页端到端由后端驱动，可独立演示
 
@@ -73,10 +73,10 @@ Monorepo Web 结构：后端 `apps/api/app/`、测试 `apps/api/tests/`、前端
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] 在 `apps/api/app/db/seed_content.py` 增加 CLI 入口（`if __name__ == "__main__"` + `argparse`），支持 `python -m app.db.seed_content [--module <m>] [--force]`，打印导入摘要（如 `seeded jargon: 6 categories, 36 terms` / `unchanged`）（depends T009；research D4）
-- [ ] T016 [US2] 在 `apps/api/app/main.py` 的 lifespan 中，于 `init_db` 之后**受环境变量 `SEED_CONTENT_ON_STARTUP` 控制**地调用 `seed_content`（dev 默认开、prod 关）（depends T009；research D4）
-- [ ] T017 [US2] 完善 `seed_content.py` 的幂等与 force 语义：未变更条目 `--force` 时强制重写、变更条目按 hash 增量更新、`updated_at` 刷新；并确保条数断言失败时事务回滚不留残缺数据（depends T009；spec FR-007/010）
-- [ ] T018 [P] [US2] 在 `apps/api/tests/test_seed_content.py` 编写 seeder 测试：首次导入后库内计数正确；数据未变重复导入为无操作（无新增/无报错）；篡改 fixtures 使条数不符时导入抛错（depends T015, T017）
+- [x] T015 [US2] 在 `apps/api/app/db/seed_content.py` 增加 CLI 入口（`if __name__ == "__main__"` + `argparse`），支持 `python -m app.db.seed_content [--module <m>] [--force]`，打印导入摘要（如 `seeded jargon: 6 categories, 36 terms` / `unchanged`）（depends T009；research D4）
+- [x] T016 [US2] 在 `apps/api/app/main.py` 的 lifespan 中，于 `init_db` 之后**受环境变量 `SEED_CONTENT_ON_STARTUP` 控制**地调用 `seed_content`（dev 默认开、prod 关）（depends T009；research D4）
+- [x] T017 [US2] 完善 `seed_content.py` 的幂等与 force 语义：未变更条目 `--force` 时强制重写、变更条目按 hash 增量更新、`updated_at` 刷新；并确保条数断言失败时事务回滚不留残缺数据（depends T009；spec FR-007/010）
+- [x] T018 [P] [US2] 在 `apps/api/tests/test_seed_content.py` 编写 seeder 测试：首次导入后库内计数正确；数据未变重复导入为无操作（无新增/无报错）；篡改 fixtures 使条数不符时导入抛错（depends T015, T017）
 
 **Checkpoint**: 维护者工作流可用——内容与代码解耦、导入安全可重复
 
@@ -90,7 +90,7 @@ Monorepo Web 结构：后端 `apps/api/app/`、测试 `apps/api/tests/`、前端
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] 创建 `apps/api/app/db/seeds/content/README.md`：说明 fixtures 目录约定、`content_items`/`content_categories`/`content_meta` 的 module-generic 用法，以及「新增一个模块」的步骤（加 `seeds/content/<module>/*.json` → 注册到 `seed_content` 的 MODULE 注册表 → 加 service 方法与端点），并确认 T009 的注册表实现未对 jargon 硬编码（depends T009）
+- [x] T019 [US3] 创建 `apps/api/app/db/seeds/content/README.md`：说明 fixtures 目录约定、`content_items`/`content_categories`/`content_meta` 的 module-generic 用法，以及「新增一个模块」的步骤（加 `seeds/content/<module>/*.json` → 注册到 `seed_content` 的 MODULE 注册表 → 加 service 方法与端点），并确认 T009 的注册表实现未对 jargon 硬编码（depends T009）
 
 **Checkpoint**: 基础设施复用路径文档化、已验证 module-generic
 
@@ -100,9 +100,9 @@ Monorepo Web 结构：后端 `apps/api/app/`、测试 `apps/api/tests/`、前端
 
 **Purpose**: 端到端验证与回归
 
-- [ ] T020 按 `specs/009-content-foundation/quickstart.md` 跑完整验证（seed → curl → 页面 → pytest → git 卫生），逐条核对 Success Criteria
-- [ ] T021 回归确认：Chat 页发消息、查看历史对话正常，`sessions/conversations/messages` 表与行为未受内容表新增影响（spec SC-007）
-- [ ] T022 [P] 运行 JS 语法/类型与后端 import 自检：前端 `npm run build`（或 lint/tsc）通过、后端 `python -c "import app.main"` 无误
+- [x] T020 按 `specs/009-content-foundation/quickstart.md` 跑完整验证（seed → curl → 页面 → pytest → git 卫生），逐条核对 Success Criteria
+- [x] T021 回归确认：Chat 页发消息、查看历史对话正常，`sessions/conversations/messages` 表与行为未受内容表新增影响（spec SC-007）
+- [x] T022 [P] 运行 JS 语法/类型与后端 import 自检：前端 `npm run build`（或 lint/tsc）通过、后端 `python -c "import app.main"` 无误
 
 ---
 

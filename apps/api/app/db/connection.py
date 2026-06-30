@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 import aiosqlite
 
-from app.db.schema import SCHEMA_SQL
+from app.db.schema import SCHEMA_SQL, SCHEMA_SQL_CONTENT
 
 DB_PATH = os.environ.get(
     "DATABASE_URL",
@@ -18,8 +18,10 @@ if DB_PATH.startswith("sqlite:///"):
 
 
 async def init_db(db: aiosqlite.Connection):
-    """Initialize database schema (idempotent)."""
+    """Initialize database schema (idempotent). Creates session/conversation
+    tables and the Spec-009 teaching-content tables."""
     await db.executescript(SCHEMA_SQL)
+    await db.executescript(SCHEMA_SQL_CONTENT)
     await db.commit()
 
 

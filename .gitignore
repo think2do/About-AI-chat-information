@@ -18,6 +18,12 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+.pytest_cache/
+
+# Runtime SQLite DB (content source of truth is JSON fixtures, not the .db)
+apps/api/data/*.db
+apps/api/data/*.db-wal
+apps/api/data/*.db-shm
 
 # Environment
 .env

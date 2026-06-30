@@ -1,0 +1,38 @@
+[
+  {
+    "slug": "model-arch",
+    "label": "模型架构",
+    "item_type": "term",
+    "sort_order": 0
+  },
+  {
+    "slug": "training",
+    "label": "训练方法",
+    "item_type": "term",
+    "sort_order": 1
+  },
+  {
+    "slug": "inference",
+    "label": "推理技术",
+    "item_type": "term",
+    "sort_order": 2
+  },
+  {
+    "slug": "evaluation",
+    "label": "性能评估",
+    "item_type": "term",
+    "sort_order": 3
+  },
+  {
+    "slug": "deployment",
+    "label": "部署优化",
+    "item_type": "term",
+    "sort_order": 4
+  },
+  {
+    "slug": "safety",
+    "label": "安全对齐",
+    "item_type": "term",
+    "sort_order": 5
+  }
+]

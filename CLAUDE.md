@@ -69,5 +69,5 @@ Create `Name.dc.html` (English PascalCase) with `<script src="./support.js">` in
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/012-content-lab/plan.md
+specs/013-content-chat/plan.md
 <!-- SPECKIT END -->

@@ -17,6 +17,17 @@ if DB_PATH.startswith("sqlite:///"):
     DB_PATH = DB_PATH[len("sqlite:///"):]
 
 
+def _ensure_db_dir() -> None:
+    """Create the DB's parent directory if missing.
+
+    The runtime .db is gitignored (content's source of truth is JSON fixtures),
+    so the data/ directory is not guaranteed to exist on a fresh checkout.
+    """
+    parent = os.path.dirname(os.path.abspath(DB_PATH))
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+
+
 async def init_db(db: aiosqlite.Connection):
     """Initialize database schema (idempotent). Creates session/conversation
     tables and the Spec-009 teaching-content tables."""
@@ -33,6 +44,7 @@ async def get_db():
         async with get_db() as db:
             cursor = await db.execute("SELECT ...")
     """
+    _ensure_db_dir()
     db = await aiosqlite.connect(DB_PATH)
     db.row_factory = aiosqlite.Row
     await db.execute("PRAGMA journal_mode=WAL")

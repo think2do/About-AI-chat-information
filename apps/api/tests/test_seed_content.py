@@ -38,8 +38,8 @@ def test_seed_count_mismatch_fails(empty_client, monkeypatch):
     orig_loader = sc.MODULE_REGISTRY["jargon"]["loader"]
 
     def tampered():
-        cats, items = orig_loader()
-        return cats, items[:-1]  # drop one term -> 35, expected 36
+        cats, items, meta = orig_loader()
+        return cats, items[:-1], meta  # drop one term -> 35, expected 36
 
     monkeypatch.setitem(sc.MODULE_REGISTRY["jargon"], "loader", tampered)
 

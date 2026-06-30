@@ -42,3 +42,89 @@ async def get_jargon() -> dict:
         categories.append({"slug": cat["slug"], "label": cat["label"], "terms": terms})
 
     return {"module": "jargon", "total": total, "categories": categories}
+
+
+def _job_summary(row) -> dict:
+    payload = json.loads(row["payload"])
+    return {
+        "id": row["slug"],
+        "title": row["title"],
+        "category": row["category_id"].split(":", 1)[1],
+        "tag": payload.get("tag", ""),
+        "difficulty": row["difficulty"] or "",
+        "company": row["company"] or "",
+        "tags": payload.get("tags", []),
+    }
+
+
+async def list_jobs(category: str | None = None, difficulty: str | None = None) -> dict:
+    """Job list (light fields) + all_tags with full counts. total/all_tags counts
+    always reflect the full set; items reflect the filters."""
+    async with get_db() as db:
+        cur = await db.execute(
+            "SELECT payload FROM content_meta WHERE module='job' AND meta_key='all_tags'"
+        )
+        meta_row = await cur.fetchone()
+        raw_tags = json.loads(meta_row["payload"]) if meta_row else []
+
+        cur = await db.execute(
+            """SELECT category_id, COUNT(*) AS n
+                 FROM content_items
+                WHERE module='job' AND item_type='question'
+                GROUP BY category_id"""
+        )
+        counts = {r["category_id"]: r["n"] for r in await cur.fetchall()}
+        total = sum(counts.values())
+
+        sql = (
+            "SELECT slug, title, category_id, difficulty, company, payload "
+            "FROM content_items WHERE module='job' AND item_type='question'"
+        )
+        params: list = []
+        if category:
+            sql += " AND category_id = ?"
+            params.append(f"job:{category}")
+        if difficulty:
+            sql += " AND difficulty = ?"
+            params.append(difficulty)
+        sql += " ORDER BY sort_order"
+        cur = await db.execute(sql, params)
+        item_rows = await cur.fetchall()
+
+    all_tags = []
+    for tag in raw_tags:
+        count = total if tag["key"] == "all" else counts.get(f"job:{tag['key']}", 0)
+        all_tags.append({**tag, "count": count})
+
+    return {
+        "module": "job",
+        "total": total,
+        "all_tags": all_tags,
+        "items": [_job_summary(r) for r in item_rows],
+    }
+
+
+async def get_job(job_id: str) -> dict | None:
+    """Full question detail, or None if not found."""
+    async with get_db() as db:
+        cur = await db.execute(
+            """SELECT slug, title, category_id, difficulty, company, payload
+                 FROM content_items
+                WHERE module='job' AND item_type='question' AND slug = ?""",
+            (job_id,),
+        )
+        row = await cur.fetchone()
+
+    if row is None:
+        return None
+
+    payload = json.loads(row["payload"])
+    return {
+        **_job_summary(row),
+        "answer": payload.get("answer", ""),
+        "code": payload.get("code"),
+        "codeLabel": payload.get("codeLabel"),
+        "codeLines": payload.get("codeLines"),
+        "keyPoints": payload.get("keyPoints", []),
+        "related": payload.get("related", []),
+    }

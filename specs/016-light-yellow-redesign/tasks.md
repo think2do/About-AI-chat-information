@@ -33,8 +33,8 @@
 - [x] T019 `CLAUDE.md` Conventions「Design system is fixed」措辞改为新浅色系统（token 单一来源、马利筋黄、退休 `#00ffa0`、mode-aware）
 
 ## F 收尾
-- [ ] T020 一致性走查（对照 Figma 五页）+ 空/错误/窄屏态；grep 暗色/离群 hex 注释外=0——token 面板（`#0d1117`/`#00ffa0`/`#161b22`/`#0a0e14`/`#21262d`/`#30363d`/`rgba(0,255,160`）**及离群色**（第二红 `#ff6b6b`、语法蓝紫 `#79c0ff`/`#bc8cff`/`#a5d6ff`/`#a371f7`、alpha 一次性 `#388bfd88`/`#00c88888`，映射到 `semantic.*`）；`npm run typecheck` 通过；console 无报错
-- [ ] T021 `git merge --no-ff` 016→junxiang
+- [x] T020 一致性走查（对照 Figma 五页）+ 空/错误/窄屏态；grep 暗色/离群 hex 注释外=0——token 面板（`#0d1117`/`#00ffa0`/`#161b22`/`#0a0e14`/`#21262d`/`#30363d`/`rgba(0,255,160`）**及离群色**（第二红 `#ff6b6b`、语法蓝紫 `#79c0ff`/`#bc8cff`/`#a5d6ff`/`#a371f7`、alpha 一次性 `#388bfd88`/`#00c88888`，映射到 `semantic.*`）；`npm run typecheck` 通过；console 无报错
+- [x] T021 `git merge --no-ff` 016→junxiang
 
 ## Notes
 无新增 npm 依赖；Lucide 图标内联 SVG 自实现。不改后端 / 内容 fixtures / 会话逻辑 / API 契约 / packages。**深色（偏黄）mode 与明暗切换开关为后续 Spec，本 Spec 只做 mode-aware 架构预留。**

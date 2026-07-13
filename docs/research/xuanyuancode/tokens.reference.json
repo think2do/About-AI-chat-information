@@ -1,0 +1,88 @@
+{
+  "_note": "外部参考调研快照，非本项目设计 token。数据来自 xuanyuancode.com 源码提取（2026-07-13）。仅供查阅，勿接入 design/tokens.json。",
+  "source": "https://www.xuanyuancode.com/",
+  "style": "warm-neo-brutalism",
+  "activeTheme": {
+    "color": {
+      "ink": "#1C1C1C",
+      "ink-soft": "#57544E",
+      "ink-faint": "#8C8676",
+      "paper": "#F5EDDB",
+      "paper-deep": "#EDE3C4",
+      "paper-card": "#FFFFFF",
+      "line": "#D8CEB6",
+      "brand": "#FAC94A",
+      "yellow-alt": "#F4D35E",
+      "yellow-deep": "#E8B53A",
+      "accent": "#C2410C",
+      "accent-deep": "#9A3010",
+      "accent-warm": "#E0561F",
+      "accent-wash": "#FBE6C7",
+      "orange-glow": "#F97316",
+      "chart-blue": "#3E6B8F",
+      "success-green": "#28C445",
+      "category-pastels": ["#C9B8FF", "#86EFAC", "#7DD3FC", "#FDBA74", "#F9A8D4"],
+      "ink-on-dark": ["rgba(255,255,255,0.55)", "rgba(255,255,255,0.5)", "rgba(255,255,255,0.35)"]
+    }
+  },
+  "altThemePreset": {
+    "_note": "主题 CSS 中另一套未在页面生效的暖调预设（偏蓝墨）",
+    "ink": "#1E2B38",
+    "ink-soft": "#5C6B79",
+    "ink-faint": "#93A0AC",
+    "paper": "#FAF6EE",
+    "paper-deep": "#F1EADC",
+    "paper-card": "#FFFDF8",
+    "line": "#DCD2BF",
+    "accent": "#C0481E",
+    "accent-deep": "#9A3815",
+    "accent-warm": "#E05A28",
+    "accent-wash": "#F7E5DB"
+  },
+  "typography": {
+    "display": "AlimamaShuHeiTi (Bold, self-hosted woff2, font-display:swap)",
+    "display-weight": 900,
+    "display-hero-size": "clamp(2.4rem, 5vw, 3.75rem)",
+    "sans": "\"Noto Sans SC\", -apple-system, \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "serif": "\"Noto Serif SC\", \"Songti SC\", Georgia, serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, \"SF Mono\", Menlo, monospace",
+    "meta-label": "12px + mono + ink-faint"
+  },
+  "shadow": {
+    "_pattern": "零模糊黑色偏移硬阴影，偏移量表达层级",
+    "xs": "1.5px 1.5px 0 #1C1C1C",
+    "sm": "2px 2px 0 #1C1C1C",
+    "md": "3px 3px 0 #1C1C1C",
+    "lg": "4px 4px 0 #1C1C1C",
+    "xl": "5px 5px 0 #1C1C1C",
+    "2xl": "6px 6px 0 #1C1C1C",
+    "3xl": "8px 8px 0 #1C1C1C",
+    "glow-hot": "0 0 12px rgba(249,115,22,0.6)"
+  },
+  "radius": {
+    "pill": "9999px (rounded-full)",
+    "card": "16px (rounded-2xl)",
+    "lg": "12px (rounded-xl)",
+    "sm": "8px (rounded-lg)",
+    "xl": "24px (rounded-3xl)"
+  },
+  "border": {
+    "default": "2px solid #1C1C1C (border-2)",
+    "section-divider": "2px (border-t-2 / border-b-2)",
+    "chapter-bar": "border-bottom: 3px solid #1C1C1C"
+  },
+  "spacing": {
+    "base": "4px",
+    "scale": [4, 8, 12, 16, 20, 24, 40],
+    "tailwind": "gap-1..gap-6, gap-10"
+  },
+  "layout": {
+    "container": "max-w-7xl (1280px)",
+    "card-grid": "grid-cols-3 (桌面) → grid-cols-2 → grid-cols-1",
+    "cover-aspect": "16/9"
+  },
+  "navbar": {
+    "background": "rgba(28,28,28,0.96)",
+    "backdrop-filter": "blur(12px)"
+  }
+}

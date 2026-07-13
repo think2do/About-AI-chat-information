@@ -85,5 +85,5 @@ Every non-trivial feature is a numbered **Spec** under `specs/NNN-name/`. This r
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/016-light-yellow-redesign/plan.md
+specs/017-dark-mode-toggle/plan.md
 <!-- SPECKIT END -->

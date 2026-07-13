@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" data-theme="light">
       <body>
         <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
           <NavSidebar />
@@ -22,7 +22,7 @@ export default function RootLayout({
               flex: 1,
               height: "100%",
               minWidth: 0,
-              background: "#0d1117",
+              background: "var(--canvas)",
               overflow: "hidden",
             }}
           >

@@ -1,4 +1,4 @@
-/* AI Teaching Tool — Global Styles (Dark Terminal Aesthetic) */
+/* AI Teaching Tool — Global Styles (Light "editorial + marigold" system, Spec 016) */
 
 /* ===== Reset ===== */
 *,
@@ -10,40 +10,55 @@
 }
 
 /* ===== Font Face ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* ===== Base Variables ===== */
-:root {
-  /* Backgrounds (dark to light) */
-  --bg-page: #0d1117;
-  --bg-secondary: #0a0e14;
-  --bg-card: #161b22;
-  --bg-input: #21262d;
-  --border-default: #30363d;
+/* ===== Design tokens (source of truth: design/tokens.json) =====
+   :root = light (default). A future dark mode (separate Spec) adds
+   [data-theme="dark"] { ... } overriding these vars — components need no change. */
+:root,
+[data-theme="light"] {
+  /* Neutrals (warm) */
+  --canvas: #faf9f7;         /* page canvas — never pure white */
+  --surface: #ffffff;        /* raised card/panel */
+  --surface-subtle: #f3f1ec; /* recessed inset — code/detail/input */
+  --border-subtle: #eceae3;  /* faintest divider / hover wash */
+  --border: #dedbd2;         /* card outline, input border, nav separator */
+  --border-strong: #cbc7bc;  /* higher-emphasis structural line */
 
-  /* Text hierarchy */
-  --text-primary: #e6edf3;
-  --text-secondary: #c9d1d9;
-  --text-tertiary: #8b949e;
-  --text-disabled: #6e7681;
-  --text-faint: #484f58;
+  /* Text hierarchy (warm ink) */
+  --text-primary: #23211c;
+  --text-secondary: #57544b;
+  --text-tertiary: #86827a;
+  --text-disabled: #aba79c;
 
-  /* Functional colors */
-  --accent-green: #00ffa0;
-  --accent-blue: #58a6ff;
-  --accent-purple: #d2a8ff;
-  --accent-orange: #ffa657;
-  --accent-red: #ff7b72;
-  --accent-success: #7ee787;
+  /* Brand — marigold yellow (fill/highlight behind ink only) */
+  --brand-yellow: #feb70c;
+  --brand-yellow-strong: #e0a200;
+  --brand-yellow-tint: rgba(254, 183, 12, 0.14);
+
+  /* Primary CTA (yellow fill + ink text) */
+  --cta-bg: #feb70c;
+  --cta-text: #1a1813;
+  --cta-hover: #e0a200;
+
+  /* Branded text link (deep amber, AA on cream) */
+  --accent-link: #8a5a00;
+
+  /* Semantic — content only (tags, syntax, difficulty). Never on UI chrome. */
+  --semantic-blue: #2563eb;
+  --semantic-purple: #7c3aed;
+  --semantic-orange: #b45309;
+  --semantic-red: #dc2626;
+  --semantic-teal: #0f766e;
 }
 
 /* ===== Body ===== */
 html,
 body {
-  background: var(--bg-page);
-  color: var(--text-secondary);
-  font-family: 'JetBrains Mono', 'Inter', monospace;
-  font-size: 13px;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif; /* mono is reserved for code/data/labels, not prose */
+  font-size: 14px;
   line-height: 1.6;
   height: 100%;
   overflow: hidden; /* the app shell (layout.tsx) is fixed to 100vh; panes scroll internally */
@@ -51,7 +66,7 @@ body {
 
 /* ===== Links ===== */
 a {
-  color: var(--accent-blue);
+  color: var(--accent-link);
   text-decoration: none;
 }
 
@@ -59,9 +74,15 @@ a:hover {
   text-decoration: underline;
 }
 
+/* ===== Selection ===== */
+::selection {
+  background: var(--brand-yellow-tint);
+  color: var(--text-primary);
+}
+
 /* ===== Keyframes (shared animations) ===== */
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,160,0.4); } 50% { box-shadow: 0 0 0 6px rgba(0,255,160,0); } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(254,183,12,0.45); } 50% { box-shadow: 0 0 0 6px rgba(254,183,12,0); } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 @keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
@@ -69,7 +90,7 @@ a:hover {
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -77,10 +98,10 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-default);
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
+  background: var(--border-strong);
 }

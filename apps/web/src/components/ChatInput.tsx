@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { color, mono, sans } from "@/lib/theme";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -18,7 +19,6 @@ export default function ChatInput({
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (el) {
@@ -32,7 +32,6 @@ export default function ChatInput({
     if (!trimmed || isStreaming || disabled) return;
     onSend(trimmed);
     setInput("");
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -45,12 +44,14 @@ export default function ChatInput({
     }
   };
 
+  const sendDisabled = !input.trim() || disabled;
+
   return (
     <div
       style={{
-        borderTop: "1px solid #21262d",
+        borderTop: `1px solid ${color.borderSubtle}`,
         padding: "16px 24px",
-        background: "#0a0e14",
+        background: color.surface,
         display: "flex",
         gap: 12,
         alignItems: "flex-end",
@@ -66,13 +67,13 @@ export default function ChatInput({
         rows={1}
         style={{
           flex: 1,
-          background: "#0d1117",
-          border: "1px solid #21262d",
-          borderRadius: 8,
+          background: color.surfaceSubtle,
+          border: `1px solid ${color.border}`,
+          borderRadius: 10,
           padding: "10px 14px",
-          color: "#c9d1d9",
-          fontFamily: "Inter, sans-serif",
-          fontSize: 13,
+          color: color.textPrimary,
+          fontFamily: sans,
+          fontSize: 14,
           lineHeight: 1.5,
           resize: "none",
           outline: "none",
@@ -84,11 +85,11 @@ export default function ChatInput({
           onClick={onCancel}
           style={{
             padding: "10px 18px",
-            background: "rgba(255, 107, 107, 0.15)",
-            border: "1px solid rgba(255, 107, 107, 0.3)",
-            borderRadius: 8,
-            color: "#ff6b6b",
-            fontFamily: "JetBrains Mono, monospace",
+            background: `color-mix(in srgb, ${color.red} 10%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${color.red} 30%, transparent)`,
+            borderRadius: 6,
+            color: color.red,
+            fontFamily: mono,
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
@@ -100,24 +101,17 @@ export default function ChatInput({
       ) : (
         <button
           onClick={handleSend}
-          disabled={!input.trim() || disabled}
+          disabled={sendDisabled}
           style={{
             padding: "10px 18px",
-            background:
-              !input.trim() || disabled
-                ? "#21262d"
-                : "#00ffa0",
+            background: sendDisabled ? color.surfaceSubtle : color.ctaBg,
             border: "none",
-            borderRadius: 8,
-            color:
-              !input.trim() || disabled
-                ? "#484f58"
-                : "#0d1117",
-            fontFamily: "JetBrains Mono, monospace",
+            borderRadius: 6,
+            color: sendDisabled ? color.textDisabled : color.ctaText,
+            fontFamily: mono,
             fontSize: 12,
             fontWeight: 600,
-            cursor:
-              !input.trim() || disabled ? "not-allowed" : "pointer",
+            cursor: sendDisabled ? "not-allowed" : "pointer",
             whiteSpace: "nowrap",
           }}
         >

@@ -1,31 +1,20 @@
 "use client";
 
-// React Bits-style animated gradient text (zero-dep, CSS background-clip + shimmer).
+// Spec 016: the light "editorial" system uses static ink titles (no colored shimmer —
+// yellow can't be text, and rainbow gradients conflict with the single-accent discipline).
+// Kept as a component so callers don't change; `colors` is accepted but ignored.
 import type { CSSProperties, ReactNode } from "react";
+import { color } from "@/lib/theme";
 
 interface GradientTextProps {
   children: ReactNode;
-  colors?: string[];
+  colors?: string[]; // deprecated (ignored) — retained for call-site compatibility
   style?: CSSProperties;
 }
 
-export default function GradientText({
-  children,
-  colors = ["#00ffa0", "#58a6ff", "#00ffa0"],
-  style,
-}: GradientTextProps) {
+export default function GradientText({ children, style }: GradientTextProps) {
   return (
-    <span
-      style={{
-        backgroundImage: `linear-gradient(90deg, ${colors.join(", ")})`,
-        backgroundSize: "200% auto",
-        WebkitBackgroundClip: "text",
-        backgroundClip: "text",
-        color: "transparent",
-        animation: "shimmer 4s linear infinite",
-        ...style,
-      }}
-    >
+    <span style={{ color: color.textPrimary, fontWeight: 600, letterSpacing: "-0.01em", ...style }}>
       {children}
     </span>
   );

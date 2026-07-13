@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { color, mono, sans, radius, space } from "@/lib/theme";
 
 export default function NotFound() {
   return (
@@ -9,27 +10,28 @@ export default function NotFound() {
         alignItems: "center",
         justifyContent: "center",
         height: "100vh",
-        color: "#c9d1d9",
-        fontFamily: "Inter, sans-serif",
-        gap: 16,
+        background: color.canvas,
+        color: color.textSecondary,
+        fontFamily: sans,
+        gap: space.lg,
       }}
     >
-      <span style={{ fontSize: 48, fontFamily: "JetBrains Mono, monospace", color: "#484f58" }}>
+      <span style={{ fontSize: 48, fontFamily: mono, color: color.textTertiary }}>
         404
       </span>
-      <h1 style={{ fontSize: 17, fontWeight: 600, color: "#e6edf3" }}>
+      <h1 style={{ fontSize: 17, fontWeight: 600, color: color.textPrimary }}>
         页面未找到
       </h1>
       <Link
         href="/"
         style={{
           padding: "7px 14px",
-          background: "#00ffa0",
-          color: "#0d1117",
-          borderRadius: 6,
+          background: color.ctaBg,
+          color: color.ctaText,
+          borderRadius: radius.sm,
           fontSize: 12,
           fontWeight: 600,
-          fontFamily: "JetBrains Mono, monospace",
+          fontFamily: mono,
           textDecoration: "none",
         }}
       >

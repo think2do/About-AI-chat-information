@@ -1,0 +1,39 @@
+{
+  "$description": "AI Teaching Tool — DARK mode color overrides (Spec 017). Warm dark + the same marigold #FEB70C. Overrides the `color` group of tokens.json; all non-color tokens (fontFamily/weight/size, spacing, radius, typography) are shared and unchanged. W3C DTCG format.",
+  "color": {
+    "canvas":        { "$type": "color", "$value": "#1B1813", "$description": "Page canvas — warm near-black (not cold terminal)" },
+    "surface":       { "$type": "color", "$value": "#24211A", "$description": "Raised card/panel on the dark canvas" },
+    "surfaceSubtle": { "$type": "color", "$value": "#14120D", "$description": "Recessed inset — code blocks, detail panels, input fills" },
+    "borderSubtle":  { "$type": "color", "$value": "#2E2A22", "$description": "Faintest divider / hover wash" },
+    "border":        { "$type": "color", "$value": "#3A352B", "$description": "Card outline, input border, nav separator" },
+    "borderStrong":  { "$type": "color", "$value": "#4A4437", "$description": "Higher-emphasis structural line" },
+    "text": {
+      "primary":   { "$type": "color", "$value": "#F2EEE4", "$description": "Body & headings — warm off-white" },
+      "secondary": { "$type": "color", "$value": "#B8B1A2", "$description": "Secondary text, inactive nav" },
+      "tertiary":  { "$type": "color", "$value": "#857E70", "$description": "Metadata, caption, placeholder" },
+      "disabled":  { "$type": "color", "$value": "#5C564A", "$description": "Disabled / inactive" }
+    },
+    "brand": {
+      "$description": "Marigold yellow (#FEB70C) — unchanged from light. FILL behind ink text only; never thin text/icons.",
+      "yellow":       { "$type": "color", "$value": "#FEB70C", "$description": "Primary brand fill — CTA, active pill, highlight, tags (ink text on top)" },
+      "yellowStrong": { "$type": "color", "$value": "#FFC533", "$description": "Hover / border on yellow elements (brighter on dark)" },
+      "yellowTint":   { "$type": "color", "$value": "#FEB70C29", "$description": "Faint highlight wash — active-nav background (~16% alpha)" }
+    },
+    "accent": {
+      "link": { "$type": "color", "$value": "#E6B24D", "$description": "Warm gold text link (readable on dark); default links = ink + underline" }
+    },
+    "cta": {
+      "bg":    { "$type": "color", "$value": "#FEB70C", "$description": "Primary action — yellow fill (the logo move)" },
+      "text":  { "$type": "color", "$value": "#1A1813", "$description": "Ink text on the yellow button (stays dark)" },
+      "hover": { "$type": "color", "$value": "#FFC533", "$description": "Primary button hover" }
+    },
+    "semantic": {
+      "$description": "Content-only: category tags & code syntax. NEVER on UI chrome. Brightened for dark.",
+      "blue":   { "$type": "color", "$value": "#6BA5FF" },
+      "purple": { "$type": "color", "$value": "#B79CFF" },
+      "orange": { "$type": "color", "$value": "#E8974A" },
+      "red":    { "$type": "color", "$value": "#FF6B6B" },
+      "teal":   { "$type": "color", "$value": "#3BB6A6" }
+    }
+  }
+}

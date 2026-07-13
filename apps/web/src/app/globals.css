@@ -17,6 +17,7 @@
    [data-theme="dark"] { ... } overriding these vars — components need no change. */
 :root,
 [data-theme="light"] {
+  color-scheme: light;
   /* Neutrals (warm) */
   --canvas: #faf9f7;         /* page canvas — never pure white */
   --surface: #ffffff;        /* raised card/panel */
@@ -50,6 +51,45 @@
   --semantic-orange: #b45309;
   --semantic-red: #dc2626;
   --semantic-teal: #0f766e;
+}
+
+/* ===== Dark mode (Spec 017) — warm dark + same marigold. Source: design/tokens.dark.json =====
+   Only overrides the token variables; components consume var(--…) so they adapt with no change. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Neutrals (warm dark) */
+  --canvas: #1b1813;
+  --surface: #24211a;
+  --surface-subtle: #14120d;
+  --border-subtle: #2e2a22;
+  --border: #3a352b;
+  --border-strong: #4a4437;
+
+  /* Text hierarchy (warm off-white) */
+  --text-primary: #f2eee4;
+  --text-secondary: #b8b1a2;
+  --text-tertiary: #857e70;
+  --text-disabled: #5c564a;
+
+  /* Brand — marigold yellow (unchanged; hover brightens on dark) */
+  --brand-yellow: #feb70c;
+  --brand-yellow-strong: #ffc533;
+  --brand-yellow-tint: rgba(254, 183, 12, 0.16);
+
+  /* Primary CTA (yellow fill + ink text) */
+  --cta-bg: #feb70c;
+  --cta-text: #1a1813;
+  --cta-hover: #ffc533;
+
+  /* Branded text link (warm gold, readable on dark) */
+  --accent-link: #e6b24d;
+
+  /* Semantic — content only, brightened for dark */
+  --semantic-blue: #6ba5ff;
+  --semantic-purple: #b79cff;
+  --semantic-orange: #e8974a;
+  --semantic-red: #ff6b6b;
+  --semantic-teal: #3bb6a6;
 }
 
 /* ===== Body ===== */

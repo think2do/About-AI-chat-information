@@ -1,7 +1,21 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: [UNVERSIONED] → 1.0.0 (initial ratification) → 1.0.1 (2026-07-01)
+  Version change: [UNVERSIONED] → 1.0.0 (initial ratification) → 1.0.1 (2026-07-01) → 1.1.0 (2026-07-13)
+
+  1.1.0 amendment (MINOR — new section added):
+  - 新增「Design System Constraints（设计系统约束）」章节，确立：设计 token 以
+    design/tokens.json（W3C DTCG）为单一事实来源、design/DESIGN.md 为品味/结构规格；
+    当前方向为浅色编辑式（暖奶白 #FAF9F7 + 马利筋黄 #FEB70C），退休原蓝绿终端风 #00ffa0；
+    黄仅作黑字之下的填充/高亮；主题 mode-aware（浅色首发，深色为后续 Spec 的 mode 扩展）。
+  - 调整 Deployment Standards 第一阶段范围表：原「视觉大改版」out-of-scope 与新章节冲突，
+    改注为「基于 token 的浅色主题系统（Spec 016）属范围内；大规模 IA/功能重构仍在外」。
+  - 依据本修订，Spec 016 取代 Spec 015 FR-006（固定暗色设计系统锁）。
+  - Templates requiring updates:
+    - .specify/templates/plan-template.md   ✅ aligned — Constitution Check 门禁天然覆盖新章节
+    - .specify/templates/spec-template.md    ✅ aligned — 无结构性影响
+    - .specify/templates/tasks-template.md   ✅ aligned — 无结构性影响
+    - CLAUDE.md                              ⚠ pending — 由 Spec 016 更新 Conventions「设计系统固定」措辞
 
   1.0.1 amendment (PATCH — wording clarification):
   - 教学内容存储方案由「packages/content typed TS modules」更正为
@@ -226,7 +240,44 @@ docs/
 | 匿名 session + conversation 保存 | 服务器统一托管 API Key |
 | DB-backed content（SQLite + JSON fixtures，经 /api/content/* 提供） | RAG 真实知识库 |
 | 30 天数据过期 | 复杂权限系统 |
-| API Key 浏览器保存、后端临时转发 | 视觉大改版 |
+| API Key 浏览器保存、后端临时转发 | 大规模 IA / 功能重构 |
+
+> 注（1.1.0 修订）：基于 token 的**浅色主题系统**（Spec 016，退休蓝绿终端风）现属第一阶段范围内，
+> 由下方「Design System Constraints」章节治理；此处 out-of-scope 的「大规模 IA / 功能重构」指
+> 信息架构或功能集的重构，与主题/视觉规范无关。
+
+---
+
+## Design System Constraints
+
+以下设计系统约束确立项目的视觉规范与主题实现方式，所有前端呈现代码 MUST 遵守：
+
+**单一事实来源：**
+- 视觉设计 token（颜色 / 字体 / 字重 / 字号 / 间距 / 圆角 / 阴影）以 `design/tokens.json`
+  （W3C DTCG 格式）为**单一事实来源**；`design/DESIGN.md` 为品味、结构与组件规则的规格文档。
+- 前端 MUST 通过统一 token 层（`apps/web/src/lib/theme.ts` + `globals.css` CSS 变量）消费设计值，
+  MUST NOT 在组件中散落硬编码色值 / 字号。
+
+**当前设计方向（浅色编辑式）：**
+- 画布为暖奶白 `#FAF9F7`（永不纯白），唯一主色为马利筋黄 `#FEB70C`（取自旦曼学院 logo）。
+- 原「蓝绿终端风」主色 `#00ffa0` 及其暗色终端美学**予以退休**（superseded，见 Spec 016）。
+- 字体仅 Inter（正文 / UI）与 JetBrains Mono（代码 / 数据 / 标签）。
+
+**黄的用法铁律：**
+- 马利筋黄 MUST 仅作「黑字之下的填充 / 高亮」——主 CTA（黄底黑字）、active pill（yellowTint 底）、
+  荧光笔式高亮标记。
+- 黄 MUST NOT 用作浅底上的文字、图标或细描边（对比度不足）。
+- 每屏 MUST 最多一个实心黄 CTA。
+
+**主题实现（mode-aware）：**
+- 主题 MUST 实现为 mode-aware：token 经 CSS 变量注入，通过 `<html data-theme>` 切换 mode，
+  组件不感知具体色值。
+- 浅色（cream + yellow）为默认且首个落地 mode；深色 mode（同样以马利筋黄为主色）为后续 Spec 的
+  扩展，MUST NOT 复活已退休的蓝绿美学。
+
+**Rationale**: 旧版设计值散落在数百处硬编码 hex 中，主题无法整体演进且深浅背景难以区分。
+将设计系统收敛到 token 单一来源，既保证视觉一致，又让主题（浅 / 深）成为可插拔的 mode，
+符合关注点分离（原则 I）与可回溯（原则 V）。
 
 ---
 
@@ -260,4 +311,4 @@ MUST 遵守其原则和约束。当其他文档与本 Constitution 冲突时，�
 
 ---
 
-**Version**: 1.0.1 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-07-01
+**Version**: 1.1.0 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-07-13

@@ -37,6 +37,8 @@ const PROB_TOKENS = ["是", "一种", "架构", "模型", "深度学习", "Trans
 const PROB_LOGITS = [5.8, 5.2, 4.6, 4.1, 3.7, 3.2, 2.9, 2.5, 2.2, 1.9, 1.6, 1.3, 1.0, 0.7, 0.4];
 const PROB_USED = new Set(["是", "Transformer"]);
 
+const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+
 function probDist(T: number, topP: number, fP: number, pP: number) {
   const t = Math.max(T, 0.01);
   const sc = PROB_LOGITS.map((l, i) => {
@@ -57,10 +59,10 @@ function probDist(T: number, topP: number, fP: number, pP: number) {
     const firstCut = !firstCutDone && cut; if (cut) firstCutDone = true;
     const bw = Math.round((item.prob / maxP) * 100);
     const background = cut ? color.border
-      : item.used ? `linear-gradient(90deg,${color.orange},${color.red}66)`
-      : i === 0 ? `linear-gradient(90deg,${color.green},#00c88888)`
-      : `linear-gradient(90deg,${color.blue},#388bfd88)`;
-    const tokenColor = cut ? color.textFaint : item.used ? color.orange : i === 0 ? color.green : color.textSecondary;
+      : item.used ? `linear-gradient(90deg,${color.orange},${mix(color.red, 50)})`
+      : i === 0 ? `linear-gradient(90deg,${color.teal},${mix(color.teal, 50)})`
+      : `linear-gradient(90deg,${color.blue},${mix(color.blue, 50)})`;
+    const tokenColor = cut ? color.textTertiary : item.used ? color.orange : i === 0 ? color.teal : color.textSecondary;
     return { token: item.tk, probText: (item.prob * 100).toFixed(1) + "%", tokenColor, width: cut ? Math.max(bw * 0.25, 2) : bw, background, firstCut, used: item.used };
   });
 }
@@ -116,7 +118,7 @@ export default function ModelParamsPanel({ params, onChange, systemPrompt, onSys
           onChange={(e) => onSystemPromptChange(e.target.value)}
           placeholder="你是一个专业的 AI 技术助手…"
           rows={4}
-          style={{ width: "100%", resize: "vertical", padding: "8px 10px", background: color.bgSecondary, border: `1px solid ${color.border}`, borderRadius: 6, color: color.textSecondary, fontSize: 12, fontFamily: sans, lineHeight: 1.6 }}
+          style={{ width: "100%", resize: "vertical", padding: "8px 10px", background: color.surfaceSubtle, border: `1px solid ${color.border}`, borderRadius: 8, color: color.textPrimary, fontSize: 12, fontFamily: sans, lineHeight: 1.6 }}
         />
       </div>
 
@@ -127,51 +129,51 @@ export default function ModelParamsPanel({ params, onChange, systemPrompt, onSys
           <div key={s.key} style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 3 }}>
               <span style={{ fontSize: 11, color: color.textPrimary, fontFamily: mono }}>{s.label}</span>
-              <span style={{ fontSize: 11, color: color.green, fontFamily: mono }}>{s.key === "maxTokens" ? params.maxTokens : Number(params[s.key]).toFixed(2)}</span>
+              <span style={{ fontSize: 11, color: color.textPrimary, fontFamily: mono }}>{s.key === "maxTokens" ? params.maxTokens : Number(params[s.key]).toFixed(2)}</span>
             </div>
             <input type="range" min={s.range[0]} max={s.range[1]} step={s.step} value={params[s.key] as number}
               onChange={(e) => change(s.key, parseFloat(e.target.value))}
-              style={{ width: "100%", accentColor: color.green, height: 4 }} />
-            <div style={{ fontSize: 9.5, color: color.textFaint, marginTop: 2 }}>{s.tip}</div>
+              style={{ width: "100%", accentColor: color.brandYellow, height: 4 }} />
+            <div style={{ fontSize: 9.5, color: color.textTertiary, marginTop: 2 }}>{s.tip}</div>
           </div>
         ))}
         <button onClick={() => onChange({ ...params, reasoningEnabled: !params.reasoningEnabled })}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 5, cursor: "pointer", fontSize: 11, fontFamily: mono,
-            background: params.reasoningEnabled ? "rgba(255,166,87,0.12)" : "transparent",
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontFamily: mono,
+            background: params.reasoningEnabled ? mix(color.orange, 12) : "transparent",
             border: `1px solid ${params.reasoningEnabled ? color.orange : color.border}`,
             color: params.reasoningEnabled ? color.orange : color.textTertiary }}>
-          🧠 思维链 {params.reasoningEnabled ? "ON" : "OFF"}<span style={{ fontSize: 9, color: color.textFaint }}>（仅 OpenRouter）</span>
+          🧠 思维链 {params.reasoningEnabled ? "ON" : "OFF"}<span style={{ fontSize: 9, color: color.textTertiary }}>（仅 OpenRouter）</span>
         </button>
       </div>
 
       {/* Probability distribution */}
       <div>
         <div style={{ ...sectionLabel, marginBottom: 4 }}>下一 Token 候选概率分布</div>
-        <div style={{ fontSize: 9.5, color: color.textFaint, fontFamily: mono, marginBottom: 8 }}>拖动 Temperature / Top-P 滑块查看变化（模拟）</div>
+        <div style={{ fontSize: 9.5, color: color.textTertiary, fontFamily: mono, marginBottom: 8 }}>拖动 Temperature / Top-P 滑块查看变化（模拟）</div>
         {bars.map((b, i) => (
           <div key={i}>
             {b.firstCut && <div style={{ borderTop: `1px dashed ${color.orange}`, margin: "4px 0", fontSize: 8, color: color.orange, fontFamily: mono }}>Top-P 截断 ↑</div>}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
               <code style={{ width: 64, fontSize: 10, color: b.tokenColor, fontFamily: mono, textAlign: "right", flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.token}{b.used ? "⟲" : ""}</code>
-              <div style={{ flex: 1, height: 13, background: color.bgPage, borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ flex: 1, height: 13, background: color.surfaceSubtle, borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ width: `${b.width}%`, height: "100%", background: b.background, borderRadius: 3, transition: "width 0.3s" }} />
               </div>
               <span style={{ width: 38, fontSize: 9, color: b.tokenColor, fontFamily: mono, textAlign: "right" }}>{b.probText}</span>
             </div>
           </div>
         ))}
-        <div style={{ fontSize: 9, color: color.textFaint, fontFamily: mono, marginTop: 6, display: "flex", gap: 10 }}>
-          <span style={{ color: color.green }}>● 候选采样</span><span style={{ color: color.textFaint }}>● Top-P 截断</span><span style={{ color: color.orange }}>● 惩罚项影响</span>
+        <div style={{ fontSize: 9, color: color.textTertiary, fontFamily: mono, marginTop: 6, display: "flex", gap: 10 }}>
+          <span style={{ color: color.teal }}>● 候选采样</span><span style={{ color: color.textTertiary }}>● Top-P 截断</span><span style={{ color: color.orange }}>● 惩罚项影响</span>
         </div>
       </div>
 
       {/* Request body preview (slider flash) */}
       <div>
         <div style={{ ...sectionLabel, marginBottom: 6 }}>请求体（改滑块看字段闪烁）</div>
-        <pre style={{ ...panel, padding: "8px 10px", margin: 0, fontFamily: mono, fontSize: 10, lineHeight: 1.6, color: color.textTertiary, whiteSpace: "pre" }}>
+        <pre style={{ ...panel, padding: "8px 10px", margin: 0, fontFamily: mono, fontSize: 10, lineHeight: 1.6, color: color.textSecondary, whiteSpace: "pre" }}>
           {reqLines.map((ln, i) => {
             const hl = ln.key && ln.key === changedKey;
-            return <div key={i} style={{ background: hl ? "rgba(0,255,160,0.12)" : "transparent", color: hl ? color.green : undefined, borderRadius: 3, transition: "background 0.3s, color 0.3s" }}>{ln.text}</div>;
+            return <div key={i} style={{ background: hl ? color.brandYellowTint : "transparent", color: hl ? color.textPrimary : undefined, borderRadius: 3, transition: "background 0.3s, color 0.3s" }}>{ln.text}</div>;
           })}
         </pre>
       </div>

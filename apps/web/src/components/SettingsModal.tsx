@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { color, mono, sans, radius } from "@/lib/theme";
 
 interface ProviderConfig {
   apiKey: string;
@@ -136,7 +137,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.6)",
+        background: "rgba(35,33,28,0.35)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -146,9 +147,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     >
       <div
         style={{
-          background: "#0d1117",
-          border: "1px solid #21262d",
-          borderRadius: 12,
+          background: color.surface,
+          border: `1px solid ${color.border}`,
+          borderRadius: radius.lg,
+          boxShadow: "0 8px 30px rgba(35,33,28,0.12)",
           width: 480,
           maxHeight: "80vh",
           overflow: "auto",
@@ -157,17 +159,17 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: "#e6edf3", fontFamily: "JetBrains Mono, monospace" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: color.textPrimary, fontFamily: mono }}>
             ⚙ 设置
           </h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#8b949e", fontSize: 20, cursor: "pointer" }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: color.textTertiary, fontSize: 20, cursor: "pointer" }}>
             ×
           </button>
         </div>
 
         {/* Provider selector */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, color: "#8b949e", fontFamily: "JetBrains Mono, monospace", display: "block", marginBottom: 8 }}>
+          <label style={{ fontSize: 11, color: color.textTertiary, fontFamily: mono, display: "block", marginBottom: 8 }}>
             Provider
           </label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
@@ -177,12 +179,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 onClick={() => handleSwitchProvider(key)}
                 style={{
                   padding: "8px 12px",
-                  borderRadius: 6,
-                  border: activeProvider === key ? "1px solid #00ffa0" : "1px solid #21262d",
-                  background: activeProvider === key ? "rgba(0,255,160,0.08)" : "#0a0e14",
-                  color: activeProvider === key ? "#00ffa0" : "#8b949e",
+                  borderRadius: radius.sm,
+                  border: activeProvider === key ? `1px solid ${color.brandYellow}` : `1px solid ${color.borderSubtle}`,
+                  background: activeProvider === key ? color.brandYellowTint : color.surfaceSubtle,
+                  color: activeProvider === key ? color.textPrimary : color.textTertiary,
                   fontSize: 12,
-                  fontFamily: "JetBrains Mono, monospace",
+                  fontFamily: mono,
                   cursor: "pointer",
                   textAlign: "left",
                 }}
@@ -195,7 +197,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         {/* API Key */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 11, color: "#8b949e", fontFamily: "JetBrains Mono, monospace", display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 11, color: color.textTertiary, fontFamily: mono, display: "block", marginBottom: 6 }}>
             API Key
           </label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -207,11 +209,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               style={{
                 flex: 1,
                 padding: "8px 12px",
-                background: "#0a0e14",
-                border: "1px solid #21262d",
-                borderRadius: 6,
-                color: "#c9d1d9",
-                fontFamily: "JetBrains Mono, monospace",
+                background: color.surfaceSubtle,
+                border: `1px solid ${color.border}`,
+                borderRadius: radius.sm,
+                color: color.textPrimary,
+                fontFamily: mono,
                 fontSize: 12,
                 outline: "none",
               }}
@@ -220,12 +222,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onClick={handleClearKey}
               style={{
                 padding: "8px 12px",
-                background: "rgba(255,107,107,0.1)",
-                border: "1px solid rgba(255,107,107,0.2)",
-                borderRadius: 6,
-                color: "#ff6b6b",
+                background: `color-mix(in srgb, ${color.red} 8%, transparent)`,
+                border: `1px solid color-mix(in srgb, ${color.red} 30%, transparent)`,
+                borderRadius: radius.sm,
+                color: color.red,
                 fontSize: 11,
-                fontFamily: "JetBrains Mono, monospace",
+                fontFamily: mono,
                 cursor: "pointer",
               }}
             >
@@ -236,7 +238,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         {/* Base URL */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 11, color: "#8b949e", fontFamily: "JetBrains Mono, monospace", display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 11, color: color.textTertiary, fontFamily: mono, display: "block", marginBottom: 6 }}>
             Base URL
           </label>
           <input
@@ -247,11 +249,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             style={{
               width: "100%",
               padding: "8px 12px",
-              background: "#0a0e14",
-              border: "1px solid #21262d",
-              borderRadius: 6,
-              color: "#c9d1d9",
-              fontFamily: "JetBrains Mono, monospace",
+              background: color.surfaceSubtle,
+              border: `1px solid ${color.border}`,
+              borderRadius: radius.sm,
+              color: color.textPrimary,
+              fontFamily: mono,
               fontSize: 12,
               outline: "none",
               boxSizing: "border-box",
@@ -261,7 +263,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         {/* Model ID */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 11, color: "#8b949e", fontFamily: "JetBrains Mono, monospace", display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 11, color: color.textTertiary, fontFamily: mono, display: "block", marginBottom: 6 }}>
             Model ID
           </label>
           <input
@@ -272,11 +274,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             style={{
               width: "100%",
               padding: "8px 12px",
-              background: "#0a0e14",
-              border: "1px solid #21262d",
-              borderRadius: 6,
-              color: "#c9d1d9",
-              fontFamily: "JetBrains Mono, monospace",
+              background: color.surfaceSubtle,
+              border: `1px solid ${color.border}`,
+              borderRadius: radius.sm,
+              color: color.textPrimary,
+              fontFamily: mono,
               fontSize: 12,
               outline: "none",
               boxSizing: "border-box",
@@ -288,13 +290,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div
           style={{
             padding: "10px 14px",
-            background: "rgba(0,255,160,0.04)",
-            border: "1px solid rgba(0,255,160,0.1)",
-            borderRadius: 6,
+            background: color.surfaceSubtle,
+            border: `1px solid ${color.borderSubtle}`,
+            borderRadius: radius.sm,
             marginBottom: 20,
             fontSize: 11,
-            color: "#8b949e",
-            fontFamily: "Inter, sans-serif",
+            color: color.textTertiary,
+            fontFamily: sans,
             lineHeight: 1.6,
           }}
         >
@@ -308,11 +310,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             style={{
               padding: "8px 16px",
               background: "transparent",
-              border: "1px solid #21262d",
-              borderRadius: 6,
-              color: "#8b949e",
+              border: `1px solid ${color.border}`,
+              borderRadius: radius.sm,
+              color: color.textSecondary,
               fontSize: 12,
-              fontFamily: "JetBrains Mono, monospace",
+              fontFamily: mono,
               cursor: "pointer",
             }}
           >
@@ -322,13 +324,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             onClick={handleSave}
             style={{
               padding: "8px 20px",
-              background: saved ? "rgba(0,255,160,0.15)" : "#00ffa0",
+              background: saved ? `color-mix(in srgb, ${color.teal} 15%, transparent)` : color.ctaBg,
               border: "none",
-              borderRadius: 6,
-              color: saved ? "#00ffa0" : "#0d1117",
+              borderRadius: radius.sm,
+              color: saved ? color.teal : color.ctaText,
               fontSize: 12,
               fontWeight: 600,
-              fontFamily: "JetBrains Mono, monospace",
+              fontFamily: mono,
               cursor: "pointer",
             }}
           >

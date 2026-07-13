@@ -9,7 +9,7 @@ import PipelineDetail from "@/components/PipelineDetail";
 import ModelParamsPanel from "@/components/ModelParamsPanel";
 import ThreePane from "@/components/layout/ThreePane";
 import { sendMessage, validateBeforeSend } from "@/lib/api";
-import { color, mono } from "@/lib/theme";
+import { color, mono, sans } from "@/lib/theme";
 import type { ChatStreamEvent } from "@teaching-tool/shared";
 
 interface DisplayMessage {
@@ -232,10 +232,10 @@ export default function ChatPage() {
   const visibleCount = messages.filter((m) => m.role !== "system").length;
 
   const headerBtn = (active: boolean) => ({
-    padding: "4px 10px", borderRadius: 5, cursor: "pointer", fontSize: 11, fontFamily: mono,
-    background: active ? "rgba(0,255,160,0.1)" : "transparent",
-    border: `1px solid ${active ? color.green : color.border}`,
-    color: active ? color.green : color.textTertiary,
+    padding: "5px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: mono,
+    background: active ? color.brandYellowTint : "transparent",
+    border: `1px solid ${active ? color.brandYellow : color.border}`,
+    color: active ? color.textPrimary : color.textSecondary,
   });
 
   return (
@@ -279,11 +279,11 @@ export default function ChatPage() {
         >
           <div style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0 }}>
             {/* Header / info bar */}
-            <div style={{ padding: "10px 20px", borderBottom: `1px solid ${color.borderSubtle}`, background: color.bgSecondary, display: "flex", alignItems: "center", gap: 10 }}>
-              <h1 style={{ fontSize: 13, fontWeight: 600, color: color.textPrimary, fontFamily: mono }}>💬 Chat</h1>
-              <span style={{ fontSize: 10, color: color.textFaint, fontFamily: mono }}>{chatConfig.provider || "—"} · {chatConfig.model || "未配置"}</span>
+            <div style={{ padding: "12px 20px", borderBottom: `1px solid ${color.borderSubtle}`, background: color.surface, display: "flex", alignItems: "center", gap: 10 }}>
+              <h1 style={{ fontSize: 15, fontWeight: 600, color: color.textPrimary, fontFamily: sans, letterSpacing: "-0.01em" }}>Chat</h1>
+              <span style={{ fontSize: 11, color: color.textTertiary, fontFamily: mono }}>{chatConfig.provider || "—"} · {chatConfig.model || "未配置"}</span>
               <div style={{ flex: 1 }} />
-              <button onClick={() => setShowConvList((v) => !v)} style={headerBtn(showConvList)}>📁 历史</button>
+              <button onClick={() => setShowConvList((v) => !v)} style={headerBtn(showConvList)}>历史</button>
               <button onClick={handleNewConversation} style={headerBtn(false)}>＋ 新对话</button>
             </div>
 

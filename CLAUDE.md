@@ -70,8 +70,9 @@ Every non-trivial feature is a numbered **Spec** under `specs/NNN-name/`. This r
 
 ## Conventions
 
-- **Design system is fixed** (dark terminal aesthetic). Do not introduce new colors or fonts. Only main accent is brand green `#00ffa0`; secondary accents from existing blue/purple/orange. Fonts: JetBrains Mono (code/data/labels) and Inter (prose) only.
-- Styling is inline `style={}` in components (no CSS modules/Tailwind); shared design tokens in `apps/web/src/lib/theme.ts`, resets/keyframes in `apps/web/src/app/globals.css`.
+- **Design system** (Spec 016, governed by constitution §Design System Constraints): light "editorial + marigold" — warm-cream canvas `#FAF9F7`, single brand accent **马利筋黄 `#FEB70C`** used *only* as a fill/highlight behind ink text (CTA, active pill, highlighter) — never as yellow text/icon/thin-border; ≤1 solid yellow CTA per screen; depth via 1px borders, not shadows. Blue/purple/orange/red/teal are **content-only** semantics (tags, syntax, difficulty), never UI chrome. Fonts: JetBrains Mono (code/data/labels) + Inter (prose/UI, body default). The old dark blue-green (`#00ffa0`) terminal look is **retired**.
+- **Tokens are the single source**: `design/tokens.json` (W3C DTCG) → `apps/web/src/lib/theme.ts` (`color.*` = CSS variables) + `apps/web/src/app/globals.css` `:root`. Theme is **mode-aware** via `<html data-theme>` (currently light only; a dark-yellow mode is a future Spec — add a `[data-theme="dark"]` block, no component churn). Do NOT hardcode hex in components.
+- Styling is inline `style={}` in components (no CSS modules/Tailwind).
 - Handler/state names are descriptive verbs (`toggleSettings`, `setModel`).
 
 ## Adding a teaching-content module (the 009 pattern, reused by 010–013)
@@ -84,5 +85,5 @@ Every non-trivial feature is a numbered **Spec** under `specs/NNN-name/`. This r
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/015-ui-redesign/plan.md
+specs/016-light-yellow-redesign/plan.md
 <!-- SPECKIT END -->

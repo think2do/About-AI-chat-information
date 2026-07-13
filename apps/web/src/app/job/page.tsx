@@ -4,14 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { JobListResponse, JobQuestion } from "@teaching-tool/shared";
 import GradientText from "@/components/bits/GradientText";
 import FadeIn from "@/components/bits/FadeIn";
+import { color, mono, sans, chip, paneBorder, radius } from "@/lib/theme";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  "简单": "#00ffa0",
-  "中等": "#ffa657",
-  "困难": "#ff6b6b",
+  "简单": color.teal,
+  "中等": color.orange,
+  "困难": color.red,
 };
-
-const mono = "JetBrains Mono, monospace";
 
 export default function JobPage() {
   const [data, setData] = useState<JobListResponse | null>(null);
@@ -71,95 +70,113 @@ export default function JobPage() {
     return activeCategory === "all" ? all : all.filter((q) => q.category === activeCategory);
   }, [data, activeCategory]);
 
+  const difficultyChip = (difficulty: string, fontSize: number, padding: string) => {
+    const c = DIFFICULTY_COLORS[difficulty] ?? color.textTertiary;
+    return {
+      fontSize,
+      padding,
+      borderRadius: radius.xs,
+      background: `color-mix(in srgb, ${c} 14%, transparent)`,
+      color: c,
+      fontFamily: mono,
+    };
+  };
+
   return (
-    <div style={{ display: "flex", height: "100%", color: "#c9d1d9", fontFamily: "Inter, sans-serif" }}>
-      <aside style={{ width: 320, minWidth: 320, height: "100vh", background: "#0a0e14", borderRight: "1px solid #21262d", overflow: "auto", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "16px", borderBottom: "1px solid #21262d" }}>
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", fontFamily: mono }}><GradientText>💼 求职题库</GradientText></h2>
-          <p style={{ fontSize: 11, color: "#484f58", marginTop: 4 }}>
+    <div style={{ display: "flex", height: "100%", color: color.textSecondary, fontFamily: sans }}>
+      <aside style={{ width: 320, minWidth: 320, height: "100vh", background: color.canvas, borderRight: paneBorder, overflow: "auto", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "16px", borderBottom: paneBorder }}>
+          <h2 style={{ fontSize: 13, fontWeight: 600, color: color.textPrimary, fontFamily: mono }}><GradientText>💼 求职题库</GradientText></h2>
+          <p style={{ fontSize: 11, color: color.textTertiary, marginTop: 4 }}>
             {loading ? "加载中…" : `${data?.total ?? 0} 道面试题 · ${Math.max(allTags.length - 1, 0)} 个分类`}
           </p>
         </div>
-        {error && <p style={{ padding: "10px 16px", fontSize: 12, color: "#ff6b6b", fontFamily: mono }}>{error}</p>}
+        {error && <p style={{ padding: "10px 16px", fontSize: 12, color: color.red, fontFamily: mono }}>{error}</p>}
         <div style={{ padding: "10px 16px", display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {allTags.map((tag) => (
-            <button key={tag.key} onClick={() => setActiveCategory(tag.key)} style={{
-              padding: "4px 10px", borderRadius: 4, fontSize: 11,
-              background: activeCategory === tag.key ? "rgba(0,255,160,0.1)" : "transparent",
-              border: activeCategory === tag.key ? "1px solid rgba(0,255,160,0.3)" : "1px solid #21262d",
-              color: activeCategory === tag.key ? "#00ffa0" : "#8b949e",
-              fontFamily: mono, cursor: "pointer",
-            }}>{tag.emoji} {tag.label} ({tag.count})</button>
-          ))}
+          {allTags.map((tag) => {
+            const active = activeCategory === tag.key;
+            return (
+              <button key={tag.key} onClick={() => setActiveCategory(tag.key)} style={{
+                padding: "4px 10px", borderRadius: radius.xs, fontSize: 11,
+                background: active ? color.brandYellow : color.surface,
+                border: active ? `1px solid ${color.brandYellow}` : `1px solid ${color.border}`,
+                color: active ? color.textPrimary : color.textSecondary,
+                fontFamily: mono, cursor: "pointer",
+              }}>{tag.label} ({tag.count})</button>
+            );
+          })}
         </div>
         <div style={{ flex: 1, overflow: "auto" }}>
           {!loading && !error && items.length === 0 && (
-            <p style={{ padding: "10px 16px", fontSize: 12, color: "#484f58", fontFamily: mono }}>暂无题目</p>
+            <p style={{ padding: "10px 16px", fontSize: 12, color: color.textTertiary, fontFamily: mono }}>暂无题目</p>
           )}
-          {items.map((q) => (
-            <button key={q.id} onClick={() => setSelectedId(q.id)} style={{
-              width: "100%", padding: "10px 16px", background: selectedId === q.id ? "rgba(0,255,160,0.06)" : "transparent",
-              border: "none", borderLeft: selectedId === q.id ? "3px solid #00ffa0" : "3px solid transparent",
-              color: selectedId === q.id ? "#e6edf3" : "#c9d1d9", fontSize: 12, cursor: "pointer", textAlign: "left",
-              fontFamily: "Inter, sans-serif", lineHeight: 1.5,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 3, background: "rgba(255,165,87,0.15)", color: DIFFICULTY_COLORS[q.difficulty] ?? "#8b949e", fontFamily: mono }}>{q.difficulty}</span>
-                <span style={{ fontSize: 10, color: "#484f58", fontFamily: mono }}>{q.company}</span>
-              </div>
-              {q.title}
-            </button>
-          ))}
+          {items.map((q) => {
+            const active = selectedId === q.id;
+            return (
+              <button key={q.id} onClick={() => setSelectedId(q.id)} style={{
+                width: "100%", padding: "10px 16px", background: active ? color.brandYellowTint : "transparent",
+                border: "none", borderLeft: active ? `2px solid ${color.brandYellow}` : "2px solid transparent",
+                color: active ? color.textPrimary : color.textSecondary, fontSize: 12, cursor: "pointer", textAlign: "left",
+                fontFamily: sans, lineHeight: 1.5,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ ...difficultyChip(q.difficulty, 10, "1px 6px") }}>{q.difficulty}</span>
+                  <span style={{ fontSize: 10, color: color.textTertiary, fontFamily: mono }}>{q.company}</span>
+                </div>
+                {q.title}
+              </button>
+            );
+          })}
         </div>
       </aside>
-      <main style={{ flex: 1, padding: 32, overflow: "auto" }}>
+      <main style={{ flex: 1, padding: 32, overflow: "auto", background: color.canvas }}>
         <FadeIn key={selectedId ?? "none"}>
         {detailLoading ? (
-          <div style={{ textAlign: "center", paddingTop: 80, color: "#484f58", fontFamily: mono, fontSize: 13 }}>正在加载题目…</div>
+          <div style={{ textAlign: "center", paddingTop: 80, color: color.textTertiary, fontFamily: mono, fontSize: 13 }}>正在加载题目…</div>
         ) : detail ? (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "rgba(255,165,87,0.15)", color: DIFFICULTY_COLORS[detail.difficulty] ?? "#8b949e", fontFamily: mono }}>{detail.difficulty}</span>
-              <span style={{ fontSize: 11, color: "#484f58", fontFamily: mono }}>来源: {detail.company}</span>
+              <span style={{ ...difficultyChip(detail.difficulty, 11, "2px 8px") }}>{detail.difficulty}</span>
+              <span style={{ fontSize: 11, color: color.textTertiary, fontFamily: mono }}>来源: {detail.company}</span>
             </div>
-            <h1 style={{ fontSize: 17, fontWeight: 600, color: "#e6edf3", fontFamily: mono, marginBottom: 12, lineHeight: 1.6 }}>{detail.title}</h1>
+            <h1 style={{ fontSize: 17, fontWeight: 600, color: color.textPrimary, fontFamily: mono, marginBottom: 12, lineHeight: 1.6 }}>{detail.title}</h1>
             {detail.tags.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
                 {detail.tags.map((t) => (
-                  <span key={t} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 3, background: "rgba(88,166,255,0.1)", color: "#58a6ff", fontFamily: mono }}>{t}</span>
+                  <span key={t} style={{ ...chip(color.blue) }}>{t}</span>
                 ))}
               </div>
             )}
 
-            <div style={{ background: "#0a0e14", border: "1px solid #21262d", borderRadius: 8, padding: 20, marginBottom: 16 }}>
-              <h3 style={{ fontSize: 11, color: "#00ffa0", fontFamily: mono, marginBottom: 12 }}>参考回答</h3>
-              <p style={{ fontSize: 13, color: "#c9d1d9", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{detail.answer}</p>
+            <div style={{ background: color.brandYellowTint, borderLeft: `2px solid ${color.brandYellow}`, borderRadius: radius.md, padding: 20, marginBottom: 16 }}>
+              <h3 style={{ fontSize: 11, color: color.textPrimary, fontFamily: mono, marginBottom: 12 }}>参考回答</h3>
+              <p style={{ fontSize: 13, color: color.textSecondary, lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{detail.answer}</p>
             </div>
 
             {detail.code && (
-              <div style={{ background: "#0a0e14", border: "1px solid #21262d", borderRadius: 8, padding: 20, marginBottom: 16 }}>
-                <h3 style={{ fontSize: 11, color: "#ffa657", fontFamily: mono, marginBottom: 12 }}>
+              <div style={{ background: color.surfaceSubtle, border: `1px solid ${color.borderSubtle}`, borderRadius: radius.md, padding: 20, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 11, color: color.orange, fontFamily: mono, marginBottom: 12 }}>
                   {detail.codeLabel || "代码示例"}{detail.codeLines ? ` · ${detail.codeLines} 行` : ""}
                 </h3>
-                <pre style={{ fontSize: 12.5, color: "#c9d1d9", lineHeight: 1.6, fontFamily: mono, overflow: "auto", margin: 0, whiteSpace: "pre" }}>{detail.code}</pre>
+                <pre style={{ fontSize: 12.5, color: color.textSecondary, lineHeight: 1.6, fontFamily: mono, overflow: "auto", margin: 0, whiteSpace: "pre" }}>{detail.code}</pre>
               </div>
             )}
 
             {detail.keyPoints.length > 0 && (
-              <div style={{ background: "#0a0e14", border: "1px solid #21262d", borderRadius: 8, padding: 20, marginBottom: 16 }}>
-                <h3 style={{ fontSize: 11, color: "#58a6ff", fontFamily: mono, marginBottom: 12 }}>解析要点</h3>
-                <ul style={{ fontSize: 13, color: "#8b949e", lineHeight: 1.9, paddingLeft: 20, margin: 0 }}>
+              <div style={{ background: `color-mix(in srgb, ${color.blue} 8%, transparent)`, borderLeft: `2px solid ${color.blue}`, borderRadius: radius.md, padding: 20, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 11, color: color.blue, fontFamily: mono, marginBottom: 12 }}>解析要点</h3>
+                <ul style={{ fontSize: 13, color: color.textSecondary, lineHeight: 1.9, paddingLeft: 20, margin: 0 }}>
                   {detail.keyPoints.map((p, i) => <li key={i}>{p}</li>)}
                 </ul>
               </div>
             )}
 
             {detail.related.length > 0 && (
-              <div style={{ background: "#0a0e14", border: "1px solid #21262d", borderRadius: 8, padding: 20 }}>
-                <h3 style={{ fontSize: 11, color: "#bc8cff", fontFamily: mono, marginBottom: 12 }}>关联考察点</h3>
+              <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: radius.md, padding: 20 }}>
+                <h3 style={{ fontSize: 11, color: color.purple, fontFamily: mono, marginBottom: 12 }}>关联考察点</h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {detail.related.map((r, i) => (
-                    <span key={i} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "rgba(188,140,255,0.08)", border: "1px solid rgba(188,140,255,0.2)", color: "#bc8cff", fontFamily: mono }}>{r}</span>
+                    <span key={i} style={{ ...chip(color.purple) }}>{r}</span>
                   ))}
                 </div>
               </div>
@@ -168,7 +185,7 @@ export default function JobPage() {
         ) : (
           <div style={{ textAlign: "center", paddingTop: 80 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>💼</div>
-            <p style={{ color: "#484f58", fontFamily: mono, fontSize: 13 }}>
+            <p style={{ color: color.textTertiary, fontFamily: mono, fontSize: 13 }}>
               {loading ? "正在加载题库…" : error ? error : "选择一个分类标签，点击题目查看详情"}
             </p>
           </div>

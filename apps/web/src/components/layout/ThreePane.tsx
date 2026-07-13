@@ -17,7 +17,7 @@ interface ThreePaneProps {
 const railBase: CSSProperties = {
   height: "100%",
   overflow: "auto",
-  background: color.bgSecondary,
+  background: color.canvas,
   flexShrink: 0,
 };
 

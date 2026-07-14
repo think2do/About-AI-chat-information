@@ -18,8 +18,8 @@
 - [x] T006 `CLAUDE.md` Conventions：「currently light only」→「light + dark，切换在导航底部，首次跟随系统」。
 
 ## E 收尾
-- [ ] T007 `npm run typecheck` 通过；`npm run dev` 走查：切换即时生效、深色刷新无 FOUC、记住选择、清存储后首访跟随系统；两 mode 各走 5 页 + 设置弹窗对照 Figma；console 无报错。
-- [ ] T008 `git merge --no-ff` 017→junxiang。
+- [x] T007 `npm run typecheck` 通过；`npm run dev` 走查：切换即时生效、深色刷新无 FOUC、记住选择、清存储后首访跟随系统；两 mode 各走 5 页 + 设置弹窗对照 Figma；console 无报错。
+- [x] T008 `git merge --no-ff` 017→junxiang。
 
 ## Notes
 无新增 npm 依赖；组件除 NavSidebar 外零改动（mode-aware `var()` 自动适配）。不改后端/内容/契约。无 constitution 变更。

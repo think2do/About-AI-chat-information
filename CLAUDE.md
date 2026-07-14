@@ -71,7 +71,7 @@ Every non-trivial feature is a numbered **Spec** under `specs/NNN-name/`. This r
 ## Conventions
 
 - **Design system** (Spec 016, governed by constitution §Design System Constraints): light "editorial + marigold" — warm-cream canvas `#FAF9F7`, single brand accent **马利筋黄 `#FEB70C`** used *only* as a fill/highlight behind ink text (CTA, active pill, highlighter) — never as yellow text/icon/thin-border; ≤1 solid yellow CTA per screen; depth via 1px borders, not shadows. Blue/purple/orange/red/teal are **content-only** semantics (tags, syntax, difficulty), never UI chrome. Fonts: JetBrains Mono (code/data/labels) + Inter (prose/UI, body default). The old dark blue-green (`#00ffa0`) terminal look is **retired**.
-- **Tokens are the single source**: `design/tokens.json` (W3C DTCG) → `apps/web/src/lib/theme.ts` (`color.*` = CSS variables) + `apps/web/src/app/globals.css` `:root`. Theme is **mode-aware** via `<html data-theme>` (currently light only; a dark-yellow mode is a future Spec — add a `[data-theme="dark"]` block, no component churn). Do NOT hardcode hex in components.
+- **Tokens are the single source**: `design/tokens.json` (W3C DTCG) → `apps/web/src/lib/theme.ts` (`color.*` = CSS variables) + `apps/web/src/app/globals.css` `:root`. Theme is **mode-aware** via `<html data-theme>` — **light + dark** (Spec 017), both marigold-based; dark values in `design/tokens.dark.json` → `globals.css` `[data-theme="dark"]`. Toggle lives in the nav-rail footer (`NavSidebar`); first visit follows OS `prefers-color-scheme`, choice persisted in `localStorage['teaching_tool_theme']` (see `lib/theme-mode.ts` + the pre-paint script in `layout.tsx`). Adding a mode = add a `[data-theme="…"]` block, no component churn. Do NOT hardcode hex in components.
 - Styling is inline `style={}` in components (no CSS modules/Tailwind).
 - Handler/state names are descriptive verbs (`toggleSettings`, `setModel`).
 
@@ -85,5 +85,5 @@ Every non-trivial feature is a numbered **Spec** under `specs/NNN-name/`. This r
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/016-light-yellow-redesign/plan.md
+specs/017-dark-mode-toggle/plan.md
 <!-- SPECKIT END -->

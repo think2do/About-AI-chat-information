@@ -172,4 +172,13 @@ Chat 页：保留"演示 playground"三区结构，但整体换到浅色皮肤�
 
 1. **精确值走 `design/tokens.json`（DTCG 格式）** → 装 **Tokens Studio for Figma** 插件 → Import → 自动生成 Variables + 文字/颜色样式。
 2. **品味与结构走本文件（DESIGN.md）** → 贴进 **Figma Make / First Draft** 的 prompt，配合 `design/sources/*.md` 与参考站截图，让 AI 按此生成页面/组件。
-3. 回到 Claude Code 落地时：这套是**浅色**，与当前 `CLAUDE.md`/constitution 里"设计系统固定为暗色终端"**冲突**——需先起一个新 Spec（如 016）并 amend constitution，再改 `apps/web/src/lib/theme.ts`。
+3. 落地状态：浅色已由 **Spec 016** 全站落地（constitution v1.1.0 §Design System Constraints 治理，退休旧暗色终端风）；深色由 **Spec 017** 落地。
+
+## Dark mode（Spec 017）
+
+深色是浅色之外的**第二个 mode**，不是新设计——**同一套马利筋黄 `#FEB70C`、同样的用色铁律**（黄仅作黑字之下的填充/高亮），只把中性与语义色换成暖色深版。精确值见 **`design/tokens.dark.json`**（与 `tokens.json` 的 `color` 组一一对应的深色覆盖）。
+
+- 画布 `#1B1813`（暖近黑，非冷蓝黑终端）、卡片 `#24211A`、内嵌 `#14120D`；文字暖白 `#F2EEE4` → `#5C564A` 四层。
+- 马利筋黄不变；hover 在深色下提亮到 `#FFC533`；文字链接用暖金 `#E6B24D`（深底可读）。
+- 语义色为深色适当调亮：blue `#6BA5FF` / purple `#B79CFF` / orange `#E8974A` / red `#FF6B6B` / teal `#3BB6A6`（仍仅限内容）。
+- 实现：`globals.css` 的 `[data-theme="dark"]` 覆盖块 + `<html data-theme>` 切换；组件因全走 `var()` 而零改动。切换开关在左侧导航底部，首次访问跟随系统 `prefers-color-scheme`。

@@ -71,7 +71,9 @@ export default function ChatPage() {
     try {
       const res = await fetch(`/api/sessions/${sessionId}/conversations/${conv.conversation_id}`);
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as {
+          messages?: Array<{ role: string; content: string }>;
+        };
         const msgs: DisplayMessage[] = (data.messages || []).map((m: { role: string; content: string }) => ({
           role: m.role as "user" | "assistant" | "system",
           content: m.content,
@@ -130,6 +132,10 @@ export default function ChatPage() {
 
     const onEvent = (event: ChatStreamEvent) => {
       switch (event.event) {
+        case "request_started":
+          if (event.conversation_id) setConversationId(event.conversation_id);
+          break;
+
         case "delta":
           if (ttftMs === undefined) ttftMs = Date.now() - t0;
           outTok++;

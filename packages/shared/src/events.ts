@@ -4,6 +4,7 @@
 export interface RequestStartedEvent {
   event: "request_started";
   request_id: string;
+  conversation_id?: string;
   timestamp: string;
 }
 

@@ -5,6 +5,8 @@ node_modules/
 
 # Next.js
 .next/
+.wrangler/
+apps/web/.wrangler/
 out/
 
 # TypeScript

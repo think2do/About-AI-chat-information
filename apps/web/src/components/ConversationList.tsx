@@ -36,7 +36,7 @@ export default function ConversationList({
     try {
       const res = await fetch(`/api/sessions/${sessionId}/conversations`);
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as { conversations?: Conversation[] };
         setConversations(data.conversations || []);
       }
     } catch (err) {

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 /* AI Teaching Tool — Global Styles (Light "editorial + marigold" system, Spec 016) */
 
 /* ===== Reset ===== */
@@ -8,9 +10,6 @@
   margin: 0;
   padding: 0;
 }
-
-/* ===== Font Face ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ===== Design tokens (source of truth: design/tokens.json) =====
    :root = light (default). A future dark mode (separate Spec) adds

@@ -1,0 +1,31 @@
+:root {
+  --style-radius-s: 8px;
+  --style-radius-m: 12px;
+  --style-radius-l: 16px;
+}
+
+.template-default {
+  background-image:
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--theme-success-500) 8%, transparent),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 100% 18%,
+      color-mix(in srgb, var(--theme-text) 5%, transparent),
+      transparent 32rem
+    );
+  background-attachment: fixed;
+}
+
+.dashboard__wrap::before {
+  display: block;
+  padding: 16px 18px;
+  margin-bottom: 24px;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 12px;
+  color: var(--theme-elevation-700);
+  background: var(--theme-elevation-50);
+  content: '体验提示：演示数据由 npm run db:seed 显式导入；导入后可尝试筛选、关系字段、草稿与版本。';
+}

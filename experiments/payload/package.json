@@ -1,0 +1,53 @@
+{
+  "name": "teaching-tool-payload-experience",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A real Payload CMS 3.86 experience backed by the teaching-tool fixtures.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" next build --webpack",
+    "db:bootstrap": "npm run db:migrate && npm run db:seed",
+    "db:migrate": "cross-env NODE_ENV=production NODE_OPTIONS=--no-deprecation payload migrate",
+    "db:migrate:status": "cross-env NODE_ENV=production NODE_OPTIONS=--no-deprecation payload migrate:status",
+    "db:seed": "cross-env NODE_ENV=production NODE_OPTIONS=--no-deprecation SEED_DEMO_CONTENT=1 payload run scripts/seed.ts",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev -H 127.0.0.1 -p 3020",
+    "env": "node scripts/generate-env.mjs",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
+    "infra:setup": "node scripts/setup-local-infra.mjs",
+    "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
+    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start -H 127.0.0.1 -p 3020",
+    "test:integration:member": "node scripts/verify-member-experience.mjs",
+    "test:integration:media": "node scripts/verify-media-integration.mjs"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "^3.86.0",
+    "@payloadcms/next": "3.86.0",
+    "@payloadcms/richtext-lexical": "3.86.0",
+    "@payloadcms/storage-s3": "^3.86.0",
+    "@payloadcms/translations": "3.86.0",
+    "@payloadcms/ui": "3.86.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "16.4.7",
+    "graphql": "^16.8.1",
+    "next": "16.2.6",
+    "payload": "3.86.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "sharp": "0.34.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "16.2.6",
+    "prettier": "^3.4.2",
+    "typescript": "5.7.3"
+  },
+  "engines": {
+    "node": "^18.20.2 || >=20.9.0"
+  }
+}

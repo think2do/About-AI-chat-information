@@ -1,0 +1,65 @@
+[
+  {
+    "slug": "stage-1",
+    "sort_order": 0,
+    "num": "1",
+    "label": "上下文组装",
+    "short": "messages[] 数组拼接",
+    "detail": "把 System Prompt、历史对话和本次用户输入按顺序拼接成 messages[] 数组。每条消息带 role（system/user/assistant）标签。这一步决定模型能\"看到\"多少上下文，也是 token 预算的起点——上下文越长，后续每一步的计算与花费都越高。",
+    "color": "#58a6ff"
+  },
+  {
+    "slug": "stage-2",
+    "sort_order": 1,
+    "num": "2",
+    "label": "请求编码",
+    "short": "JSON 序列化",
+    "detail": "将 messages[] 连同模型参数（temperature、top_p、max_tokens、frequency/presence penalty 等）序列化为 JSON 请求体，通过 HTTPS 发往模型服务端。你在参数面板里拖动的每个滑块，改变的正是这个请求体里对应的字段。",
+    "color": "#ffa657"
+  },
+  {
+    "slug": "stage-3",
+    "sort_order": 2,
+    "num": "3",
+    "label": "分词预处理",
+    "short": "Tokenization",
+    "detail": "服务端用 Tokenizer 把文本切成 token 序列：中文常 1 字 1～2 token，英文按子词（BPE）合并，数字与标点各自成 token。每个 token 映射到一个整数 ID。token 数直接决定计费金额与上下文占用，是\"为什么中文/英文耗费不同\"的根因。",
+    "color": "#ff6b6b"
+  },
+  {
+    "slug": "stage-4",
+    "sort_order": 3,
+    "num": "4",
+    "label": "API 调度 & 模型画像",
+    "short": "Provider 路由",
+    "detail": "请求被路由到目标模型实例。不同模型有不同的硬件画像：层数、隐藏维度、注意力头数、上下文窗口。MoE（混合专家）模型每次只激活部分专家、速度更快成本更低；Dense 模型则全参数参与推理。模型选择在此影响延迟与价格。",
+    "color": "#a371f7"
+  },
+  {
+    "slug": "stage-5",
+    "sort_order": 4,
+    "num": "5",
+    "label": "Transformer 推理",
+    "short": "前向传播",
+    "detail": "token 的 Embedding 向量逐层通过 Transformer Block：每层先做多头自注意力（让每个 token \"关注\"序列中相关位置），再经前馈网络（FFN）做非线性变换，并辅以残差连接与归一化。层数越多、维度越高，模型对语义的提炼越深。",
+    "color": "#00ffa0"
+  },
+  {
+    "slug": "stage-6",
+    "sort_order": 5,
+    "num": "6",
+    "label": "自回归解码",
+    "short": "逐 token 生成",
+    "detail": "模型每一步只预测\"下一个 token\"的概率分布（softmax over 词表），再按 temperature 与 top-p 从中采样出一个 token，追加到序列末尾后重新前向传播——逐 token 循环。这正是你看到回答\"一个字一个字蹦出来\"的原因，也是 TPS（每秒 token 数）的来源。",
+    "color": "#00ffa0"
+  },
+  {
+    "slug": "stage-7",
+    "sort_order": 6,
+    "num": "7",
+    "label": "响应完成 & 指标",
+    "short": "汇总统计",
+    "detail": "当模型生成 EOS（结束符）或达到 max_tokens 上限时停止解码。系统汇总本次指标：输出 token 数、TPS（吞吐）、TTFT（首字延迟）、本次成本，以及上下文窗口使用率，帮助你直观感受性能与花费之间的权衡。",
+    "color": "#e6edf3"
+  }
+]

@@ -204,7 +204,7 @@ const workSeeds = [
   },
 ] as const
 
-const fixturesRoot = path.resolve(process.cwd(), '../../apps/api/app/db/seeds/content')
+const fixturesRoot = path.resolve(process.cwd(), 'src/seed/fixtures')
 
 function readJSON<T>(...parts: string[]): T {
   const file = path.join(fixturesRoot, ...parts)

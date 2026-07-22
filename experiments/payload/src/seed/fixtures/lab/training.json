@@ -1,0 +1,5 @@
+{
+  "defaultQuestion": "Transformer 是什么？",
+  "baseTemplate": "{q}好的，{q}，这让我想到了一个有趣的语言现象……在自然语言语料库中，这类句式往往出现在学术论文的引言部分，例如\"Transformer 是一种……Transformer 是一种……\"（续写偏离：模型把问题当成训练语料继续生成，而不是按指令回答）",
+  "sftAnswer": "Transformer 是一种基于自注意力机制（Self-Attention）的深度学习架构，通过并行计算序列中各位置的相互关系来理解语义，是 GPT、BERT、Claude 等现代大模型的核心技术基础。"
+}

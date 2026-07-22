@@ -1,0 +1,72 @@
+[
+  {
+    "slug": "fc-0",
+    "sort_order": 0,
+    "icon": "💬",
+    "label": "用户发送消息",
+    "color": "#79c0ff",
+    "content": "\"上海今天天气怎么样？\"",
+    "jsonObj": null,
+    "isCode": true,
+    "highlight": false
+  },
+  {
+    "slug": "fc-1",
+    "sort_order": 1,
+    "icon": "🤖",
+    "label": "模型输出工具调用意图（tool_call）",
+    "color": "#7ee787",
+    "content": null,
+    "jsonObj": {
+      "tool_calls": [
+        {
+          "id": "call_abc123",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"上海\",\"date\":\"today\"}"
+          }
+        }
+      ]
+    },
+    "isCode": false,
+    "highlight": false
+  },
+  {
+    "slug": "fc-2",
+    "sort_order": 2,
+    "icon": "💻",
+    "label": "⚡ 你的代码执行函数（不是模型！）",
+    "color": "#ffa657",
+    "content": "result = get_weather(city=\"上海\", date=\"today\")",
+    "jsonObj": null,
+    "isCode": true,
+    "highlight": true
+  },
+  {
+    "slug": "fc-3",
+    "sort_order": 3,
+    "icon": "📥",
+    "label": "函数结果回填 messages[ ]",
+    "color": "#d2a8ff",
+    "content": null,
+    "jsonObj": {
+      "role": "tool",
+      "tool_call_id": "call_abc123",
+      "content": "{\"temp\":28,\"weather\":\"晴转多云\",\"humidity\":\"65%\"}"
+    },
+    "isCode": false,
+    "highlight": false
+  },
+  {
+    "slug": "fc-4",
+    "sort_order": 4,
+    "icon": "✅",
+    "label": "模型据结果生成最终自然语言回答",
+    "color": "#00ffa0",
+    "content": "上海今天晴转多云，气温 28°C，湿度 65%，适合外出，记得备伞防晒。",
+    "jsonObj": null,
+    "isCode": false,
+    "highlight": false
+  }
+]

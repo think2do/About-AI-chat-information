@@ -1,0 +1,32 @@
+[
+  {
+    "key": "all",
+    "label": "全部",
+    "emoji": "📋"
+  },
+  {
+    "key": "architecture",
+    "label": "系统架构",
+    "emoji": "🏗️"
+  },
+  {
+    "key": "model-selection",
+    "label": "模型选型",
+    "emoji": "🧠"
+  },
+  {
+    "key": "evaluation",
+    "label": "评测指标",
+    "emoji": "📊"
+  },
+  {
+    "key": "project-challenges",
+    "label": "项目挑战",
+    "emoji": "💡"
+  },
+  {
+    "key": "product-strategy",
+    "label": "产品策略",
+    "emoji": "🎯"
+  }
+]

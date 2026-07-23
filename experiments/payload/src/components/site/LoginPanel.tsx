@@ -10,11 +10,21 @@ function responseMessage(body: unknown, fallback: string): string {
   return record.errors?.[0]?.message || record.message || fallback
 }
 
-export function LoginPanel({ returnUrl = '/me' }: { returnUrl?: string }) {
+type LoginPanelProps = {
+  demoEmail?: string
+  demoPassword?: string
+  returnUrl?: string
+}
+
+export function LoginPanel({
+  demoEmail = 'member@example.com',
+  demoPassword = 'Member@123456',
+  returnUrl = '/me',
+}: LoginPanelProps) {
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('member@example.com')
-  const [password, setPassword] = useState('Member@123456')
+  const [email, setEmail] = useState(demoEmail)
+  const [password, setPassword] = useState(demoPassword)
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [message, setMessage] = useState('使用普通用户测试账号，可体验登录、活动报名和个人中心。')

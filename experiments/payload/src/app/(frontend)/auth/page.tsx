@@ -29,7 +29,11 @@ export default async function AuthPage({
     <>
       <SiteHeader siteName={settings.siteName || undefined} />
       <main className="login-page">
-        <LoginPanel returnUrl={safeReturnUrl(params.returnUrl)} />
+        <LoginPanel
+          demoEmail={process.env.SEED_MEMBER_EMAIL}
+          demoPassword={process.env.SEED_MEMBER_PASSWORD}
+          returnUrl={safeReturnUrl(params.returnUrl)}
+        />
       </main>
     </>
   )

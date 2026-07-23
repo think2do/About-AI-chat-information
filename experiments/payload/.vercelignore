@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.*.local
+.vercel
+.next
+node_modules
+design-evidence
+design-qa-assets
+design-qa.md
